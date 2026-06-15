@@ -184,6 +184,7 @@ interface AppContextType {
   unfollowPlan: (planId: string) => void;
   setPrimaryPlan: (planId: string) => void;
   togglePlanWeek: (planId: string, weekNum: number) => void;
+  togglePlanTask: (planId: string, taskKey: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -1890,6 +1891,22 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   };
 
+  const togglePlanTask = (planId: string, taskKey: string) => {
+    updateState(prev => {
+      const userPlans = prev.userPlans || [];
+      const updatedUserPlans = userPlans.map(up => {
+        if (up.planId !== planId) return up;
+        const customProgress = { ...up.customProgress };
+        customProgress[taskKey] = !customProgress[taskKey];
+        return { ...up, customProgress };
+      });
+      return {
+        ...prev,
+        userPlans: updatedUserPlans
+      };
+    });
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -1940,7 +1957,8 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         pausePlan,
         unfollowPlan,
         setPrimaryPlan,
-        togglePlanWeek
+        togglePlanWeek,
+        togglePlanTask
       }}
     >
       {children}
