@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useAppState } from "../context/AppStateContext";
 import { GlassCard, ProgressBar } from "../components/Common";
-import { DEFAULT_WEEK_PLAN } from "../data/curriculum";
+import { ALL_PLANS } from "../data/curriculum";
 import type { WeekPlan } from "../data/curriculum";
 import {
   ChevronDown,
@@ -17,6 +17,11 @@ import {
 
 export const RoadmapView: React.FC = () => {
   const { state, toggleWeek, toggleDsaProblem, updateDevSkill } = useAppState();
+  
+  const primaryPlanId = state.primaryPlanId || "16-week-mastery";
+  const primaryPlan = ALL_PLANS.find(p => p.id === primaryPlanId) || ALL_PLANS[0];
+  const roadmapWeeks = primaryPlan.roadmap;
+
   const [expandedWeeks, setExpandedWeeks] = useState<Record<string, boolean>>({
     "week-1": true // default first week open
   });
@@ -57,7 +62,7 @@ export const RoadmapView: React.FC = () => {
     if (state.completedWeeks.includes(week.id)) return "completed";
     
     // An active week is the first uncompleted week
-    const firstUncompletedIndex = DEFAULT_WEEK_PLAN.findIndex(
+    const firstUncompletedIndex = roadmapWeeks.findIndex(
       w => !state.completedWeeks.includes(w.id)
     );
     if (index === firstUncompletedIndex || (firstUncompletedIndex === -1 && index === 0)) {
@@ -71,7 +76,7 @@ export const RoadmapView: React.FC = () => {
   };
 
   // Filter week plans
-  const filteredWeeks = DEFAULT_WEEK_PLAN.filter(week => {
+  const filteredWeeks = roadmapWeeks.filter(week => {
     const matchesSearch =
       week.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       week.focus.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -143,9 +148,9 @@ export const RoadmapView: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/[0.06] pb-6">
         <div>
           <span className="text-xs uppercase font-mono tracking-widest text-slate-500">Timeline Curriculum</span>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">16-Week Preparation Roadmap</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">{primaryPlan.title} Roadmap</h1>
           <p className="text-sm text-slate-400 mt-1">
-            Structured semester schedule splitting foundation tools, advanced algorithms, database structures, and mock testing.
+            {primaryPlan.description}
           </p>
         </div>
       </div>

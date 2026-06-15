@@ -15,7 +15,7 @@ import {
   CheckCircle,
   AlertCircle
 } from "lucide-react";
-import { DEFAULT_WEEK_PLAN } from "../data/curriculum";
+import { ALL_PLANS } from "../data/curriculum";
 
 interface DashboardViewProps {
   setActiveTab: (tab: string) => void;
@@ -43,11 +43,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab }) =>
   const [showReadinessExplainer, setShowReadinessExplainer] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
+  const primaryPlanId = state.primaryPlanId || "16-week-mastery";
+  const primaryPlan = ALL_PLANS.find(p => p.id === primaryPlanId) || ALL_PLANS[0];
+  const weekPlans = primaryPlan.roadmap;
   const currentWeekIndex = Math.min(
-    DEFAULT_WEEK_PLAN.length - 1,
+    weekPlans.length - 1,
     Math.floor(state.completedWeeks.length)
   );
-  const currentWeek = DEFAULT_WEEK_PLAN[currentWeekIndex] || DEFAULT_WEEK_PLAN[0];
+  const currentWeek = weekPlans[currentWeekIndex] || weekPlans[0];
 
   const handleAddCustomTask = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,23 +60,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab }) =>
     }
   };
 
-  // Determine current day of week index for consistency map (columns: 16 weeks, rows: 7 days)
-  // Let's draw a grid of 16 weeks x 7 days
+  // Determine current day of week index for consistency map (columns: durationWeeks, rows: 7 days)
+  // Let's draw a grid of durationWeeks x 7 days
   const renderHeatmap = () => {
     // Generate grid items
     const cells = [];
-    const weekPlans = DEFAULT_WEEK_PLAN;
+    const weekPlans = primaryPlan.roadmap;
+    const durationWeeks = primaryPlan.durationWeeks;
     
     // Check completion level for each day
-    // We map days from 1 to 16 weeks * 7 days
-    for (let dayOffset = 0; dayOffset < 16 * 7; dayOffset++) {
+    // We map days from 1 to durationWeeks * 7 days
+    for (let dayOffset = 0; dayOffset < durationWeeks * 7; dayOffset++) {
       const weekIndex = Math.floor(dayOffset / 7);
       const dayIndex = dayOffset % 7;
       
       // Calculate a pseudo date for this cell (for mapping history)
       // We offsets days back from today for visualization
       const dateOffset = new Date();
-      dateOffset.setDate(dateOffset.getDate() - (15 * 7 + 6 - dayOffset));
+      dateOffset.setDate(dateOffset.getDate() - ((durationWeeks - 1) * 7 + 6 - dayOffset));
       const dateStr = dateOffset.toISOString().split("T")[0];
       
       // Check habits completed on that day
@@ -136,7 +140,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab }) =>
             <div className="w-2.5 h-2.5 rounded-sm bg-accentPrimary/80 border border-accentPrimary/40" />
             <span>More</span>
           </div>
-          <span>Week 16 (Interviews)</span>
+          <span>Week {durationWeeks} (Interviews)</span>
         </div>
       </div>
     );
@@ -228,7 +232,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab }) =>
               </div>
               <span className="text-3xl font-extrabold text-white font-mono">{overallCompletion}%</span>
               <p className="text-xs text-slate-500 mt-1 font-mono">
-                {state.completedWeeks.length} of {DEFAULT_WEEK_PLAN.length} Weeks completed
+                {state.completedWeeks.length} of {weekPlans.length} Weeks completed
               </p>
             </div>
             <div className="mt-4">
@@ -433,7 +437,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab }) =>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-slate-400" /> Prep Consistency Grid
               </h3>
-              <span className="text-[10px] font-mono text-slate-500 uppercase">16-Week Journey</span>
+              <span className="text-[10px] font-mono text-slate-500 uppercase">{primaryPlan.title}</span>
             </div>
             {renderHeatmap()}
             <p className="text-[11px] text-slate-500 font-mono leading-relaxed mt-2">
@@ -568,23 +572,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab }) =>
               <div className="bg-white/[0.02] border border-white/[0.04] p-3 rounded-lg space-y-2 font-mono text-[10px]">
                 <div className="flex justify-between border-b border-white/[0.04] pb-1.5">
                   <span className="text-slate-400">1. DSA Completion</span>
-                  <span className="text-white font-bold">30% Weight</span>
+                  <span className="text-white font-bold">35% Weight</span>
                 </div>
                 <div className="flex justify-between border-b border-white/[0.04] pb-1.5">
                   <span className="text-slate-400">2. Full Stack Skills Matrix</span>
-                  <span className="text-white font-bold">25% Weight</span>
+                  <span className="text-white font-bold">30% Weight</span>
                 </div>
                 <div className="flex justify-between border-b border-white/[0.04] pb-1.5">
                   <span className="text-slate-400">3. Projects Completion</span>
-                  <span className="text-white font-bold">20% Weight</span>
+                  <span className="text-white font-bold">25% Weight</span>
                 </div>
                 <div className="flex justify-between border-b border-white/[0.04] pb-1.5">
-                  <span className="text-slate-400">4. Low AI Reliance (100 - AI%)</span>
-                  <span className="text-white font-bold">15% Weight</span>
+                  <span className="text-slate-400">4. Preparation Streak (capped)</span>
+                  <span className="text-white font-bold">10% Weight</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">5. Preparation Streak (capped)</span>
-                  <span className="text-white font-bold">10% Weight</span>
+                  <span className="text-slate-400">5. AI Dependency Score</span>
+                  <span className="text-rose-400 font-bold">Penalty (up to -15%)</span>
                 </div>
               </div>
 

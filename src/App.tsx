@@ -13,6 +13,7 @@ import { BadgesView } from "./pages/BadgesView";
 import { SettingsView } from "./pages/SettingsView";
 import { LoginView } from "./pages/LoginView";
 import { ProfileView } from "./pages/ProfileView";
+import { PlansView } from "./pages/PlansView";
 import { MarkdownRenderer } from "./components/MarkdownRenderer";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -36,8 +37,10 @@ import {
   Loader2,
   Trash2,
   Maximize2,
-  Minimize2
+  Minimize2,
+  ClipboardList
 } from "lucide-react";
+import { ALL_PLANS } from "./data/curriculum";
 
 const SYSTEM_PROMPT = `You are an elite technical mentor for a Computer Science Engineering student preparing for placements over the next 3-4 months.
 Your mission is to guide the student to placement readiness across DSA, Full Stack, and Project portfolios, while enforcing anti-vibe-coding discipline (avoiding blind copy-pasting, understanding code from first principles, and building self-reliance).
@@ -306,9 +309,13 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const primaryPlanId = state.primaryPlanId || "16-week-mastery";
+  const primaryPlan = ALL_PLANS.find(p => p.id === primaryPlanId) || ALL_PLANS[0];
+
   const navigationItems = [
     { id: "dashboard", name: "Dashboard", icon: LayoutDashboard },
-    { id: "roadmap", name: "16-Week Plan", icon: Map },
+    { id: "plans", name: "Plans", icon: ClipboardList },
+    { id: "roadmap", name: primaryPlan.title, icon: Map },
     { id: "dsa", name: "DSA Tracker", icon: Code2 },
     { id: "dev", name: "Full Stack", icon: Layers },
     { id: "ai", name: "AI Tracker", icon: Terminal },
@@ -326,6 +333,8 @@ const AppContent: React.FC = () => {
     switch (activeTab) {
       case "dashboard":
         return <DashboardView setActiveTab={setActiveTab} />;
+      case "plans":
+        return <PlansView />;
       case "roadmap":
         return <RoadmapView />;
       case "dsa":

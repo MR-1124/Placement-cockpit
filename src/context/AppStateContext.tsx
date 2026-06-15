@@ -6,10 +6,10 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import {
   DEFAULT_DSA_TOPICS,
   DEFAULT_DEV_CATEGORIES,
-  DEFAULT_WEEK_PLAN,
-  DEFAULT_BADGES
+  DEFAULT_BADGES,
+  ALL_PLANS
 } from "../data/curriculum";
-import type { DsaTopic, DevCategory } from "../data/curriculum";
+import type { DsaTopic, DevCategory, UserPlan } from "../data/curriculum";
 
 export interface Project {
   id: string;
@@ -131,6 +131,8 @@ interface AppState {
   chatMessages: ChatMessage[];
   chatSessions?: ChatSession[];
   currentSessionId?: string;
+  userPlans?: UserPlan[];
+  primaryPlanId?: string;
 }
 
 interface AppContextType {
@@ -177,6 +179,11 @@ interface AppContextType {
   updateSettings: (settings: Partial<AppSettings>) => void;
   resetAllData: () => void;
   seedMockData: () => void;
+  followPlan: (planId: string) => void;
+  pausePlan: (planId: string) => void;
+  unfollowPlan: (planId: string) => void;
+  setPrimaryPlan: (planId: string) => void;
+  togglePlanWeek: (planId: string, weekNum: number) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -230,6 +237,8 @@ interface SerializedProgress {
     resumeLink: string;
     cohort: string;
   };
+  userPlans?: UserPlan[];
+  primaryPlanId?: string;
 }
 
 const serializeState = (state: AppState): Omit<SerializedProgress, "user"> => {
@@ -298,6 +307,8 @@ const serializeState = (state: AppState): Omit<SerializedProgress, "user"> => {
     xp: state.xp || 0,
     chatSessions: state.chatSessions || [],
     currentSessionId: state.currentSessionId || "default-session",
+    userPlans: state.userPlans || [],
+    primaryPlanId: state.primaryPlanId || "16-week-mastery",
     profile: state.user ? {
       name: state.user.name,
       email: state.user.email,
@@ -405,7 +416,9 @@ const deserializeState = (serialized: Partial<SerializedProgress>): Partial<AppS
         isPinned: false
       }
     ],
-    currentSessionId: serialized.currentSessionId || "default-session"
+    currentSessionId: serialized.currentSessionId || "default-session",
+    userPlans: serialized.userPlans || [],
+    primaryPlanId: serialized.primaryPlanId || "16-week-mastery"
   };
 };
 
@@ -508,7 +521,19 @@ const INITIAL_STATE: AppState = {
       isPinned: false
     }
   ],
-  currentSessionId: "default-session"
+  currentSessionId: "default-session",
+  userPlans: [
+    {
+      planId: "16-week-mastery",
+      active: true,
+      primary: true,
+      startedAt: new Date().toISOString(),
+      paused: false,
+      completedWeeks: [],
+      customProgress: {}
+    }
+  ],
+  primaryPlanId: "16-week-mastery"
 };
 
 export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -580,6 +605,29 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         if (updatedState.settings.nvidiaModelName === undefined) {
           updatedState.settings.nvidiaModelName = "meta/llama-3.1-70b-instruct";
+        }
+
+        if (updatedState.primaryPlanId === undefined) {
+          updatedState.primaryPlanId = "16-week-mastery";
+        }
+
+        if (updatedState.userPlans === undefined || updatedState.userPlans.length === 0) {
+          const migratedCompletedWeeks = (parsed.completedWeeks || []).map((id: string) => {
+            const num = parseInt(id.replace("week-", ""));
+            return isNaN(num) ? 1 : num;
+          });
+
+          updatedState.userPlans = [
+            {
+              planId: "16-week-mastery",
+              active: true,
+              primary: true,
+              startedAt: new Date().toISOString(),
+              paused: false,
+              completedWeeks: migratedCompletedWeeks,
+              customProgress: {}
+            }
+          ];
         }
 
         if (parsed.lastActiveDate !== today) {
@@ -960,8 +1008,10 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     aiLogsCount
   );
 
+  const primaryPlanId = state.primaryPlanId || "16-week-mastery";
+  const primaryPlan = ALL_PLANS.find(p => p.id === primaryPlanId) || ALL_PLANS[0];
   const overallCompletion = Math.round(
-    (state.completedWeeks.length / DEFAULT_WEEK_PLAN.length) * 100
+    (state.completedWeeks.length / primaryPlan.roadmap.length) * 100
   );
 
   // Dynamic level progression system (RPG-style)
@@ -979,10 +1029,25 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Actions
   const toggleWeek = (weekId: string) => {
     updateState(prev => {
-      const isCompleted = prev.completedWeeks.includes(weekId);
-      const completedWeeks = isCompleted
-        ? prev.completedWeeks.filter(id => id !== weekId)
-        : [...prev.completedWeeks, weekId];
+      const primaryPlanId = prev.primaryPlanId || "16-week-mastery";
+      const userPlans = prev.userPlans || [];
+      const primaryUserPlan = userPlans.find(up => up.planId === primaryPlanId);
+
+      const weekNum = parseInt(weekId.replace("week-", ""));
+      if (isNaN(weekNum)) return prev;
+
+      const isCompleted = primaryUserPlan?.completedWeeks.includes(weekNum) ?? false;
+
+      const updatedUserPlans = userPlans.map(up => {
+        if (up.planId !== primaryPlanId) return up;
+        const completedWeeksList = isCompleted
+          ? up.completedWeeks.filter((w: number) => w !== weekNum)
+          : [...up.completedWeeks, weekNum];
+        return { ...up, completedWeeks: completedWeeksList };
+      });
+
+      const updatedPrimaryPlan = updatedUserPlans.find(up => up.planId === primaryPlanId);
+      const primaryPlanCompletedWeeksStr = (updatedPrimaryPlan?.completedWeeks || []).map((w: number) => `week-${w}`);
 
       if (!isCompleted) {
         // Week completed confetti!
@@ -1000,7 +1065,11 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         });
       }
 
-      return { ...prev, completedWeeks };
+      return {
+        ...prev,
+        userPlans: updatedUserPlans,
+        completedWeeks: primaryPlanCompletedWeeksStr
+      };
     });
   };
 
@@ -1702,6 +1771,125 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   };
 
+  const followPlan = (planId: string) => {
+    updateState(prev => {
+      const userPlans = prev.userPlans || [];
+      if (userPlans.some(up => up.planId === planId)) return prev;
+
+      const newPlan: UserPlan = {
+        planId,
+        active: true,
+        primary: false,
+        startedAt: new Date().toISOString(),
+        paused: false,
+        completedWeeks: [],
+        customProgress: {}
+      };
+
+      return {
+        ...prev,
+        userPlans: [...userPlans, newPlan]
+      };
+    });
+  };
+
+  const pausePlan = (planId: string) => {
+    updateState(prev => {
+      const userPlans = (prev.userPlans || []).map(up => {
+        if (up.planId !== planId) return up;
+        return { ...up, paused: !up.paused };
+      });
+      return { ...prev, userPlans };
+    });
+  };
+
+  const unfollowPlan = (planId: string) => {
+    updateState(prev => {
+      if (planId === "16-week-mastery") return prev;
+
+      const userPlans = (prev.userPlans || []).filter(up => up.planId !== planId);
+      
+      let primaryPlanId = prev.primaryPlanId;
+      if (primaryPlanId === planId) {
+        primaryPlanId = "16-week-mastery";
+      }
+
+      const updatedUserPlans = userPlans.map(up => ({
+        ...up,
+        primary: up.planId === primaryPlanId
+      }));
+
+      const primaryPlanCompletedWeeks = updatedUserPlans.find(up => up.planId === primaryPlanId)?.completedWeeks || [];
+      const completedWeeks = primaryPlanCompletedWeeks.map((w: number) => `week-${w}`);
+
+      return {
+        ...prev,
+        userPlans: updatedUserPlans,
+        primaryPlanId,
+        completedWeeks
+      };
+    });
+  };
+
+  const setPrimaryPlan = (planId: string) => {
+    updateState(prev => {
+      const userPlans = prev.userPlans || [];
+      
+      let updatedUserPlans = [...userPlans];
+      if (!updatedUserPlans.some(up => up.planId === planId)) {
+        updatedUserPlans.push({
+          planId,
+          active: true,
+          primary: false,
+          startedAt: new Date().toISOString(),
+          paused: false,
+          completedWeeks: [],
+          customProgress: {}
+        });
+      }
+
+      updatedUserPlans = updatedUserPlans.map(up => ({
+        ...up,
+        primary: up.planId === planId
+      }));
+
+      const primaryPlanCompletedWeeks = updatedUserPlans.find(up => up.planId === planId)?.completedWeeks || [];
+      const completedWeeks = primaryPlanCompletedWeeks.map((w: number) => `week-${w}`);
+
+      return {
+        ...prev,
+        userPlans: updatedUserPlans,
+        primaryPlanId: planId,
+        completedWeeks
+      };
+    });
+  };
+
+  const togglePlanWeek = (planId: string, weekNum: number) => {
+    updateState(prev => {
+      const userPlans = (prev.userPlans || []).map(up => {
+        if (up.planId !== planId) return up;
+        const isCompleted = up.completedWeeks.includes(weekNum);
+        const completedWeeks = isCompleted
+          ? up.completedWeeks.filter((w: number) => w !== weekNum)
+          : [...up.completedWeeks, weekNum];
+        return { ...up, completedWeeks };
+      });
+
+      let completedWeeks = prev.completedWeeks;
+      if (prev.primaryPlanId === planId) {
+        const primaryPlanCompletedWeeks = userPlans.find(up => up.planId === planId)?.completedWeeks || [];
+        completedWeeks = primaryPlanCompletedWeeks.map((w: number) => `week-${w}`);
+      }
+
+      return {
+        ...prev,
+        userPlans,
+        completedWeeks
+      };
+    });
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -1747,7 +1935,12 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         deleteNote,
         updateSettings,
         resetAllData,
-        seedMockData
+        seedMockData,
+        followPlan,
+        pausePlan,
+        unfollowPlan,
+        setPrimaryPlan,
+        togglePlanWeek
       }}
     >
       {children}
