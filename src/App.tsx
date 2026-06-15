@@ -152,8 +152,11 @@ const AppContent: React.FC = () => {
 
       let response;
 
+      const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+      const useStream = isLocalhost;
+
       try {
-        setChatStatus("Connecting to local Vite dev proxy (/api-nvidia)...");
+        setChatStatus(isLocalhost ? "Connecting to local Vite dev proxy (/api-nvidia)..." : "Connecting to Netlify API proxy (/api-nvidia)...");
         // Try local proxy endpoint first to bypass browser CORS blocks
         response = await fetch("/api-nvidia/v1/chat/completions", {
           method: "POST",
@@ -166,7 +169,7 @@ const AppContent: React.FC = () => {
             messages: apiMessages,
             temperature: 0.2,
             max_tokens: 1024,
-            stream: true
+            stream: useStream
           }),
           signal: controller.signal
         });
@@ -192,7 +195,7 @@ const AppContent: React.FC = () => {
             messages: apiMessages,
             temperature: 0.2,
             max_tokens: 1024,
-            stream: true
+            stream: useStream
           }),
           signal: controller.signal
         });
@@ -291,8 +294,10 @@ const AppContent: React.FC = () => {
         console.error(err);
         let errMsg = err.message || "An unexpected error occurred.";
         if (errMsg.includes("Failed to fetch")) {
-          errMsg = "Failed to fetch response. This is likely due to browser CORS security blocks or network issues. " +
-                   "Please verify that your internet connection is active, your NVIDIA API Key in Settings is valid, and the local Vite proxy server is running.";
+          const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+          errMsg = isLocalhost
+            ? "Connection Error: Failed to fetch response. This is likely due to browser CORS security blocks or network issues. Please verify that your internet connection is active, your NVIDIA API Key in Settings is valid, and the local Vite proxy server is running."
+            : "Connection Error: Failed to fetch response from Netlify API proxy. Please verify that your internet connection is active, your NVIDIA API Key in Settings is valid, and the Netlify redirect configuration is correct.";
         }
         setChatError(errMsg);
       }
