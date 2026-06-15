@@ -17081,6 +17081,213 @@ export const FOUR_WEEK_ROADMAP: WeekPlan[] = [
   }
 ];
 
+export const FULL_STACK_ROADMAP: WeekPlan[] = [
+  {
+    id: "week-1",
+    title: "Week 1: HTML5, CSS3 & Responsive Layouts",
+    phase: "Foundation",
+    focus: "Semantic HTML, Flexbox, Grid, CSS Variables & Layout patterns",
+    goals: [
+      "Master CSS Box Model, Flexbox, and CSS Grid layouts",
+      "Build dynamic mobile-first layouts with media queries",
+      "Establish low-AI independent mockups styling"
+    ],
+    estimatedTime: "20 hours",
+    dsaTopics: ["arrays-hashing"],
+    devSkills: ["skill-1", "skill-2"],
+    projectMilestone: "Beginner: Build responsive candidate profile card layout",
+    revisionFocus: "Box sizing and Flexbox alignment rules",
+    dsaProblems: ["dsa-1", "dsa-2", "dsa-3"]
+  },
+  {
+    id: "week-2",
+    title: "Week 2: JavaScript Variables, Loops & Functions",
+    phase: "Foundation",
+    focus: "Variables, primitive vs object types, operators, loops, standard functions",
+    goals: [
+      "Explain JavaScript Execution Context and variable hoisting",
+      "Write conditional constructs and iterations over arrays/objects",
+      "Solve array search and element frequency counting"
+    ],
+    estimatedTime: "22 hours",
+    dsaTopics: ["arrays-hashing"],
+    devSkills: ["skill-1"],
+    projectMilestone: "Beginner: Interactive Calculator utility logic",
+    revisionFocus: "Primitive value assignment vs Object references",
+    dsaProblems: ["dsa-4", "dsa-5", "dsa-6"]
+  },
+  {
+    id: "week-3",
+    title: "Week 3: Closures, Async JS & DOM Manipulation",
+    phase: "Foundation",
+    focus: "Scope chain, closures, higher-order functions, DOM events, fetch API, localStorage",
+    goals: [
+      "Explain closures, map/filter/reduce implementations",
+      "Perform REST API fetching and catch errors",
+      "Manage persistent user session states locally"
+    ],
+    estimatedTime: "25 hours",
+    dsaTopics: ["two-pointers"],
+    devSkills: ["skill-1"],
+    projectMilestone: "Beginner: Interactive Todo planner with LocalStorage tracking",
+    revisionFocus: "JS Event Loop, Microtasks vs Macrotasks",
+    dsaProblems: ["dsa-two-pointers-11", "dsa-two-pointers-12"]
+  },
+  {
+    id: "week-4",
+    title: "Week 4: Modern Tooling, npm & Git workflows",
+    phase: "Foundation",
+    focus: "npm packages, ES modules, Git cherry-pick, interactive rebasing, branching",
+    goals: [
+      "Initialize web apps with custom npm packages and modules",
+      "Handle branching, commits, and conflicts resolution",
+      "Rebuild static features from memory to enforce recall"
+    ],
+    estimatedTime: "20 hours",
+    dsaTopics: ["two-pointers"],
+    devSkills: ["skill-19"],
+    projectMilestone: "Beginner: Deploy custom modular portfolio dashboard static build",
+    revisionFocus: "Git commit history rewriting and rebase mechanics",
+    dsaProblems: ["dsa-two-pointers-13", "dsa-two-pointers-14"]
+  },
+  {
+    id: "week-5",
+    title: "Week 5: React Functional Components & Local State",
+    phase: "Core Mastery",
+    focus: "React JSX syntax, props, component rendering, lifting state, event handlers",
+    goals: [
+      "Decompose UI mockups into isolated components",
+      "Implement controlled inputs and state hooks",
+      "Prevent unnecessary state duplication"
+    ],
+    estimatedTime: "25 hours",
+    dsaTopics: ["stack-queue"],
+    devSkills: ["skill-3"],
+    projectMilestone: "Intermediate: Interactive Quiz system in React",
+    revisionFocus: "React reconciliation algorithm and key props",
+    dsaProblems: ["dsa-stack-queue-29", "dsa-22", "dsa-23"]
+  },
+  {
+    id: "week-6",
+    title: "Week 6: Effect Lifecycles & Custom Hooks",
+    phase: "Core Mastery",
+    focus: "useEffect dependencies, cleanups, useRef hooks, custom data fetch abstractions",
+    goals: [
+      "Avoid memory leaks by properly executing effect cleanup callbacks",
+      "Abstract standard operations into reusable custom hooks",
+      "Build loading spinners and fallback UI blocks"
+    ],
+    estimatedTime: "26 hours",
+    dsaTopics: ["stack-queue"],
+    devSkills: ["skill-3", "skill-6"],
+    projectMilestone: "Intermediate: Dynamic Weather dashboard querying REST APIs",
+    revisionFocus: "State batching and effect execution timing",
+    dsaProblems: ["dsa-24", "dsa-25", "dsa-26"]
+  },
+  {
+    id: "week-7",
+    title: "Week 7: Client-Side Routing & Zustand Stores",
+    phase: "Core Mastery",
+    focus: "React Router, nested child views, context API, global Zustand store slices",
+    goals: [
+      "Set up nested dynamic routes and loading indicators",
+      "Configure unified global stores for user session states",
+      "Build search, filter, and sort frontend lists"
+    ],
+    estimatedTime: "28 hours",
+    dsaTopics: ["sliding-window"],
+    devSkills: ["skill-4", "skill-5"],
+    projectMilestone: "Intermediate: Notes manager with tags search and theme toggle",
+    revisionFocus: "Zustand state selectors vs context provider renders",
+    dsaProblems: ["dsa-sliding-window-10", "dsa-sliding-window-11"]
+  },
+  {
+    id: "week-8",
+    title: "Week 8: TypeScript Compilations & Strict Typing",
+    phase: "Core Mastery",
+    focus: "TS interfaces, union types, generics, typing React props, state, and events",
+    goals: [
+      "Build type-safe frontend modules with TypeScript profiles",
+      "Avoid any typings and use generics for data components",
+      "Refactor clean nested folders architecture"
+    ],
+    estimatedTime: "25 hours",
+    dsaTopics: ["sliding-window"],
+    devSkills: ["skill-3", "skill-10"],
+    projectMilestone: "Intermediate: Task manager dashboard refactored entirely to TS",
+    revisionFocus: "Type narrowing and utility types (Omit, Partial, Pick)",
+    dsaProblems: ["dsa-sliding-window-12", "dsa-sliding-window-13"]
+  },
+  {
+    id: "week-9",
+    title: "Week 9: Node.js, Express & REST Architecture",
+    phase: "Advanced Topics",
+    focus: "Express router, custom middlewares, controller-service layers, error handler",
+    goals: [
+      "Initialize Node backend servers with modular folder structures",
+      "Implement global centralized error handlers",
+      "Validate incoming JSON bodies using schema validations"
+    ],
+    estimatedTime: "25 hours",
+    dsaTopics: ["linked-list"],
+    devSkills: ["skill-7", "skill-10"],
+    projectMilestone: "Advanced: Full REST API core server for Job application tracker",
+    revisionFocus: "Node event loop cycles and async middleware pipes",
+    dsaProblems: ["dsa-31", "dsa-32", "dsa-33"]
+  },
+  {
+    id: "week-10",
+    title: "Week 10: PostgreSQL vs NoSQL, Security & Auth",
+    phase: "Advanced Topics",
+    focus: "PostgreSQL normalization, Prisma, MongoDB collections, JWT auth, bcrypt",
+    goals: [
+      "Design normalized relational DB tables and indexes",
+      "Build JWT token authentication flows utilizing HttpOnly cookies",
+      "Secure user passwords with custom salt and hashing algorithms"
+    ],
+    estimatedTime: "28 hours",
+    dsaTopics: ["linked-list"],
+    devSkills: ["skill-8", "skill-12", "skill-13", "skill-14"],
+    projectMilestone: "Advanced: Authenticated backend server linked to PostgreSQL/MongoDB database",
+    revisionFocus: "DB Index indexing performance and SQL injection defenses",
+    dsaProblems: ["dsa-34", "dsa-36", "dsa-37"]
+  },
+  {
+    id: "week-11",
+    title: "Week 11: Full Stack Integration & CORS Policies",
+    phase: "Advanced Topics",
+    focus: "Axios client setups, CORS settings, login state context, optimistic states",
+    goals: [
+      "Bridge React client to Express server securely",
+      "Configure CORS headers to accept credentials from specified domains",
+      "Render dynamic user session context bindings"
+    ],
+    estimatedTime: "28 hours",
+    dsaTopics: ["trees"],
+    devSkills: ["skill-6", "skill-8", "skill-11"],
+    projectMilestone: "Advanced: Deployed unified Full Stack Authenticated dashboard",
+    revisionFocus: "CORS preflight requests and token refreshing strategies",
+    dsaProblems: ["dsa-trees-11", "dsa-trees-24"]
+  },
+  {
+    id: "week-12",
+    title: "Week 12: Containerization, Deployment & STAR Method",
+    phase: "Placement Ready",
+    focus: "Docker multi-stage files, Render/Railway cloud hosts, STAR interview logs",
+    goals: [
+      "Containerize full-stack apps using custom Docker multi-stage instructions",
+      "Deploy databases and live servers to cloud environments",
+      "Format project descriptions into situation/task/action/result summaries"
+    ],
+    estimatedTime: "30 hours",
+    dsaTopics: ["trees"],
+    devSkills: ["skill-20", "skill-21", "skill-22", "skill-24"],
+    projectMilestone: "Advanced: Launch job tracker to cloud, write STAR resumes documentation",
+    revisionFocus: "Production env configurations and reverse proxies setup",
+    dsaProblems: ["dsa-heaps-9", "dsa-heaps-10"]
+  }
+];
+
 export const ALL_PLANS: Plan[] = [
   {
     id: "16-week-mastery",
@@ -17093,6 +17300,18 @@ export const ALL_PLANS: Plan[] = [
     roadmap: DEFAULT_WEEK_PLAN,
     category: "Mastery",
     recommendedFor: ["Long-term placement prep", "Pre-final year students"]
+  },
+  {
+    id: "full-stack-mastery",
+    title: "Full Stack Mastery Plan",
+    durationWeeks: 12,
+    description: "Genuinely master full stack development from frontend foundations to backend deployment, databases, TypeScript, security, and STAR method project polishing.",
+    difficulty: "Hard",
+    estimatedHoursPerDay: "4–6 hours",
+    tags: ["React", "TypeScript", "Node.js", "Databases", "Deployment"],
+    roadmap: FULL_STACK_ROADMAP,
+    category: "Mastery",
+    recommendedFor: ["Full Stack placement readiness", "Gaining absolute code ownership", "System design and project rounds"]
   },
   {
     id: "2-month-readiness",
