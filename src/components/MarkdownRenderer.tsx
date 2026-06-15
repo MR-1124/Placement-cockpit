@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Clipboard, Check } from "lucide-react";
+import { Clipboard, Check, AlertTriangle } from "lucide-react";
 
 // 1. Mermaid dynamic CDN renderer component
 interface MermaidProps {
@@ -10,9 +10,22 @@ export const MermaidDiagram: React.FC<MermaidProps> = ({ chart }) => {
   const elementRef = useRef<HTMLDivElement>(null);
   const [svg, setSvg] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyChart = async () => {
+    try {
+      await navigator.clipboard.writeText(chart);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy chart code:", err);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
+    const id = `mermaid-${Math.random().toString(36).substring(7)}`;
     
     const renderChart = async () => {
       try {
@@ -27,6 +40,7 @@ export const MermaidDiagram: React.FC<MermaidProps> = ({ chart }) => {
                 startOnLoad: false,
                 theme: "dark",
                 securityLevel: "loose",
+                suppressErrorRendering: true,
                 themeVariables: {
                   background: "#0d0e12",
                   primaryColor: "#8b5cf6",
@@ -44,13 +58,19 @@ export const MermaidDiagram: React.FC<MermaidProps> = ({ chart }) => {
             startOnLoad: false,
             theme: "dark",
             securityLevel: "loose",
+            suppressErrorRendering: true,
+            themeVariables: {
+              background: "#0d0e12",
+              primaryColor: "#8b5cf6",
+              primaryTextColor: "#f8fafc",
+              lineColor: "#334155",
+            }
           });
         }
         
         setSvg("");
         setError(null);
         
-        const id = `mermaid-${Math.random().toString(36).substring(7)}`;
         const { svg: renderedSvg } = await (window as any).mermaid.render(id, chart);
         
         if (isMounted) {
@@ -58,8 +78,13 @@ export const MermaidDiagram: React.FC<MermaidProps> = ({ chart }) => {
         }
       } catch (err: any) {
         console.error("Mermaid parsing error:", err);
+        
+        // Clean up temporary elements created by mermaid on document.body
+        const extraElements = document.querySelectorAll(`[id*="${id}"]`);
+        extraElements.forEach(el => el.remove());
+
         if (isMounted) {
-          setError("Failed to render flow diagram. Syntax error inside mermaid configuration.");
+          setError(err?.message || "Failed to render flow diagram. Syntax error inside mermaid configuration.");
         }
       }
     };
@@ -68,14 +93,36 @@ export const MermaidDiagram: React.FC<MermaidProps> = ({ chart }) => {
     
     return () => {
       isMounted = false;
+      // Also cleanup on unmount
+      const extraElements = document.querySelectorAll(`[id*="${id}"]`);
+      extraElements.forEach(el => el.remove());
     };
   }, [chart]);
 
   if (error) {
     return (
-      <div className="p-3 bg-rose-500/5 border border-rose-500/10 rounded-xl text-rose-400 font-mono text-[10px] my-2 select-text">
-        <span className="font-bold block uppercase text-[9px] mb-1">Diagram Warning</span>
-        <pre className="text-[9px] overflow-x-auto text-slate-500 whitespace-pre-wrap">{chart}</pre>
+      <div className="my-4 bg-rose-950/10 border border-rose-500/20 rounded-xl overflow-hidden shadow-lg">
+        {/* Header */}
+        <div className="flex justify-between items-center bg-rose-500/5 border-b border-rose-500/10 px-4 py-2 text-[10px] text-rose-400 font-sans font-bold uppercase tracking-wider select-none">
+          <div className="flex items-center gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
+            <span>Diagram Rendering Failed</span>
+          </div>
+          <button
+            onClick={handleCopyChart}
+            className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer text-[10px] text-slate-400"
+          >
+            {copied ? (
+              <span className="text-emerald-400">Copied!</span>
+            ) : (
+              <span>Copy Code</span>
+            )}
+          </button>
+        </div>
+        <div className="p-4 font-mono text-[10px] select-text space-y-2">
+          <div className="text-rose-400 font-semibold">{error}</div>
+          <pre className="p-3 bg-black/40 border border-white/[0.04] rounded-lg text-slate-500 overflow-x-auto whitespace-pre-wrap">{chart}</pre>
+        </div>
       </div>
     );
   }
@@ -90,11 +137,59 @@ export const MermaidDiagram: React.FC<MermaidProps> = ({ chart }) => {
   }
 
   return (
-    <div 
-      ref={elementRef} 
-      className="my-3 bg-black/40 border border-white/[0.06] p-4 rounded-xl flex justify-center overflow-x-auto shadow-inner select-none"
-      dangerouslySetInnerHTML={{ __html: svg }} 
-    />
+    <div className="my-4 bg-black/50 border border-white/[0.08] rounded-xl overflow-hidden shadow-lg">
+      {/* Header */}
+      <div className="flex justify-between items-center bg-white/[0.02] border-b border-white/[0.06] px-4 py-2 text-[10px] text-slate-400 font-sans font-bold uppercase tracking-wider select-none">
+        <div className="flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+          <span>Architectural Diagram</span>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Copy Button */}
+          <button
+            onClick={handleCopyChart}
+            className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer text-[10px]"
+          >
+            {copied ? (
+              <span className="text-emerald-400">Copied!</span>
+            ) : (
+              <span>Copy Code</span>
+            )}
+          </button>
+          
+          {/* Toggle Expand Button */}
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer text-[10px]"
+          >
+            <span>{isExpanded ? "Collapse" : "Expand"}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Diagram Content Wrapper */}
+      <div className="relative">
+        <div 
+          ref={elementRef} 
+          className={`p-4 flex justify-center overflow-x-auto shadow-inner select-none transition-all duration-300 ${
+            isExpanded ? "max-h-none" : "max-h-[250px] overflow-hidden"
+          }`}
+          dangerouslySetInnerHTML={{ __html: svg }} 
+        />
+        
+        {/* Collapsed Overlay Gradient & Button */}
+        {!isExpanded && (
+          <div 
+            onClick={() => setIsExpanded(true)}
+            className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end justify-center pb-4 cursor-pointer hover:from-black/90 transition-all"
+          >
+            <span className="bg-white/[0.08] hover:bg-white/[0.12] text-white border border-white/[0.1] px-3 py-1.5 rounded-lg text-[10px] font-semibold tracking-wider uppercase backdrop-blur-sm shadow-md transition-all">
+              Expand Diagram
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 
