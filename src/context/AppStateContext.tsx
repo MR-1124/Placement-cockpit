@@ -409,6 +409,40 @@ const deserializeState = (serialized: Partial<SerializedProgress>): Partial<AppS
   };
 };
 
+const calculateReadinessScore = (
+  dsaCompletion: number,
+  devCompletion: number,
+  projectCompletionPercentage: number,
+  streak: number,
+  aiDependencyScore: number,
+  aiLogsCount: number
+): number => {
+  const dsaContribution = dsaCompletion * 0.35;
+  const devContribution = devCompletion * 0.30;
+  const projectContribution = projectCompletionPercentage * 0.25;
+  const streakContribution = Math.min(10, streak) * 10 * 0.10;
+
+  const aiPenalty = aiLogsCount > 0 ? (aiDependencyScore * 0.15) : 0;
+
+  return Math.min(100, Math.max(0, Math.round(dsaContribution + devContribution + projectContribution + streakContribution - aiPenalty)));
+};
+
+const getLevelInfo = (totalXp: number) => {
+  let level = Math.floor(0.5 + Math.sqrt(0.25 + totalXp / 100));
+  if (level < 1) level = 1;
+
+  const xpForCurrentLevel = 100 * level * (level - 1);
+  const xpForNextLevel = 100 * (level + 1) * level;
+  const xpInCurrentLevel = totalXp - xpForCurrentLevel;
+  const xpRequiredForNextLevel = xpForNextLevel - xpForCurrentLevel;
+
+  const xpProgress = xpRequiredForNextLevel > 0
+    ? Math.min(100, Math.round((xpInCurrentLevel / xpRequiredForNextLevel) * 100))
+    : 100;
+
+  return { level, xpProgress };
+};
+
 const STORAGE_KEY = "placement_cockpit_state";
 
 const getTodayString = () => {
@@ -790,18 +824,14 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ? (updatedState.projects.reduce((acc, p) => acc + p.completion, 0) / (updatedState.projects.length * 100)) * 100
       : 0;
 
-    // AI Penalty: if avgAiPercent is > 50, subtract score, else add positive
-    const aiImpact = Math.max(0, 100 - avgAiPercent); // lower dependency = higher score
-    
-    // Readiness Score
-    const rawReadiness =
-      dsaComp * 0.3 +
-      devComp * 0.25 +
-      projComp * 0.2 +
-      (updatedState.streak > 0 ? Math.min(100, updatedState.streak * 10) : 0) * 0.1 +
-      aiImpact * 0.15;
-    
-    const readinessScore = Math.min(100, Math.round(rawReadiness));
+    const readinessScore = calculateReadinessScore(
+      dsaComp,
+      devComp,
+      projComp,
+      updatedState.streak,
+      avgAiPercent,
+      logCount
+    );
 
     const freshlyUnlocked: string[] = [];
 
@@ -921,27 +951,21 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Mastered topics act as finished revisions
   const revisionCompletion = revisionTotalCount > 0 ? Math.min(100, Math.round((revisionTotalCount / 15) * 100)) : 0;
 
-  // Placement Readiness Score Formula
-  // DSA (30%), Dev Matrix (25%), Projects (20%), Streaks (10%), AI Low Dependency (15%)
-  // Lower AI dependency is better. Max AI dependency score = 100, so contribution is (100 - aiDependencyScore) * 0.15
-  const aiContribution = (100 - aiDependencyScore) * 0.15;
-  const streakContribution = Math.min(100, state.streak * 10) * 0.1; // cap streak at 10 days for score
-  const dsaContribution = dsaCompletion * 0.3;
-  const devContribution = devCompletion * 0.25;
-  const projectContribution = projectCompletionPercentage * 0.2;
-
-  const readinessScore = Math.min(
-    100,
-    Math.round(dsaContribution + devContribution + projectContribution + streakContribution + aiContribution)
+  const readinessScore = calculateReadinessScore(
+    dsaCompletion,
+    devCompletion,
+    projectCompletionPercentage,
+    state.streak,
+    aiDependencyScore,
+    aiLogsCount
   );
 
   const overallCompletion = Math.round(
     (state.completedWeeks.length / DEFAULT_WEEK_PLAN.length) * 100
   );
 
-  // Dynamic level progression system
-  const level = Math.floor(state.xp / 200) + 1;
-  const xpProgress = Math.min(100, Math.round(((state.xp % 200) / 200) * 100));
+  // Dynamic level progression system (RPG-style)
+  const { level, xpProgress } = getLevelInfo(state.xp);
 
   const getLevelTitle = (lvl: number) => {
     if (lvl >= 10) return "Tech Lead";
