@@ -680,6 +680,53 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   });
 
+  // Dynamic check for date transition (midnight reset) while tab is open
+  useEffect(() => {
+    const checkDateTransition = () => {
+      const today = getTodayString();
+      setState(prev => {
+        if (!prev.lastActiveDate || prev.lastActiveDate === today) return prev;
+
+        const yesterday = getYesterdayString();
+        const completedCount = Object.values(prev.dailyHabits).filter(Boolean).length;
+        const historyItem: HistoryItem = {
+          date: prev.lastActiveDate,
+          habitsCompleted: completedCount
+        };
+
+        const filteredHistory = prev.habitHistory.filter(h => h.date !== prev.lastActiveDate);
+
+        let updatedStreak = prev.streak;
+        if (prev.lastActiveDate === yesterday) {
+          // Keep streak
+        } else {
+          // Reset streak
+          updatedStreak = 0;
+        }
+
+        return {
+          ...prev,
+          habitHistory: [...filteredHistory, historyItem],
+          dailyHabits: {
+            solveDsa: false,
+            reviseOld: false,
+            buildFeature: false,
+            avoidAi: false,
+            pushGithub: false,
+            readDoc: false
+          },
+          customTasks: prev.customTasks.filter(t => !t.isCompleted),
+          streak: updatedStreak,
+          lastActiveDate: today
+        };
+      });
+    };
+
+    checkDateTransition();
+    const interval = setInterval(checkDateTransition, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Save state to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
