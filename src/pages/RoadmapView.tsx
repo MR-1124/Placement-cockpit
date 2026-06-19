@@ -512,7 +512,15 @@ export const RoadmapView: React.FC = () => {
                     {/* Complete Week Toggle */}
                     <div className="flex justify-end pt-3 border-t border-white/[0.04]">
                       <button
-                        onClick={() => toggleWeek(week.id)}
+                        onClick={() => {
+                          if (!isChecked && progress < 100) {
+                            const confirmMark = window.confirm(
+                              "You have not completed all items for this week. Are you sure you want to mark it as completed?"
+                            );
+                            if (!confirmMark) return;
+                          }
+                          toggleWeek(week.id);
+                        }}
                         className={`flex items-center gap-1.5 text-xs px-3.5 py-1.8 rounded-lg font-bold border transition-all ${
                           isChecked
                             ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
