@@ -30,7 +30,8 @@ export const ProfileView: React.FC = () => {
     readinessScore,
     level,
     levelTitle,
-    logoutUser
+    logoutUser,
+    confirmAction
   } = useAppState();
 
   const user = state.user;
@@ -93,14 +94,21 @@ export const ProfileView: React.FC = () => {
   };
 
   const handleSignOut = async () => {
-    if (confirm("Are you sure you want to sign out? Your state is saved locally and will restore upon logging back in.")) {
-      try {
-        await auth.signOut();
-      } catch (e) {
-        console.error("Firebase SignOut error, forcing local logout", e);
+    confirmAction({
+      title: "Sign Out Session",
+      message: "Are you sure you want to sign out? Your state is saved locally and will restore upon logging back in.",
+      confirmText: "Sign Out",
+      cancelText: "Cancel",
+      severity: "warning",
+      onConfirm: async () => {
+        try {
+          await auth.signOut();
+        } catch (e) {
+          console.error("Firebase SignOut error, forcing local logout", e);
+        }
+        logoutUser();
       }
-      logoutUser();
-    }
+    });
   };
 
   return (

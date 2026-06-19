@@ -63,7 +63,8 @@ const AppContent: React.FC = () => {
     xpProgress,
     levelTitle,
     addChatMessage,
-    clearChatHistory
+    clearChatHistory,
+    confirmAction
   } = useAppState();
 
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -309,9 +310,14 @@ const AppContent: React.FC = () => {
   };
 
   const handleClearHistory = () => {
-    if (confirm("Are you sure you want to clear your chat history?")) {
-      clearChatHistory();
-    }
+    confirmAction({
+      title: "Clear Chat History",
+      message: "Are you sure you want to clear your chat history? This cannot be undone.",
+      confirmText: "Clear History",
+      cancelText: "Cancel",
+      severity: "danger",
+      onConfirm: () => clearChatHistory()
+    });
   };
 
   const primaryPlanId = state.primaryPlanId || "16-week-mastery";

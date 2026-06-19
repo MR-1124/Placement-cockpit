@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 export const RoadmapView: React.FC = () => {
-  const { state, toggleWeek, toggleDsaProblem, updateDevSkill } = useAppState();
+  const { state, toggleWeek, toggleDsaProblem, updateDevSkill, confirmAction } = useAppState();
   
   const primaryPlanId = state.primaryPlanId || "16-week-mastery";
   const primaryPlan = ALL_PLANS.find(p => p.id === primaryPlanId) || ALL_PLANS[0];
@@ -28,6 +28,7 @@ export const RoadmapView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activePhaseFilter, setActivePhaseFilter] = useState<string>("All");
   const [activeDiffTabs, setActiveDiffTabs] = useState<Record<string, "Easy" | "Medium" | "Hard">>({});
+
 
   const toggleExpand = (weekId: string) => {
     setExpandedWeeks(prev => ({ ...prev, [weekId]: !prev[weekId] }));
@@ -514,12 +515,17 @@ export const RoadmapView: React.FC = () => {
                       <button
                         onClick={() => {
                           if (!isChecked && progress < 100) {
-                            const confirmMark = window.confirm(
-                              "You have not completed all items for this week. Are you sure you want to mark it as completed?"
-                            );
-                            if (!confirmMark) return;
+                            confirmAction({
+                              title: "Incomplete Curriculum Items",
+                              message: "You have not completed all DSA problems and dev skill checkmarks allocated for this week. Marking it complete will record it as fully completed in your stats.",
+                              confirmText: "Confirm Completion",
+                              cancelText: "Cancel",
+                              severity: "warning",
+                              onConfirm: () => toggleWeek(week.id)
+                            });
+                          } else {
+                            toggleWeek(week.id);
                           }
-                          toggleWeek(week.id);
                         }}
                         className={`flex items-center gap-1.5 text-xs px-3.5 py-1.8 rounded-lg font-bold border transition-all ${
                           isChecked
@@ -538,6 +544,8 @@ export const RoadmapView: React.FC = () => {
           );
         })}
       </div>
+
+      
     </div>
   );
 };

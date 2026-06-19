@@ -36,7 +36,8 @@ export const AiChatView: React.FC = () => {
     setActiveSession,
     deleteSession,
     togglePinSession,
-    renameSession
+    renameSession,
+    confirmAction
   } = useAppState();
   const [chatInput, setChatInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -270,9 +271,14 @@ export const AiChatView: React.FC = () => {
   };
 
   const handleClearHistory = () => {
-    if (confirm("Are you sure you want to clear your chat history?")) {
-      clearChatHistory();
-    }
+    confirmAction({
+      title: "Clear Chat History",
+      message: "Are you sure you want to clear your chat history? This cannot be undone.",
+      confirmText: "Clear History",
+      cancelText: "Cancel",
+      severity: "danger",
+      onConfirm: () => clearChatHistory()
+    });
   };
 
   const copyMessageToClipboard = (text: string) => {
@@ -457,9 +463,14 @@ export const AiChatView: React.FC = () => {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (confirm("Delete this chat session?")) {
-                                    deleteSession(session.id);
-                                  }
+                                  confirmAction({
+                                    title: "Delete Chat Session",
+                                    message: `Are you sure you want to delete "${session.title}"?`,
+                                    confirmText: "Delete",
+                                    cancelText: "Cancel",
+                                    severity: "danger",
+                                    onConfirm: () => deleteSession(session.id)
+                                  });
                                 }}
                                 title="Delete chat"
                                 className="p-1 rounded hover:bg-white/5 text-slate-500 hover:text-rose-400 transition-colors"

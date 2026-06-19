@@ -3,6 +3,8 @@ import confetti from "canvas-confetti";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db, hasFirebaseKeys } from "../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { motion, AnimatePresence } from "framer-motion";
+import { AlertTriangle, AlertCircle, Info } from "lucide-react";
 import {
   DEFAULT_DSA_TOPICS,
   DEFAULT_DEV_CATEGORIES,
@@ -10,6 +12,16 @@ import {
   ALL_PLANS
 } from "../data/curriculum";
 import type { DsaTopic, DevCategory, UserPlan } from "../data/curriculum";
+
+export interface ConfirmationOptions {
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  severity?: "info" | "warning" | "danger";
+  onConfirm: () => void;
+}
+
 
 export interface Project {
   id: string;
@@ -185,6 +197,7 @@ interface AppContextType {
   setPrimaryPlan: (planId: string) => void;
   togglePlanWeek: (planId: string, weekNum: number) => void;
   togglePlanTask: (planId: string, taskKey: string) => void;
+  confirmAction: (options: ConfirmationOptions) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -679,6 +692,32 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       lastActiveDate: getTodayString()
     };
   });
+
+  const [confirmState, setConfirmState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    severity?: "info" | "warning" | "danger";
+    onConfirm?: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: ""
+  });
+
+  const confirmAction = (options: ConfirmationOptions) => {
+    setConfirmState({
+      isOpen: true,
+      title: options.title,
+      message: options.message,
+      confirmText: options.confirmText,
+      cancelText: options.cancelText,
+      severity: options.severity || "info",
+      onConfirm: options.onConfirm
+    });
+  };
 
   // Dynamic check for date transition (midnight reset) while tab is open
   useEffect(() => {
@@ -2005,10 +2044,90 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         unfollowPlan,
         setPrimaryPlan,
         togglePlanWeek,
-        togglePlanTask
+        togglePlanTask,
+        confirmAction
       }}
     >
       {children}
+      <AnimatePresence>
+        {confirmState.isOpen && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] select-none">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="w-full max-w-md bg-darkCard/95 border border-white/[0.08] shadow-2xl relative rounded-2xl overflow-hidden glass-panel"
+            >
+              {/* Glow border depending on severity */}
+              <div 
+                className={`h-1.5 w-full ${
+                  confirmState.severity === "danger" 
+                    ? "bg-rose-500" 
+                    : confirmState.severity === "warning" 
+                    ? "bg-amber-500" 
+                    : "bg-accentPrimary"
+                }`}
+              />
+
+              <div className="p-6 space-y-4">
+                <div className="flex items-start gap-4">
+                  <div 
+                    className={`p-3 rounded-full shrink-0 border ${
+                      confirmState.severity === "danger" 
+                        ? "bg-rose-500/10 text-rose-400 border-rose-500/20" 
+                        : confirmState.severity === "warning" 
+                        ? "bg-amber-500/10 text-amber-400 border-amber-500/20" 
+                        : "bg-accentPrimary/10 text-accentPrimary border-accentPrimary/20"
+                    }`}
+                  >
+                    {confirmState.severity === "danger" ? (
+                      <AlertCircle className="w-6 h-6" />
+                    ) : confirmState.severity === "warning" ? (
+                      <AlertTriangle className="w-6 h-6" />
+                    ) : (
+                      <Info className="w-6 h-6" />
+                    )}
+                  </div>
+                  
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <h3 className="text-base font-bold text-white tracking-tight leading-none">
+                      {confirmState.title}
+                    </h3>
+                    <p className="text-xs text-slate-400 leading-relaxed pt-2">
+                      {confirmState.message}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    onClick={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold border border-white/[0.06] bg-white/[0.02] text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all cursor-pointer"
+                  >
+                    {confirmState.cancelText || "Cancel"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirmState.onConfirm) confirmState.onConfirm();
+                      setConfirmState(prev => ({ ...prev, isOpen: false }));
+                    }}
+                    className={`px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all cursor-pointer ${
+                      confirmState.severity === "danger"
+                        ? "bg-rose-600 hover:bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.3)]"
+                        : confirmState.severity === "warning"
+                        ? "bg-amber-600 hover:bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]"
+                        : "bg-accentPrimary hover:bg-accentPrimary/90 shadow-[0_0_15px_rgba(var(--accent-rgb),0.3)]"
+                    }`}
+                  >
+                    {confirmState.confirmText || "Confirm"}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </AppContext.Provider>
   );
 };

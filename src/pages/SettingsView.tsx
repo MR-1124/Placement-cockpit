@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 export const SettingsView: React.FC = () => {
-  const { state, updateSettings, resetAllData, seedMockData } = useAppState();
+  const { state, updateSettings, resetAllData, seedMockData, confirmAction } = useAppState();
   const [showSeedToast, setShowSeedToast] = useState(false);
   const [showResetToast, setShowResetToast] = useState(false);
 
@@ -48,11 +48,18 @@ export const SettingsView: React.FC = () => {
   };
 
   const handleReset = () => {
-    if (confirm("Are you sure you want to clear all data? This cannot be undone.")) {
-      resetAllData();
-      setShowResetToast(true);
-      setTimeout(() => setShowResetToast(false), 3000);
-    }
+    confirmAction({
+      title: "Reset Database (Wipe All)",
+      message: "Are you sure you want to clear all data? This cannot be undone.",
+      confirmText: "Wipe All Data",
+      cancelText: "Cancel",
+      severity: "danger",
+      onConfirm: () => {
+        resetAllData();
+        setShowResetToast(true);
+        setTimeout(() => setShowResetToast(false), 3000);
+      }
+    });
   };
 
   return (

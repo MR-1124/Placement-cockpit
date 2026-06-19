@@ -22,7 +22,8 @@ export const PlansView: React.FC = () => {
     followPlan, 
     pausePlan, 
     unfollowPlan, 
-    setPrimaryPlan
+    setPrimaryPlan,
+    confirmAction
   } = useAppState();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -332,9 +333,14 @@ export const PlansView: React.FC = () => {
                         {plan.id !== "16-week-mastery" && (
                           <button
                             onClick={() => {
-                              if (confirm(`Are you sure you want to unfollow "${plan.title}"? Your progress on this plan will be deleted.`)) {
-                                unfollowPlan(plan.id);
-                              }
+                              confirmAction({
+                                title: "Unfollow Plan",
+                                message: `Are you sure you want to unfollow "${plan.title}"? Your progress on this plan will be deleted.`,
+                                confirmText: "Unfollow",
+                                cancelText: "Cancel",
+                                severity: "danger",
+                                onConfirm: () => unfollowPlan(plan.id)
+                              });
                             }}
                             className="px-3 py-2 bg-slate-900 border border-white/[0.06] hover:bg-rose-500/10 hover:border-rose-500/20 hover:text-rose-400 text-slate-400 font-semibold rounded-xl text-xs flex items-center justify-center transition-all cursor-pointer"
                             title="Unfollow Plan"
