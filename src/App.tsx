@@ -39,8 +39,7 @@ import {
   Trash2,
   Maximize2,
   Minimize2,
-  ClipboardList,
-  Home
+  ClipboardList
 } from "lucide-react";
 import { ALL_PLANS } from "./data/curriculum";
 
@@ -73,13 +72,23 @@ const AppContent: React.FC = () => {
   const [isWideChat, setIsWideChat] = useState(false);
   const [chatInput, setChatInput] = useState("");
   
-  // Focus Mode state
+  // Focus Mode state (restored from localStorage if active)
   const [focusSession, setFocusSession] = useState<{
     isOpen: boolean;
     active: any;
-  }>({
-    isOpen: false,
-    active: null
+  }>(() => {
+    const saved = localStorage.getItem("active_focus_session");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.active) {
+          return { isOpen: true, active: parsed.active };
+        }
+      } catch (e) {
+        console.error("Failed to restore focus session state on startup", e);
+      }
+    }
+    return { isOpen: false, active: null };
   });
   const [isLoading, setIsLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
@@ -89,6 +98,15 @@ const AppContent: React.FC = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatTextAreaRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Sync tab navigation with user authentication status
+  useEffect(() => {
+    if (state.user === null) {
+      setActiveTab("landing");
+    } else if (activeTab === "landing") {
+      setActiveTab("dashboard");
+    }
+  }, [state.user, activeTab]);
 
   useEffect(() => {
     if (chatTextAreaRef.current) {
@@ -347,8 +365,7 @@ const AppContent: React.FC = () => {
     { id: "notes", name: "Notebook", icon: StickyNote },
     { id: "badges", name: "Badges", icon: Trophy },
     { id: "profile", name: "My Profile", icon: User },
-    { id: "settings", name: "Settings", icon: Settings },
-    { id: "landing", name: "Product Tour", icon: Home }
+    { id: "settings", name: "Settings", icon: Settings }
   ];
 
   // Helper to resolve currently active page view

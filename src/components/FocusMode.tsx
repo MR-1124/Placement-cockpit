@@ -51,9 +51,28 @@ export const FocusMode: React.FC<FocusModeProps> = ({
   const [isPaused, setIsPaused] = useState(false);
   const timerRef = useRef<any>(null);
 
-  // Initialize timer when activeSession starts
+  // Initialize timer when activeSession starts (or restore from localStorage if reloading)
   useEffect(() => {
     if (activeSession) {
+      const saved = localStorage.getItem("active_focus_session");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.active && parsed.active.goal === activeSession.goal) {
+            let restoredTime = parsed.timeLeft;
+            if (!parsed.isPaused && parsed.lastSavedTime) {
+              const elapsedSeconds = Math.floor((Date.now() - parsed.lastSavedTime) / 1000);
+              restoredTime = Math.max(0, parsed.timeLeft - elapsedSeconds);
+            }
+            setTimeLeft(restoredTime);
+            setIsPaused(parsed.isPaused);
+            setHasStarted(true);
+            return;
+          }
+        } catch (e) {
+          console.error("Failed to restore focus session state", e);
+        }
+      }
       setTimeLeft(activeSession.duration * 60);
       setIsPaused(false);
       setHasStarted(true);
@@ -61,6 +80,20 @@ export const FocusMode: React.FC<FocusModeProps> = ({
       setHasStarted(false);
     }
   }, [activeSession]);
+
+  // Save active focus session details to localStorage on change/tick
+  useEffect(() => {
+    if (activeSession && hasStarted) {
+      localStorage.setItem("active_focus_session", JSON.stringify({
+        active: activeSession,
+        timeLeft,
+        isPaused,
+        lastSavedTime: Date.now()
+      }));
+    } else if (!activeSession) {
+      localStorage.removeItem("active_focus_session");
+    }
+  }, [activeSession, timeLeft, isPaused, hasStarted]);
 
   // Interval timer tick
   useEffect(() => {
