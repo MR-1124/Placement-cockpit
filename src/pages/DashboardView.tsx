@@ -42,7 +42,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
   const [newTaskName, setNewTaskName] = useState("");
   const [selectedHeatmapCell, setSelectedHeatmapCell] = useState<{ date: string; week: number; day: number; habitsCompleted: number } | null>(null);
   const [showReadinessExplainer, setShowReadinessExplainer] = useState(false);
-  const [heatmapMode, setHeatmapMode] = useState<"plan" | "calendar">("plan");
+  const [heatmapMode, setHeatmapMode] = useState<"plan" | "6months" | "1year" | "month">("plan");
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}`;
+  });
 
   const today = new Date().toISOString().split("T")[0];
   const primaryPlanId = state.primaryPlanId || "16-week-mastery";
@@ -60,6 +64,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
       addCustomTask(newTaskName.trim());
       setNewTaskName("");
     }
+  };
+
+  const getMonthOptions = () => {
+    const options = [];
+    const d = new Date();
+    for (let i = 0; i < 12; i++) {
+      const monthDate = new Date(d.getFullYear(), d.getMonth() - i, 1);
+      const label = monthDate.toLocaleString("default", { month: "short", year: "numeric" });
+      const value = `${monthDate.getFullYear()}-${(monthDate.getMonth() + 1).toString().padStart(2, "0")}`;
+      options.push({ value, label });
+    }
+    return options;
   };
 
   // Determine current day of week index for consistency map (columns: durationWeeks, rows: 7 days)
@@ -149,15 +165,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
           />
         );
       }
-    } else {
-      // calendar mode: columns = 24 weeks (Sunday-Saturday rows) ending on current week's Saturday
+    } else if (heatmapMode === "6months" || heatmapMode === "1year") {
+      const weeksCount = heatmapMode === "6months" ? 24 : 53;
       const todayDate = new Date(today);
       const todayDay = todayDate.getDay(); // 0 (Sun) to 6 (Sat)
       const endOfWeekOffset = 6 - todayDay;
       const graphEndDate = new Date(todayDate);
       graphEndDate.setDate(graphEndDate.getDate() + endOfWeekOffset);
       
-      const totalDays = 24 * 7;
+      const totalDays = weeksCount * 7;
 
       for (let dayOffset = 0; dayOffset < totalDays; dayOffset++) {
         const dateOffset = new Date(graphEndDate);
@@ -222,6 +238,86 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
           />
         );
       }
+    } else if (heatmapMode === "month") {
+      const [y, m] = selectedMonth.split("-").map(Number);
+      const firstDay = new Date(y, m - 1, 1);
+      const firstDayOfWeek = firstDay.getDay(); // 0 (Sun) to 6 (Sat)
+      const lastDay = new Date(y, m, 0);
+      const totalDaysInMonth = lastDay.getDate();
+      
+      const startOffset = firstDayOfWeek;
+      const endOffset = 6 - lastDay.getDay();
+      const totalDaysToRender = startOffset + totalDaysInMonth + endOffset;
+
+      const startDate = new Date(y, m - 1, 1 - startOffset);
+
+      for (let dayOffset = 0; dayOffset < totalDaysToRender; dayOffset++) {
+        const dateOffset = new Date(startDate);
+        dateOffset.setDate(dateOffset.getDate() + dayOffset);
+        const dateStr = dateOffset.toISOString().split("T")[0];
+
+        const isCurrentMonth = dateOffset.getMonth() === (m - 1);
+        const isFuture = new Date(dateStr) > new Date(today);
+
+        let completionIntensity = 0;
+
+        if (isCurrentMonth && !isFuture) {
+          if (dateStr === today) {
+            const completedHabits = Object.values(state.dailyHabits).filter(Boolean).length;
+            completionIntensity = Math.min(4, Math.ceil(completedHabits / 1.5));
+          } else {
+            const historyMatch = state.habitHistory.find(h => h.date === dateStr);
+            if (historyMatch) {
+              completionIntensity = Math.min(4, Math.ceil(historyMatch.habitsCompleted / 1.5));
+            }
+          }
+        }
+
+        let colorClass = "bg-white/[0.02] border-white/[0.02]";
+        if (!isCurrentMonth) {
+          colorClass = "bg-transparent border-transparent opacity-10 pointer-events-none";
+        } else if (isFuture) {
+          colorClass = "bg-white/[0.005] border-white/[0.01] opacity-30 cursor-not-allowed";
+        } else if (completionIntensity === 1) {
+          colorClass = "bg-accentPrimary/20 border-accentPrimary/10";
+        } else if (completionIntensity === 2) {
+          colorClass = "bg-accentPrimary/40 border-accentPrimary/20";
+        } else if (completionIntensity === 3) {
+          colorClass = "bg-accentPrimary/60 border-accentPrimary/30";
+        } else if (completionIntensity === 4) {
+          colorClass = "bg-accentPrimary/80 border-accentPrimary/40";
+        }
+
+        cells.push(
+          <div
+            key={dayOffset}
+            onClick={() => {
+              if (!isCurrentMonth || isFuture) return;
+              const habitsCount = dateStr === today
+                ? Object.values(state.dailyHabits).filter(Boolean).length
+                : (state.habitHistory.find(h => h.date === dateStr)?.habitsCompleted || 0);
+              setSelectedHeatmapCell({
+                date: dateStr,
+                week: Math.floor(dayOffset / 7) + 1,
+                day: (dayOffset % 7) + 1,
+                habitsCompleted: habitsCount
+              });
+            }}
+            title={
+              !isCurrentMonth
+                ? ""
+                : isFuture
+                ? `${dateStr} (Future)`
+                : `${dateStr}: ${
+                    dateStr === today ? "Today" : ""
+                  } (${completionIntensity} habits completed) - Click to inspect`
+            }
+            className={`w-3.5 h-3.5 rounded-sm border transition-all ${
+              isCurrentMonth && !isFuture ? "cursor-pointer hover:scale-110 active:scale-95" : ""
+            } ${colorClass}`}
+          />
+        );
+      }
     }
 
     return (
@@ -230,7 +326,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
           {cells}
         </div>
         <div className="flex justify-between items-center text-[10px] text-slate-500 font-mono px-1">
-          <span>{heatmapMode === "plan" ? "Week 1 (Start)" : "6 Months Ago"}</span>
+          <span>
+            {heatmapMode === "plan" 
+              ? "Week 1 (Start)" 
+              : heatmapMode === "6months" 
+              ? "6 Months Ago" 
+              : heatmapMode === "1year"
+              ? "1 Year Ago"
+              : `${new Date(selectedMonth + "-02").toLocaleString("default", { month: "long" })} Start`
+            }
+          </span>
           <div className="flex items-center gap-1">
             <span>Less</span>
             <div className="w-2.5 h-2.5 rounded-sm bg-white/[0.02] border border-white/[0.02]" />
@@ -239,7 +344,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
             <div className="w-2.5 h-2.5 rounded-sm bg-accentPrimary/80 border border-accentPrimary/40" />
             <span>More</span>
           </div>
-          <span>{heatmapMode === "plan" ? `Week ${durationWeeks} (End)` : "Today"}</span>
+          <span>
+            {heatmapMode === "plan" 
+              ? `Week ${durationWeeks} (End)` 
+              : heatmapMode === "month"
+              ? `${new Date(selectedMonth + "-02").toLocaleString("default", { month: "long" })} End`
+              : "Today"
+            }
+          </span>
         </div>
       </div>
     );
@@ -551,11 +663,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
                 <TrendingUp className="w-4 h-4 text-slate-400" />
                 <h3 className="text-base font-bold text-white">Prep Consistency Grid</h3>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <div className="flex gap-0.5 bg-white/[0.02] border border-white/[0.06] p-0.5 rounded-lg">
                   <button
                     onClick={() => setHeatmapMode("plan")}
-                    className={`px-2.5 py-1 rounded text-[10px] font-bold font-mono uppercase transition-all cursor-pointer ${
+                    className={`px-2 py-1 rounded text-[10px] font-bold font-mono uppercase transition-all cursor-pointer ${
                       heatmapMode === "plan"
                         ? "bg-white/[0.06] text-white"
                         : "bg-transparent text-slate-500 hover:text-slate-350"
@@ -564,22 +676,61 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
                     Roadmap
                   </button>
                   <button
-                    onClick={() => setHeatmapMode("calendar")}
-                    className={`px-2.5 py-1 rounded text-[10px] font-bold font-mono uppercase transition-all cursor-pointer ${
-                      heatmapMode === "calendar"
+                    onClick={() => setHeatmapMode("6months")}
+                    className={`px-2 py-1 rounded text-[10px] font-bold font-mono uppercase transition-all cursor-pointer ${
+                      heatmapMode === "6months"
                         ? "bg-white/[0.06] text-white"
                         : "bg-transparent text-slate-500 hover:text-slate-350"
                     }`}
                   >
-                    6 Months
+                    6m
+                  </button>
+                  <button
+                    onClick={() => setHeatmapMode("1year")}
+                    className={`px-2 py-1 rounded text-[10px] font-bold font-mono uppercase transition-all cursor-pointer ${
+                      heatmapMode === "1year"
+                        ? "bg-white/[0.06] text-white"
+                        : "bg-transparent text-slate-500 hover:text-slate-350"
+                    }`}
+                  >
+                    1y
+                  </button>
+                  <button
+                    onClick={() => setHeatmapMode("month")}
+                    className={`px-2 py-1 rounded text-[10px] font-bold font-mono uppercase transition-all cursor-pointer ${
+                      heatmapMode === "month"
+                        ? "bg-white/[0.06] text-white"
+                        : "bg-transparent text-slate-500 hover:text-slate-350"
+                    }`}
+                  >
+                    Monthly
                   </button>
                 </div>
+
+                {heatmapMode === "month" && (
+                  <select
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="bg-slate-900 border border-white/[0.08] rounded px-2 py-1 text-[10px] font-mono font-bold text-white outline-none focus:border-accentPrimary cursor-pointer"
+                  >
+                    {getMonthOptions().map(opt => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
                 <span className="text-[10px] font-mono text-slate-500 uppercase hidden md:inline">{primaryPlan.title}</span>
               </div>
             </div>
             {renderHeatmap()}
             <p className="text-[11px] text-slate-500 font-mono leading-relaxed mt-2">
-              Each grid column represents a roadmap week (Sunday-Saturday rows). Bright cells indicate a high number of habits ticked on that day. Complete your weeks to keep the momentum going!
+              {heatmapMode === "plan" 
+                ? "Each grid column represents a roadmap week (Sunday-Saturday rows). Bright cells indicate a high number of habits ticked on that day. Complete your weeks to keep the momentum going!"
+                : heatmapMode === "month"
+                ? "Showing progress grid for the selected month. Empty cells represent adjacent months' buffer. Click highlighted cells to inspect daily stats."
+                : "Calendar view of daily habit checklists. Darker squares denote higher consistency. Inspect any active cell to view detailed solved problems logs."}
             </p>
           </GlassCard>
 
