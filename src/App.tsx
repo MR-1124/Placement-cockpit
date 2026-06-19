@@ -15,6 +15,7 @@ import { LoginView } from "./pages/LoginView";
 import { ProfileView } from "./pages/ProfileView";
 import { PlansView } from "./pages/PlansView";
 import { MarkdownRenderer } from "./components/MarkdownRenderer";
+import { FocusMode } from "./components/FocusMode";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
@@ -70,6 +71,15 @@ const AppContent: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isWideChat, setIsWideChat] = useState(false);
   const [chatInput, setChatInput] = useState("");
+  
+  // Focus Mode state
+  const [focusSession, setFocusSession] = useState<{
+    isOpen: boolean;
+    active: any;
+  }>({
+    isOpen: false,
+    active: null
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
   const [chatStatus, setChatStatus] = useState<string>("");
@@ -343,7 +353,12 @@ const AppContent: React.FC = () => {
   const renderView = () => {
     switch (activeTab) {
       case "dashboard":
-        return <DashboardView setActiveTab={setActiveTab} />;
+        return (
+          <DashboardView 
+            setActiveTab={setActiveTab} 
+            onOpenFocusConfig={() => setFocusSession({ isOpen: true, active: null })} 
+          />
+        );
       case "plans":
         return <PlansView />;
       case "roadmap":
@@ -807,6 +822,19 @@ const AppContent: React.FC = () => {
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {focusSession.isOpen && (
+          <FocusMode
+            isOpen={focusSession.isOpen}
+            onClose={() => setFocusSession({ isOpen: false, active: null })}
+            onStartSession={(config) => setFocusSession({ isOpen: true, active: config })}
+            activeSession={focusSession.active}
+            onEndSession={() => {
+              setFocusSession({ isOpen: false, active: null });
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -19,9 +19,10 @@ import { ALL_PLANS } from "../data/curriculum";
 
 interface DashboardViewProps {
   setActiveTab: (tab: string) => void;
+  onOpenFocusConfig?: () => void;
 }
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab }) => {
+export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOpenFocusConfig }) => {
   const {
     state,
     overallCompletion,
@@ -266,6 +267,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab }) =>
         
         {/* Streak & Active Info */}
         <div className="flex flex-wrap items-center gap-3">
+          {onOpenFocusConfig && (
+            <button
+              onClick={onOpenFocusConfig}
+              className="glass-panel rounded-lg px-4 py-2 flex items-center gap-2.5 border border-cyan-500/20 hover:border-cyan-500/50 hover:bg-cyan-500/5 text-cyan-400 hover:text-cyan-300 transition-all cursor-pointer shadow-md shadow-cyan-500/5 select-none"
+              title="Launch distraction-free focus mode"
+            >
+              <Zap className="w-5 h-5 text-cyan-400 fill-cyan-400/10 animate-pulse" />
+              <div className="text-left">
+                <div className="text-xs font-bold leading-none">Focus Mode</div>
+                <div className="text-[9px] font-mono tracking-wider uppercase opacity-80 mt-0.5">Start Session</div>
+              </div>
+            </button>
+          )}
+
           <div className="glass-panel rounded-lg px-4 py-2 flex items-center gap-2.5 border border-white/[0.06]">
             <Award className="w-5 h-5 text-accentPrimary" />
             <div>
