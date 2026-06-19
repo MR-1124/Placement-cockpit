@@ -44,6 +44,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
   const [dsaSearch, setDsaSearch] = useState("");
   const [selectedDsa, setSelectedDsa] = useState<FocusSessionConfig["linkedDsaQuestion"] | undefined>(undefined);
   const [selectedProjectTask, setSelectedProjectTask] = useState<FocusSessionConfig["linkedProjectTask"] | undefined>(undefined);
+  const [hasStarted, setHasStarted] = useState(false);
 
   // Countdown timer states
   const [timeLeft, setTimeLeft] = useState(0);
@@ -55,6 +56,9 @@ export const FocusMode: React.FC<FocusModeProps> = ({
     if (activeSession) {
       setTimeLeft(activeSession.duration * 60);
       setIsPaused(false);
+      setHasStarted(true);
+    } else {
+      setHasStarted(false);
     }
   }, [activeSession]);
 
@@ -72,10 +76,10 @@ export const FocusMode: React.FC<FocusModeProps> = ({
 
   // Check if timer finished
   useEffect(() => {
-    if (activeSession && timeLeft === 0) {
+    if (activeSession && hasStarted && timeLeft === 0) {
       handleCompleteSession();
     }
-  }, [timeLeft, activeSession]);
+  }, [timeLeft, activeSession, hasStarted]);
 
   if (!isOpen) return null;
 
@@ -129,6 +133,41 @@ export const FocusMode: React.FC<FocusModeProps> = ({
     if (diff === "Easy") return "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
     if (diff === "Medium") return "bg-amber-500/10 text-amber-400 border border-amber-500/20";
     return "bg-rose-500/10 text-rose-400 border border-rose-500/20";
+  };
+
+  const handleGoalChange = (val: string) => {
+    setGoal(val);
+    const trimmedVal = val.trim().toLowerCase();
+    if (trimmedVal.length > 2) {
+      // Check if it matches any unsolved DSA problem title (case-insensitive)
+      const matchingDsa = unsolvedDsaQuestions.find(q => 
+        q.name.toLowerCase() === trimmedVal || 
+        trimmedVal.includes(q.name.toLowerCase()) || 
+        q.name.toLowerCase().includes(trimmedVal)
+      );
+      if (matchingDsa) {
+        setSelectedDsa(matchingDsa);
+        setSelectedProjectTask(undefined);
+        return;
+      }
+
+      // Check if it matches any project task description
+      const matchingTask = projectTasks.find(t => {
+        const taskLabel = t.name.split(":").pop()?.trim().toLowerCase() || "";
+        return taskLabel === trimmedVal || 
+               trimmedVal.includes(taskLabel) || 
+               taskLabel.includes(trimmedVal) ||
+               t.name.toLowerCase().includes(trimmedVal);
+      });
+      if (matchingTask) {
+        setSelectedProjectTask(matchingTask);
+        setSelectedDsa(undefined);
+        return;
+      }
+    }
+    // Deselect if no match or short query
+    setSelectedDsa(undefined);
+    setSelectedProjectTask(undefined);
   };
 
   const handleInitialize = () => {
@@ -234,7 +273,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
             <input
               type="text"
               value={goal}
-              onChange={e => setGoal(e.target.value)}
+              onChange={e => handleGoalChange(e.target.value)}
               placeholder="e.g., Implementing Auth flow, Solved 2 Medium Matrix questions"
               className="w-full bg-slate-900/50 border border-white/[0.08] focus:border-accentPrimary rounded-xl px-4 py-3 text-xs sm:text-sm text-white placeholder-slate-600 outline-none transition-all focus:bg-slate-900"
             />
@@ -271,7 +310,16 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                     return (
                       <div
                         key={q.problemId}
-                        onClick={() => setSelectedDsa(active ? undefined : q)}
+                        onClick={() => {
+                          if (active) {
+                            setSelectedDsa(undefined);
+                            setGoal("");
+                          } else {
+                            setSelectedDsa(q);
+                            setSelectedProjectTask(undefined);
+                            setGoal(`Solving: ${q.name}`);
+                          }
+                        }}
                         className={`flex justify-between items-center p-2 rounded-lg border text-[11px] transition-all cursor-pointer ${
                           active
                             ? "bg-accentPrimary/10 border-accentPrimary text-white"
@@ -308,7 +356,16 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                     return (
                       <div
                         key={`${t.projectId}-${t.taskKey}`}
-                        onClick={() => setSelectedProjectTask(active ? undefined : t)}
+                        onClick={() => {
+                          if (active) {
+                            setSelectedProjectTask(undefined);
+                            setGoal("");
+                          } else {
+                            setSelectedProjectTask(t);
+                            setSelectedDsa(undefined);
+                            setGoal(t.name);
+                          }
+                        }}
                         className={`p-2.5 rounded-lg border text-[11px] transition-all cursor-pointer flex items-center gap-2 ${
                           active
                             ? "bg-accentPrimary/10 border-accentPrimary text-white"

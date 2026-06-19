@@ -11,9 +11,9 @@ import { RevisionView } from "./pages/RevisionView";
 import { NotesView } from "./pages/NotesView";
 import { BadgesView } from "./pages/BadgesView";
 import { SettingsView } from "./pages/SettingsView";
-import { LoginView } from "./pages/LoginView";
 import { ProfileView } from "./pages/ProfileView";
 import { PlansView } from "./pages/PlansView";
+import { LandingView } from "./pages/LandingView";
 import { MarkdownRenderer } from "./components/MarkdownRenderer";
 import { FocusMode } from "./components/FocusMode";
 import { motion, AnimatePresence } from "framer-motion";
@@ -39,7 +39,8 @@ import {
   Trash2,
   Maximize2,
   Minimize2,
-  ClipboardList
+  ClipboardList,
+  Home
 } from "lucide-react";
 import { ALL_PLANS } from "./data/curriculum";
 
@@ -55,7 +56,7 @@ Respond according to these core guidelines:
 
 
 const AppContent: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>("dashboard");
+  const [activeTab, setActiveTab] = useState<string>("landing");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const {
     state,
@@ -346,7 +347,8 @@ const AppContent: React.FC = () => {
     { id: "notes", name: "Notebook", icon: StickyNote },
     { id: "badges", name: "Badges", icon: Trophy },
     { id: "profile", name: "My Profile", icon: User },
-    { id: "settings", name: "Settings", icon: Settings }
+    { id: "settings", name: "Settings", icon: Settings },
+    { id: "landing", name: "Product Tour", icon: Home }
   ];
 
   // Helper to resolve currently active page view
@@ -388,8 +390,8 @@ const AppContent: React.FC = () => {
     }
   };
 
-  if (state.user === null) {
-    return <LoginView />;
+  if (state.user === null || activeTab === "landing") {
+    return <LandingView onEnterDashboard={() => setActiveTab("dashboard")} />;
   }
 
   return (
