@@ -373,6 +373,8 @@ export const InterviewSimulatorView: React.FC = () => {
   const langRef = useRef("cpp");
   const phaseRef = useRef<string>("intro");
   const timeLeftRef = useRef(45 * 60);
+  // Bug-fix #1/#2: guard ref prevents double evaluation trigger
+  const isEvaluatingRef = useRef(false);
 
   useEffect(() => {
     if (activeSession) {
@@ -399,12 +401,11 @@ export const InterviewSimulatorView: React.FC = () => {
     }
   }, [activeSession?.currentPhase]);
 
-  // Auto-trigger evaluation when phase becomes "evaluating"
-  useEffect(() => {
-    if (activeSession && activeSession.currentPhase === "evaluating" && !isEvaluating) {
-      triggerEvaluationFlow();
-    }
-  }, [activeSession?.currentPhase, isEvaluating]);
+  // Bug-fix #1: Removed auto-trigger useEffect.
+  // Evaluation is ONLY triggered explicitly by handleSubmitInterview (HR phase button)
+  // or handleTimeOutSubmission (timer expiry). The useEffect caused a double-call race
+  // because triggerEvaluationFlow() itself sets currentPhase="evaluating", which
+  // re-fired this effect, starting a second evaluation that caused permanent "stuck" state.
 
   // 1. Time-delta reload persistence logic
   useEffect(() => {
@@ -429,17 +430,28 @@ export const InterviewSimulatorView: React.FC = () => {
       let secondsLeft = correctedTime;
       timerRef.current = setInterval(() => {
         secondsLeft = Math.max(0, secondsLeft - 1);
-        updateInterviewSession(
-          secondsLeft,
-          codeRef.current,
-          langRef.current,
-          chatHistoryRef.current,
-          secondsLeft === 0 ? "evaluating" : (phaseRef.current as any)
-        );
 
         if (secondsLeft === 0) {
+          // Bug-fix #2: clear timer BEFORE setting phase and calling evaluation
+          // so the timer never fires again and cannot re-trigger handleTimeOutSubmission
           clearInterval(timerRef.current);
+          timerRef.current = null;
+          updateInterviewSession(
+            0,
+            codeRef.current,
+            langRef.current,
+            chatHistoryRef.current,
+            "evaluating"
+          );
           handleTimeOutSubmission();
+        } else {
+          updateInterviewSession(
+            secondsLeft,
+            codeRef.current,
+            langRef.current,
+            chatHistoryRef.current,
+            phaseRef.current as any
+          );
         }
       }, 1000);
     }
@@ -505,6 +517,10 @@ export const InterviewSimulatorView: React.FC = () => {
   // Start interview launcher
   const handleLaunchSession = async () => {
     if (!warmupCheck1 || !warmupCheck2) return;
+    // Bug-fix #5: reset editor maximize state before new session
+    setIsEditorMaximized(false);
+    // Bug-fix #1/#2: reset evaluation guard for fresh session
+    isEvaluatingRef.current = false;
     
     // Choose a random problem description matching difficulty and topic
     let problemDesc = "";
@@ -559,8 +575,10 @@ export const InterviewSimulatorView: React.FC = () => {
     setIsAiResponding(true);
     setAiStatusText("Interviewer is thinking...");
 
-    // Build Chat History for API call
-    const chatHistory = [...activeSession.chatHistory, { id: "temp", role: "user" as const, content: messageText, timestamp: "" }];
+    // Bug-fix #4: use chatHistoryRef.current (always up-to-date) instead of
+    // activeSession.chatHistory (stale React state snapshot) to avoid message drops
+    // when user sends two messages in rapid succession.
+    const chatHistory = [...chatHistoryRef.current, { id: "temp", role: "user" as const, content: messageText, timestamp: "" }];
     
     await getInterviewerResponse(chatHistory);
   };
@@ -572,8 +590,9 @@ export const InterviewSimulatorView: React.FC = () => {
     setAiStatusText("Interviewer is formulating a hint...");
     setStreamingDelta("");
 
+    // Bug-fix #4: same fix — use chatHistoryRef.current
     const chatHistory = [
-      ...activeSession.chatHistory, 
+      ...chatHistoryRef.current, 
       { 
         id: "temp", 
         role: "user" as const, 
@@ -848,6 +867,8 @@ Rule: Do not output code solutions. Guide them using conceptual feedback. Keep r
 
   // Submit interview action
   const handleSubmitInterview = () => {
+    // Bug-fix #1: Guard prevents double invocation from confirmAction + useEffect
+    if (isEvaluatingRef.current) return;
     confirmAction({
       title: "Submit Code & Finish Interview?",
       message: "Are you sure you want to submit your code? The AI interviewer will analyze your code, chat history, and complexity analysis to render your placement scorecard.",
@@ -877,20 +898,36 @@ Rule: Do not output code solutions. Guide them using conceptual feedback. Keep r
   };
 
   const handleTimeOutSubmission = () => {
+    // Bug-fix #2: timer already stopped before this is called; just trigger eval
     triggerEvaluationFlow();
   };
 
   // Evaluator pipeline with NVIDIA NIM
   const triggerEvaluationFlow = async () => {
-    if (!activeSession) return;
+    // Bug-fix #1/#2: isEvaluatingRef is a synchronous guard (unlike isEvaluating state
+    // which has async update lag). Set it immediately to block any concurrent call.
+    if (isEvaluatingRef.current) return;
+    isEvaluatingRef.current = true;
+
+    if (!activeSession) {
+      isEvaluatingRef.current = false;
+      return;
+    }
     
     setIsEvaluating(true);
+    // Bug-fix #3: use codeRef.current (always latest) instead of inputCode React state
+    // which may be stale if user typed code just before evaluation triggered.
+    // Bug-fix #4: use chatHistoryRef.current (always latest) instead of activeSession.chatHistory.
+    const currentCode = codeRef.current;
+    const currentLang = langRef.current;
+    const currentHistory = [...chatHistoryRef.current];
+
     // Switch state to evaluating phase
     updateInterviewSession(
-      activeSession.timeLeft,
-      inputCode,
-      selectedLang,
-      activeSession.chatHistory,
+      timeLeftRef.current,
+      currentCode,
+      currentLang,
+      currentHistory,
       "evaluating"
     );
 
@@ -910,12 +947,12 @@ Candidate Resume Text Profile:
 ${activeSession.resumeText || "No resume uploaded."}
 
 Candidate's Final Code:
-\`\`\`${activeSession.language}
-${inputCode || "// No code was submitted"}
+\`\`\`${currentLang}
+${currentCode || "// No code was submitted"}
 \`\`\`
 
 Interview Chat Log Transcript:
-${activeSession.chatHistory.map(h => `${h.role === "user" ? "Candidate" : "Interviewer"}: ${h.content}`).join("\n")}
+${currentHistory.map(h => `${h.role === "user" ? "Candidate" : "Interviewer"}: ${h.content}`).join("\n")}
 
 Evaluate the candidate and return a JSON object ONLY matching this schema:
 {
@@ -1050,9 +1087,9 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
         topic: activeSession.topic,
         difficulty: activeSession.difficulty,
         interviewerPersonality: activeSession.interviewerPersonality,
-        codeSolution: inputCode,
-        language: activeSession.language,
-        chatHistory: activeSession.chatHistory,
+        codeSolution: currentCode,
+        language: currentLang,
+        chatHistory: currentHistory,
         scorecard: {
           problemSolving: Number(scores.problemSolving) || 5,
           codeQuality: Number(scores.codeQuality) || 5,
@@ -1077,9 +1114,9 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
         topic: activeSession.topic,
         difficulty: activeSession.difficulty,
         interviewerPersonality: activeSession.interviewerPersonality,
-        codeSolution: inputCode,
-        language: activeSession.language,
-        chatHistory: activeSession.chatHistory,
+        codeSolution: currentCode,
+        language: currentLang,
+        chatHistory: currentHistory,
         scorecard: {
           problemSolving: 7,
           codeQuality: 6,
@@ -1103,6 +1140,8 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
       endInterviewSession(true, fallbackReport);
     } finally {
       setIsEvaluating(false);
+      // Bug-fix #1/#2: release guard so the NEXT interview session can evaluate
+      isEvaluatingRef.current = false;
     }
   };
 
