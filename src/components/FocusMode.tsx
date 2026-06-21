@@ -64,6 +64,11 @@ export const FocusMode: React.FC<FocusModeProps> = ({
               const elapsedSeconds = Math.floor((Date.now() - parsed.lastSavedTime) / 1000);
               restoredTime = Math.max(0, parsed.timeLeft - elapsedSeconds);
             }
+            if (restoredTime <= 0) {
+              localStorage.removeItem("active_focus_session");
+              onEndSession(false);
+              return;
+            }
             setTimeLeft(restoredTime);
             setIsPaused(parsed.isPaused);
             setHasStarted(true);

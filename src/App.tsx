@@ -14,6 +14,7 @@ import { SettingsView } from "./pages/SettingsView";
 import { ProfileView } from "./pages/ProfileView";
 import { PlansView } from "./pages/PlansView";
 import { LandingView } from "./pages/LandingView";
+import { InterviewSimulatorView } from "./pages/InterviewSimulatorView";
 import { MarkdownRenderer } from "./components/MarkdownRenderer";
 import { FocusMode } from "./components/FocusMode";
 import { motion, AnimatePresence } from "framer-motion";
@@ -39,7 +40,8 @@ import {
   Trash2,
   Maximize2,
   Minimize2,
-  ClipboardList
+  ClipboardList,
+  Speech
 } from "lucide-react";
 import { ALL_PLANS } from "./data/curriculum";
 
@@ -55,7 +57,19 @@ Respond according to these core guidelines:
 
 
 const AppContent: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>("landing");
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    const savedState = localStorage.getItem("placement_cockpit_state");
+    if (savedState) {
+      try {
+        const parsed = JSON.parse(savedState);
+        if (parsed.activeInterviewSession) {
+          return "interview";
+        }
+      } catch (e) {}
+    }
+    const lastUser = localStorage.getItem("last_logged_in_user");
+    return lastUser ? "dashboard" : "landing";
+  });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const {
     state,
@@ -72,7 +86,7 @@ const AppContent: React.FC = () => {
   const [isWideChat, setIsWideChat] = useState(false);
   const [chatInput, setChatInput] = useState("");
   
-  // Focus Mode state (restored from localStorage if active)
+  // Focus Mode state (restored from localStorage if active and not expired)
   const [focusSession, setFocusSession] = useState<{
     isOpen: boolean;
     active: any;
@@ -82,7 +96,16 @@ const AppContent: React.FC = () => {
       try {
         const parsed = JSON.parse(saved);
         if (parsed.active) {
-          return { isOpen: true, active: parsed.active };
+          let restoredTime = parsed.timeLeft;
+          if (!parsed.isPaused && parsed.lastSavedTime) {
+            const elapsedSeconds = Math.floor((Date.now() - parsed.lastSavedTime) / 1000);
+            restoredTime = Math.max(0, parsed.timeLeft - elapsedSeconds);
+          }
+          if (restoredTime > 0) {
+            return { isOpen: true, active: parsed.active };
+          } else {
+            localStorage.removeItem("active_focus_session");
+          }
         }
       } catch (e) {
         console.error("Failed to restore focus session state on startup", e);
@@ -360,6 +383,7 @@ const AppContent: React.FC = () => {
     { id: "dev", name: "Full Stack", icon: Layers },
     { id: "ai", name: "AI Tracker", icon: Terminal },
     { id: "aichat", name: "AI Mentor", icon: MessageSquare },
+    { id: "interview", name: "Mock Interview", icon: Speech },
     { id: "projects", name: "Projects", icon: FolderGit2 },
     { id: "revision", name: "Revision Plan", icon: CalendarRange },
     { id: "notes", name: "Notebook", icon: StickyNote },
@@ -390,6 +414,8 @@ const AppContent: React.FC = () => {
         return <AiTrackerView />;
       case "aichat":
         return <AiChatView />;
+      case "interview":
+        return <InterviewSimulatorView />;
       case "projects":
         return <ProjectsView />;
       case "revision":

@@ -124,6 +124,40 @@ export interface HistoryItem {
   habitsCompleted: number; // count
 }
 
+export interface MockInterviewReport {
+  id: string;
+  date: string; // YYYY-MM-DD
+  topic: string;
+  difficulty: "Easy" | "Medium" | "Hard";
+  interviewerPersonality: "Helpful Mentor" | "Quiet Observer" | "Strict Interviewer";
+  codeSolution: string;
+  language: string;
+  chatHistory: ChatMessage[];
+  scorecard: {
+    problemSolving: number; // 0 - 10
+    codeQuality: number; // 0 - 10
+    communication: number; // 0 - 10
+    overallScore: number; // 0 - 10
+    recommendation: "Strong Hire" | "Hire" | "Leaning Hire" | "No Hire";
+    strengths: string[];
+    weaknesses: string[];
+    feedback: string;
+  };
+}
+
+export interface ActiveInterviewSession {
+  topic: string;
+  difficulty: "Easy" | "Medium" | "Hard";
+  interviewerPersonality: "Helpful Mentor" | "Quiet Observer" | "Strict Interviewer";
+  timeLeft: number; // seconds remaining
+  code: string;
+  language: string;
+  chatHistory: ChatMessage[];
+  currentPhase: "intro" | "coding" | "qa" | "evaluating";
+  lastSavedTime?: number; // timestamp
+  goal?: string; // Boilerplate problem title/description
+}
+
 interface AppState {
   user: UserProfile | null;
   completedWeeks: string[];
@@ -145,6 +179,8 @@ interface AppState {
   currentSessionId?: string;
   userPlans?: UserPlan[];
   primaryPlanId?: string;
+  mockInterviews?: MockInterviewReport[];
+  activeInterviewSession?: ActiveInterviewSession | null;
 }
 
 interface AppContextType {
@@ -198,6 +234,11 @@ interface AppContextType {
   togglePlanWeek: (planId: string, weekNum: number) => void;
   togglePlanTask: (planId: string, taskKey: string) => void;
   confirmAction: (options: ConfirmationOptions) => void;
+  startInterviewSession: (topic: string, difficulty: "Easy" | "Medium" | "Hard", personality: "Helpful Mentor" | "Quiet Observer" | "Strict Interviewer", problemDescription: string) => void;
+  updateInterviewSession: (timeLeft: number, code: string, language: string, chatHistory: ChatMessage[], currentPhase: "intro" | "coding" | "qa" | "evaluating") => void;
+  addInterviewChatMessage: (role: "user" | "assistant", content: string) => void;
+  endInterviewSession: (completed: boolean, report?: MockInterviewReport) => void;
+  deleteMockInterviewReport: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -253,6 +294,8 @@ interface SerializedProgress {
   };
   userPlans?: UserPlan[];
   primaryPlanId?: string;
+  mockInterviews?: MockInterviewReport[];
+  activeInterviewSession?: ActiveInterviewSession | null;
 }
 
 const serializeState = (state: AppState): Omit<SerializedProgress, "user"> => {
@@ -323,6 +366,8 @@ const serializeState = (state: AppState): Omit<SerializedProgress, "user"> => {
     currentSessionId: state.currentSessionId || "default-session",
     userPlans: state.userPlans || [],
     primaryPlanId: state.primaryPlanId || "16-week-mastery",
+    mockInterviews: state.mockInterviews || [],
+    activeInterviewSession: state.activeInterviewSession || null,
     profile: state.user ? {
       name: state.user.name,
       email: state.user.email,
@@ -432,7 +477,9 @@ const deserializeState = (serialized: Partial<SerializedProgress>): Partial<AppS
     ],
     currentSessionId: serialized.currentSessionId || "default-session",
     userPlans: serialized.userPlans || [],
-    primaryPlanId: serialized.primaryPlanId || "16-week-mastery"
+    primaryPlanId: serialized.primaryPlanId || "16-week-mastery",
+    mockInterviews: serialized.mockInterviews || [],
+    activeInterviewSession: serialized.activeInterviewSession || null
   };
 };
 
@@ -547,7 +594,9 @@ const INITIAL_STATE: AppState = {
       customProgress: {}
     }
   ],
-  primaryPlanId: "16-week-mastery"
+  primaryPlanId: "16-week-mastery",
+  mockInterviews: [],
+  activeInterviewSession: null
 };
 
 export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -561,7 +610,16 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const today = getTodayString();
         const yesterday = getYesterdayString();
         let updatedState = { ...parsed };
-        updatedState.user = null;
+        const lastUser = localStorage.getItem("last_logged_in_user");
+        if (lastUser) {
+          try {
+            updatedState.user = JSON.parse(lastUser);
+          } catch {
+            updatedState.user = null;
+          }
+        } else {
+          updatedState.user = null;
+        }
 
         // Merge saved dsaTopics progress with fresh DEFAULT_DSA_TOPICS definitions
         updatedState.dsaTopics = DEFAULT_DSA_TOPICS.map(defaultTopic => {
@@ -623,6 +681,14 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         if (updatedState.primaryPlanId === undefined) {
           updatedState.primaryPlanId = "16-week-mastery";
+        }
+
+        if (updatedState.mockInterviews === undefined) {
+          updatedState.mockInterviews = [];
+        }
+
+        if (updatedState.activeInterviewSession === undefined) {
+          updatedState.activeInterviewSession = null;
         }
 
         if (updatedState.userPlans === undefined || updatedState.userPlans.length === 0) {
@@ -687,8 +753,16 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         console.error("Failed to parse saved state, using initial state", e);
       }
     }
+    const lastUser = localStorage.getItem("last_logged_in_user");
+    let initialUser = null;
+    if (lastUser) {
+      try {
+        initialUser = JSON.parse(lastUser);
+      } catch {}
+    }
     return {
       ...INITIAL_STATE,
+      user: initialUser,
       lastActiveDate: getTodayString()
     };
   });
@@ -847,6 +921,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               }
 
               localStorage.setItem(`profile_${firebaseUser.uid}`, JSON.stringify(userProfile));
+              localStorage.setItem("last_logged_in_user", JSON.stringify(userProfile));
 
               setState(prev => ({
                 ...prev,
@@ -855,18 +930,22 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               }));
             } else {
               localStorage.setItem(`profile_${firebaseUser.uid}`, JSON.stringify(userProfile));
+              localStorage.setItem("last_logged_in_user", JSON.stringify(userProfile));
               setState(prev => ({ ...prev, user: userProfile }));
             }
           } catch (err) {
             console.error("Error loading user data from Firestore:", err);
             localStorage.setItem(`profile_${firebaseUser.uid}`, JSON.stringify(userProfile));
+            localStorage.setItem("last_logged_in_user", JSON.stringify(userProfile));
             setState(prev => ({ ...prev, user: userProfile }));
           }
         } else {
           localStorage.setItem(`profile_${firebaseUser.uid}`, JSON.stringify(userProfile));
+          localStorage.setItem("last_logged_in_user", JSON.stringify(userProfile));
           setState(prev => ({ ...prev, user: userProfile }));
         }
       } else {
+        localStorage.removeItem("last_logged_in_user");
         setState(prev => ({ ...prev, user: null }));
       }
     });
@@ -893,10 +972,12 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [state, state.user?.uid]);
 
   const loginUser = (userProfile: UserProfile) => {
+    localStorage.setItem("last_logged_in_user", JSON.stringify(userProfile));
     setState(prev => ({ ...prev, user: userProfile }));
   };
 
   const logoutUser = () => {
+    localStorage.removeItem("last_logged_in_user");
     setState(prev => ({ ...prev, user: null }));
   };
 
@@ -905,6 +986,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (!prev.user) return prev;
       const updatedUser = { ...prev.user, ...profileUpdate };
       localStorage.setItem(`profile_${prev.user.uid}`, JSON.stringify(updatedUser));
+      localStorage.setItem("last_logged_in_user", JSON.stringify(updatedUser));
       return { ...prev, user: updatedUser };
     });
   };
@@ -1993,6 +2075,109 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   };
 
+  const startInterviewSession = (topic: string, difficulty: "Easy" | "Medium" | "Hard", personality: "Helpful Mentor" | "Quiet Observer" | "Strict Interviewer", problemDescription: string) => {
+    updateState(prev => ({
+      ...prev,
+      activeInterviewSession: {
+        topic,
+        difficulty,
+        interviewerPersonality: personality,
+        timeLeft: 45 * 60,
+        code: "",
+        language: "cpp",
+        chatHistory: [
+          {
+            id: `msg-${Date.now()}`,
+            role: "assistant",
+            content: `Hello! I am your interviewer today, acting as a ${personality}. We will be working on a ${difficulty} difficulty problem on the topic of ${topic}. Here is the problem description:\n\n${problemDescription}\n\nTo begin, please read the problem description, explain your understanding, and outline your approach (including time and space complexities) in the chat before you start coding.`,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }
+        ],
+        currentPhase: "intro",
+        lastSavedTime: Date.now()
+      }
+    }));
+  };
+
+  const updateInterviewSession = (
+    timeLeft: number,
+    code: string,
+    language: string,
+    chatHistory: ChatMessage[],
+    currentPhase: "intro" | "coding" | "qa" | "evaluating"
+  ) => {
+    updateState(prev => {
+      if (!prev.activeInterviewSession) return prev;
+      return {
+        ...prev,
+        activeInterviewSession: {
+          ...prev.activeInterviewSession,
+          timeLeft,
+          code,
+          language,
+          chatHistory,
+          currentPhase,
+          lastSavedTime: Date.now()
+        }
+      };
+    });
+  };
+
+  const addInterviewChatMessage = (role: "user" | "assistant", content: string) => {
+    updateState(prev => {
+      if (!prev.activeInterviewSession) return prev;
+      const newMessage: ChatMessage = {
+        id: `msg-${Date.now()}`,
+        role,
+        content,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      return {
+        ...prev,
+        activeInterviewSession: {
+          ...prev.activeInterviewSession,
+          chatHistory: [...prev.activeInterviewSession.chatHistory, newMessage],
+          lastSavedTime: Date.now()
+        }
+      };
+    });
+  };
+
+  const endInterviewSession = (completed: boolean, report?: MockInterviewReport) => {
+    updateState(prev => {
+      const mockInterviews = prev.mockInterviews || [];
+      const updatedReports = report ? [...mockInterviews, report] : mockInterviews;
+      
+      let xpDiff = 0;
+      if (completed && report) {
+        xpDiff = 300;
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ["#8b5cf6", "#10b981", "#3b82f6"]
+        });
+      }
+      
+      return {
+        ...prev,
+        mockInterviews: updatedReports,
+        activeInterviewSession: null,
+        xp: Math.max(0, prev.xp + xpDiff)
+      };
+    });
+  };
+
+  const deleteMockInterviewReport = (id: string) => {
+    updateState(prev => {
+      const mockInterviews = prev.mockInterviews || [];
+      return {
+        ...prev,
+        mockInterviews: mockInterviews.filter(r => r.id !== id)
+      };
+    });
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -2045,7 +2230,12 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setPrimaryPlan,
         togglePlanWeek,
         togglePlanTask,
-        confirmAction
+        confirmAction,
+        startInterviewSession,
+        updateInterviewSession,
+        addInterviewChatMessage,
+        endInterviewSession,
+        deleteMockInterviewReport
       }}
     >
       {children}
