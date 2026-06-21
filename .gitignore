@@ -26,3 +26,7 @@ dist-ssr
 # Local agent files
 .agents/
 skills-lock.json
+
+# Documentation containing local config/secrets
+project_overview.md
+
