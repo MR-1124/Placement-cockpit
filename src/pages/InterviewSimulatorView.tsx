@@ -188,6 +188,13 @@ export const InterviewSimulatorView: React.FC = () => {
     }
   }, [activeSession?.currentPhase]);
 
+  // Auto-trigger evaluation when phase becomes "evaluating"
+  useEffect(() => {
+    if (activeSession && activeSession.currentPhase === "evaluating" && !isEvaluating) {
+      triggerEvaluationFlow();
+    }
+  }, [activeSession?.currentPhase, isEvaluating]);
+
   // 1. Time-delta reload persistence logic
   useEffect(() => {
     if (activeSession && activeSession.timeLeft > 0 && activeSession.currentPhase !== "evaluating") {
@@ -455,6 +462,9 @@ Rule: Do not output code solutions. Guide them using conceptual feedback. Keep r
             stream: true
           })
         });
+        if (!response.ok) {
+          throw new Error(`Proxy error: ${response.status}`);
+        }
       } catch (err) {
         // Direct NIM API fallback
         response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
@@ -606,6 +616,7 @@ Rule: Do not output code solutions. Guide them using conceptual feedback. Keep r
     if (!apiKey) {
       setIsEvaluating(false);
       alert("NVIDIA API Key missing. Can't perform AI code evaluation.");
+      endInterviewSession(false);
       return;
     }
 
@@ -661,6 +672,9 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
             max_tokens: 2000
           })
         });
+        if (!response.ok) {
+          throw new Error(`Proxy error: ${response.status}`);
+        }
       } catch (err) {
         response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
           method: "POST",
