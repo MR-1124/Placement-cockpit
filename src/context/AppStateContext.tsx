@@ -117,6 +117,7 @@ export interface UserProfile {
   githubUrl: string;
   resumeLink: string;
   cohort: string;
+  savedIntro?: string;
 }
 
 export interface HistoryItem {
@@ -298,6 +299,7 @@ interface SerializedProgress {
     githubUrl: string;
     resumeLink: string;
     cohort: string;
+    savedIntro?: string;
   };
   userPlans?: UserPlan[];
   primaryPlanId?: string;
@@ -383,7 +385,8 @@ const serializeState = (state: AppState): Omit<SerializedProgress, "user"> => {
       linkedinUrl: state.user.linkedinUrl || "",
       githubUrl: state.user.githubUrl || "",
       resumeLink: state.user.resumeLink || "",
-      cohort: state.user.cohort || ""
+      cohort: state.user.cohort || "",
+      savedIntro: state.user.savedIntro || ""
     } : undefined
   };
 };
@@ -990,9 +993,20 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const updateUserProfile = (profileUpdate: Partial<UserProfile>) => {
     setState(prev => {
-      if (!prev.user) return prev;
-      const updatedUser = { ...prev.user, ...profileUpdate };
-      localStorage.setItem(`profile_${prev.user.uid}`, JSON.stringify(updatedUser));
+      const currentUser = prev.user || {
+        uid: "guest-user",
+        name: "Guest Student",
+        email: "guest@example.com",
+        avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=guest",
+        targetCompanies: [],
+        linkedinUrl: "",
+        githubUrl: "",
+        resumeLink: "",
+        cohort: "CSE 2026",
+        savedIntro: ""
+      };
+      const updatedUser = { ...currentUser, ...profileUpdate };
+      localStorage.setItem(`profile_${currentUser.uid}`, JSON.stringify(updatedUser));
       localStorage.setItem("last_logged_in_user", JSON.stringify(updatedUser));
       return { ...prev, user: updatedUser };
     });

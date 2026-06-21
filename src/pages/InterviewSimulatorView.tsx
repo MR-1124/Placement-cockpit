@@ -128,7 +128,8 @@ export const InterviewSimulatorView: React.FC = () => {
     updateInterviewSession, 
     addInterviewChatMessage, 
     endInterviewSession, 
-    deleteMockInterviewReport 
+    deleteMockInterviewReport,
+    updateUserProfile
   } = useAppState();
 
   const apiKey = state.settings.nvidiaApiKey;
@@ -140,6 +141,18 @@ export const InterviewSimulatorView: React.FC = () => {
   const [selectedPersonality, setSelectedPersonality] = useState<"Helpful Mentor" | "Quiet Observer" | "Strict Interviewer">("Helpful Mentor");
   const [warmupCheck1, setWarmupCheck1] = useState(false);
   const [warmupCheck2, setWarmupCheck2] = useState(false);
+  const [tempIntro, setTempIntro] = useState(state.user?.savedIntro || "");
+
+  // Sync tempIntro when state.user loads or updates
+  useEffect(() => {
+    if (state.user?.savedIntro) {
+      setTempIntro(state.user.savedIntro);
+    }
+  }, [state.user?.savedIntro]);
+
+  const handleSaveIntro = () => {
+    updateUserProfile({ savedIntro: tempIntro });
+  };
   
   // Interactive active states
   const activeSession = state.activeInterviewSession;
@@ -334,11 +347,12 @@ export const InterviewSimulatorView: React.FC = () => {
   };
 
   // Chat message send handler
-  const handleSendChatMessage = async (e?: React.FormEvent) => {
+  const handleSendChatMessage = async (e?: React.FormEvent, overrideText?: string) => {
     if (e) e.preventDefault();
-    if (!chatInput.trim() || isAiResponding || !activeSession) return;
+    const textToSend = overrideText || chatInput;
+    if (!textToSend.trim() || isAiResponding || !activeSession) return;
 
-    const messageText = chatInput;
+    const messageText = textToSend;
     setChatInput("");
     setStreamingDelta("");
     
@@ -950,7 +964,36 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
               </div>
 
               {/* Chat Input message box */}
-              <div className="p-3 border-t border-white/[0.06] bg-black/20 shrink-0">
+              <div className="p-3 border-t border-white/[0.06] bg-black/20 shrink-0 animate-fade-in">
+                {activeSession.currentPhase === "intro" && (
+                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/[0.04] text-[10px] font-mono select-none">
+                    <span className="text-slate-500">Self-Introduction:</span>
+                    <div className="flex gap-2.5">
+                      {state.user?.savedIntro ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setChatInput(state.user?.savedIntro || "")}
+                            className="text-slate-400 hover:text-white transition-colors cursor-pointer hover:underline"
+                            title="Insert saved introduction text into text box"
+                          >
+                            Draft Saved Pitch
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSendChatMessage(undefined, state.user?.savedIntro)}
+                            className="text-accentPrimary hover:text-cyan-400 transition-colors cursor-pointer font-bold hover:underline"
+                            title="Send saved introduction immediately"
+                          >
+                            Instant Send
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-slate-600 italic">No pitch template saved. Set in config panel.</span>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <div className="flex gap-2 items-end">
                   <textarea
                     value={chatInput}
@@ -1492,6 +1535,32 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
           </GlassCard>
 
           {/* Warmup Checklist */}
+          {/* Standard Candidate Introduction */}
+          <GlassCard className="p-6 space-y-4">
+            <div>
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">Standard Candidate Pitch</h3>
+              <p className="text-[10px] text-slate-500 mt-1 leading-normal">
+                Save your standard personal introduction, target project achievements, and technical stack details to quickly paste it during intro phases.
+              </p>
+            </div>
+            <textarea
+              value={tempIntro}
+              onChange={(e) => setTempIntro(e.target.value)}
+              placeholder="Hello! I am a final year Computer Science student. I build full stack applications using React and Node.js..."
+              rows={4}
+              className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-xs text-slate-200 placeholder-slate-700 focus:outline-none transition-colors resize-none overflow-y-auto"
+            />
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleSaveIntro}
+                className="px-4 py-1.5 rounded-lg bg-accentPrimary/15 hover:bg-accentPrimary/25 border border-accentPrimary/30 hover:border-accentPrimary/50 text-accentPrimary text-[11px] font-bold font-mono transition-all cursor-pointer"
+              >
+                Save Pitch Template
+              </button>
+            </div>
+          </GlassCard>
+
           <GlassCard className="p-6 space-y-4">
             <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">Warmup Protocol Checklists</h3>
             
