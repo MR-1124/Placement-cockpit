@@ -57,6 +57,23 @@ export const InterviewSimulatorView: React.FC = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<any>(null);
 
+  // Keep refs containing absolute latest values to prevent stale closure bugs
+  const chatHistoryRef = useRef<any[]>([]);
+  const codeRef = useRef("");
+  const langRef = useRef("cpp");
+  const phaseRef = useRef<string>("intro");
+  const timeLeftRef = useRef(45 * 60);
+
+  useEffect(() => {
+    if (activeSession) {
+      chatHistoryRef.current = activeSession.chatHistory;
+      codeRef.current = activeSession.code;
+      langRef.current = activeSession.language;
+      phaseRef.current = activeSession.currentPhase;
+      timeLeftRef.current = activeSession.timeLeft;
+    }
+  }, [activeSession?.chatHistory, activeSession?.code, activeSession?.language, activeSession?.currentPhase, activeSession?.timeLeft]);
+
   // Sync state values if activeSession is updated or restored
   useEffect(() => {
     if (activeSession) {
@@ -90,10 +107,10 @@ export const InterviewSimulatorView: React.FC = () => {
         secondsLeft = Math.max(0, secondsLeft - 1);
         updateInterviewSession(
           secondsLeft,
-          inputCode,
-          selectedLang,
-          activeSession.chatHistory,
-          secondsLeft === 0 ? "evaluating" : activeSession.currentPhase
+          codeRef.current,
+          langRef.current,
+          chatHistoryRef.current,
+          secondsLeft === 0 ? "evaluating" : (phaseRef.current as any)
         );
 
         if (secondsLeft === 0) {
@@ -111,26 +128,28 @@ export const InterviewSimulatorView: React.FC = () => {
   // Sync editor contents to context state on changes
   const handleCodeChange = (val: string) => {
     setInputCode(val);
+    codeRef.current = val;
     if (activeSession) {
       updateInterviewSession(
         activeSession.timeLeft,
         val,
-        selectedLang,
-        activeSession.chatHistory,
-        activeSession.currentPhase
+        langRef.current,
+        chatHistoryRef.current,
+        phaseRef.current as any
       );
     }
   };
 
   const handleLangChange = (lang: string) => {
     setSelectedLang(lang);
+    langRef.current = lang;
     if (activeSession) {
       updateInterviewSession(
         activeSession.timeLeft,
-        inputCode,
+        codeRef.current,
         lang,
-        activeSession.chatHistory,
-        activeSession.currentPhase
+        chatHistoryRef.current,
+        phaseRef.current as any
       );
     }
   };
@@ -362,23 +381,22 @@ Rule: Do not output code solutions. Guide them using conceptual feedback. Keep r
 
       setStreamingDelta("");
 
-      if (nextPhase !== activeSession.currentPhase) {
-        const newMessage = {
-          id: `msg-${Date.now()}`,
-          role: "assistant" as const,
-          content: cleanedResponse,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        updateInterviewSession(
-          activeSession.timeLeft,
-          inputCode,
-          selectedLang,
-          [...activeSession.chatHistory, newMessage],
-          nextPhase
-        );
-      } else {
-        addInterviewChatMessage("assistant", cleanedResponse);
-      }
+      const newMessage = {
+        id: `msg-${Date.now()}`,
+        role: "assistant" as const,
+        content: cleanedResponse,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      const newHistory = [...chatHistoryRef.current, newMessage];
+
+      updateInterviewSession(
+        timeLeftRef.current,
+        codeRef.current,
+        langRef.current,
+        newHistory,
+        nextPhase
+      );
     } catch (err: any) {
       console.error(err);
       addInterviewChatMessage("assistant", `Failed to get a response from the interviewer. Error details: ${err.message}`);
