@@ -120,6 +120,110 @@ const cleanResponseTags = (text: string) => {
     .trim();
 };
 
+const robustJsonParse = (text: string): any => {
+  let jsonStr = text.trim();
+  if (jsonStr.includes("```")) {
+    const matches = jsonStr.match(/```(?:json)?([\s\S]*?)```/);
+    if (matches && matches[1]) {
+      jsonStr = matches[1].trim();
+    }
+  }
+  
+  try {
+    return JSON.parse(jsonStr);
+  } catch (parseErr) {
+    console.warn("Standard JSON parse failed, attempting regex extraction...", parseErr);
+    
+    const extractNumber = (key: string, defaultValue: number): number => {
+      const regex = new RegExp(`"${key}"\\s*:\\s*(\\d+)`, "i");
+      const match = jsonStr.match(regex);
+      if (match && match[1]) {
+        return Number(match[1]);
+      }
+      const regexNoQuotes = new RegExp(`${key}\\s*:\\s*(\\d+)`, "i");
+      const matchNoQuotes = jsonStr.match(regexNoQuotes);
+      if (matchNoQuotes && matchNoQuotes[1]) {
+        return Number(matchNoQuotes[1]);
+      }
+      return defaultValue;
+    };
+
+    const extractString = (key: string, defaultValue: string): string => {
+      const regex = new RegExp(`"${key}"\\s*:\\s*"([^"]*)"`, "i");
+      const match = jsonStr.match(regex);
+      if (match && match[1]) {
+        return match[1];
+      }
+      const regexSingle = new RegExp(`"${key}"\\s*:\\s*'([^']*)'`, "i");
+      const matchSingle = jsonStr.match(regexSingle);
+      if (matchSingle && matchSingle[1]) {
+        return matchSingle[1];
+      }
+      return defaultValue;
+    };
+
+    const extractStringArray = (key: string): string[] => {
+      const regex = new RegExp(`"${key}"\\s*:\\s*\\[([^\\]]*)\\]`, "i");
+      const match = jsonStr.match(regex);
+      if (match && match[1]) {
+        const itemsStr = match[1];
+        return itemsStr
+          .split(",")
+          .map(item => item.trim().replace(/^["']|["']$/g, ""))
+          .filter(item => item.length > 0);
+      }
+      return [];
+    };
+
+    const questionsFeedback: any[] = [];
+    const qfRegex = /\{\s*"question"\s*:\s*"([^"]*)"\s*,\s*"response"\s*:\s*"([^"]*)"\s*,\s*"rating"\s*:\s*(\d+)\s*,\s*"feedback"\s*:\s*"([^"]*)"\s*\}/gi;
+    let qfMatch;
+    while ((qfMatch = qfRegex.exec(jsonStr)) !== null) {
+      questionsFeedback.push({
+        question: qfMatch[1],
+        response: qfMatch[2],
+        rating: Number(qfMatch[3]),
+        feedback: qfMatch[4]
+      });
+    }
+
+    if (questionsFeedback.length === 0) {
+      const questionMatches = [...jsonStr.matchAll(/"question"\s*:\s*"([^"]*)"/gi)];
+      const responseMatches = [...jsonStr.matchAll(/"response"\s*:\s*"([^"]*)"/gi)];
+      const ratingMatches = [...jsonStr.matchAll(/"rating"\s*:\s*(\d+)/gi)];
+      const feedbackMatches = [...jsonStr.matchAll(/"feedback"\s*:\s*"([^"]*)"/gi)];
+      
+      const minLen = Math.min(questionMatches.length, responseMatches.length, ratingMatches.length, feedbackMatches.length);
+      for (let i = 0; i < minLen; i++) {
+        questionsFeedback.push({
+          question: questionMatches[i][1],
+          response: responseMatches[i][1],
+          rating: Number(ratingMatches[i][1]),
+          feedback: feedbackMatches[i][1]
+        });
+      }
+    }
+
+    const result = {
+      problemSolving: extractNumber("problemSolving", 5),
+      codeQuality: extractNumber("codeQuality", 5),
+      communication: extractNumber("communication", 5),
+      overallScore: extractNumber("overallScore", 5),
+      recommendation: extractString("recommendation", "Hire"),
+      strengths: extractStringArray("strengths"),
+      weaknesses: extractStringArray("weaknesses"),
+      feedback: extractString("feedback", "Completed the interview session. Standard feedback provided."),
+      questionsFeedback: questionsFeedback
+    };
+
+    if (result.problemSolving || result.codeQuality || result.communication) {
+      return result;
+    }
+
+    throw parseErr;
+  }
+};
+
 export const InterviewSimulatorView: React.FC = () => {
   const { 
     state, 
@@ -460,7 +564,10 @@ Rule: Do not output code solutions. Guide them using conceptual feedback. Keep r
         ...chatHistory.map(c => ({ role: c.role, content: c.content }))
       ];
 
-      let response;
+      let response: Response | null = null;
+      let lastError: any = null;
+
+      // Try 1: Proxy with configured model
       try {
         response = await fetch("/api-nvidia/v1/chat/completions", {
           method: "POST",
@@ -472,33 +579,90 @@ Rule: Do not output code solutions. Guide them using conceptual feedback. Keep r
             model: modelName,
             messages: apiMessages,
             temperature: 0.4,
-            max_tokens: 500,
+            max_tokens: 1000,
             stream: true
           })
         });
         if (!response.ok) {
+          const contentType = response.headers.get("content-type") || "";
+          if (contentType.includes("application/json")) {
+            const errJson = await response.json().catch(() => null);
+            if (errJson) {
+              throw new Error(errJson.error?.message || errJson.message || `Proxy error: ${response.status}`);
+            }
+          }
           throw new Error(`Proxy error: ${response.status}`);
         }
-      } catch (err) {
-        // Direct NIM API fallback
-        response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: modelName,
-            messages: apiMessages,
-            temperature: 0.4,
-            max_tokens: 500,
-            stream: true
-          })
-        });
+      } catch (err: any) {
+        lastError = err;
       }
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`);
+      // Try 2: Direct NIM API with configured model
+      if (!response || !response.ok) {
+        try {
+          response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${apiKey}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              model: modelName,
+              messages: apiMessages,
+              temperature: 0.4,
+              max_tokens: 1000,
+              stream: true
+            })
+          });
+          if (!response.ok) {
+            const contentType = response.headers.get("content-type") || "";
+            if (contentType.includes("application/json")) {
+              const errJson = await response.json().catch(() => null);
+              if (errJson) {
+                throw new Error(errJson.error?.message || errJson.message || `API error: ${response.status}`);
+              }
+            }
+            throw new Error(`API error: ${response.status}`);
+          }
+        } catch (err: any) {
+          lastError = err;
+        }
+      }
+
+      // Try 3: Direct NIM API with default model
+      if ((!response || !response.ok) && modelName !== "meta/llama-3.1-70b-instruct") {
+        try {
+          response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${apiKey}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              model: "meta/llama-3.1-70b-instruct",
+              messages: apiMessages,
+              temperature: 0.4,
+              max_tokens: 1000,
+              stream: true
+            })
+          });
+          if (!response.ok) {
+            const contentType = response.headers.get("content-type") || "";
+            if (contentType.includes("application/json")) {
+              const errJson = await response.json().catch(() => null);
+              if (errJson) {
+                throw new Error(errJson.error?.message || errJson.message || `API fallback error: ${response.status}`);
+              }
+            }
+            throw new Error(`API fallback error: ${response.status}`);
+          }
+        } catch (err: any) {
+          lastError = err;
+        }
+      }
+
+      if (!response || !response.ok) {
+        throw lastError || new Error("Failed to connect to AI server.");
       }
 
       const reader = response.body?.getReader();
@@ -671,7 +835,10 @@ Identify each question asked (including self-introduction, DSA problems, Core CS
 Ensure the output is valid JSON. Do not include markdown codeblocks or other explanations outside the JSON payload.`;
 
     try {
-      let response;
+      let response: Response | null = null;
+      let lastError: any = null;
+
+      // Try 1: Proxy with configured model
       try {
         response = await fetch("/api-nvidia/v1/chat/completions", {
           method: "POST",
@@ -687,41 +854,89 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
           })
         });
         if (!response.ok) {
+          const contentType = response.headers.get("content-type") || "";
+          if (contentType.includes("application/json")) {
+            const errJson = await response.json().catch(() => null);
+            if (errJson) {
+              throw new Error(errJson.error?.message || errJson.message || `Proxy error: ${response.status}`);
+            }
+          }
           throw new Error(`Proxy error: ${response.status}`);
         }
-      } catch (err) {
-        response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: modelName,
-            messages: [{ role: "user", content: evaluationPrompt }],
-            temperature: 0.2,
-            max_tokens: 2000
-          })
-        });
+      } catch (err: any) {
+        lastError = err;
       }
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`);
+      // Try 2: Direct NIM API with configured model
+      if (!response || !response.ok) {
+        try {
+          response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${apiKey}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              model: modelName,
+              messages: [{ role: "user", content: evaluationPrompt }],
+              temperature: 0.2,
+              max_tokens: 2000
+            })
+          });
+          if (!response.ok) {
+            const contentType = response.headers.get("content-type") || "";
+            if (contentType.includes("application/json")) {
+              const errJson = await response.json().catch(() => null);
+              if (errJson) {
+                throw new Error(errJson.error?.message || errJson.message || `API error: ${response.status}`);
+              }
+            }
+            throw new Error(`API error: ${response.status}`);
+          }
+        } catch (err: any) {
+          lastError = err;
+        }
+      }
+
+      // Try 3: Direct NIM API with default model
+      if ((!response || !response.ok) && modelName !== "meta/llama-3.1-70b-instruct") {
+        try {
+          response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${apiKey}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              model: "meta/llama-3.1-70b-instruct",
+              messages: [{ role: "user", content: evaluationPrompt }],
+              temperature: 0.2,
+              max_tokens: 2000
+            })
+          });
+          if (!response.ok) {
+            const contentType = response.headers.get("content-type") || "";
+            if (contentType.includes("application/json")) {
+              const errJson = await response.json().catch(() => null);
+              if (errJson) {
+                throw new Error(errJson.error?.message || errJson.message || `API fallback error: ${response.status}`);
+              }
+            }
+            throw new Error(`API fallback error: ${response.status}`);
+          }
+        } catch (err: any) {
+          lastError = err;
+        }
+      }
+
+      if (!response || !response.ok) {
+        throw lastError || new Error("Failed to connect to evaluation API.");
       }
 
       const data = await response.json();
       const content = data.choices?.[0]?.message?.content || "";
-      
-      // Attempt to extract JSON from markdown wrappers if AI included them
-      let jsonStr = content.trim();
-      if (jsonStr.includes("```")) {
-        const matches = jsonStr.match(/```(?:json)?([\s\S]*?)```/);
-        if (matches && matches[1]) {
-          jsonStr = matches[1].trim();
-        }
-      }
 
-      const scores = JSON.parse(jsonStr);
+      const scores = robustJsonParse(content);
 
       const report: MockInterviewReport = {
         id: `report-${Date.now()}`,

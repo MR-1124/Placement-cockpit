@@ -25,7 +25,9 @@ export const SettingsView: React.FC = () => {
       "meta/llama-3.1-405b-instruct",
       "nvidia/llama-3.1-nemotron-70b-instruct",
       "mistralai/mixtral-8x22b-instruct-v0.1",
-      "deepseek-ai/deepseek-r1"
+      "deepseek-ai/deepseek-r1",
+      "nvidia/nemotron-3-nano-30b-a3b",
+      "gpt-oss-120b"
     ].includes(model)) {
       return model;
     }
@@ -211,6 +213,8 @@ export const SettingsView: React.FC = () => {
                     <option value="deepseek-ai/deepseek-r1" className="bg-darkCard">DeepSeek R1 (Reasoning)</option>
                     <option value="meta/llama-3.1-405b-instruct" className="bg-darkCard">Llama 3.1 405B</option>
                     <option value="nvidia/llama-3.1-nemotron-70b-instruct" className="bg-darkCard">Nemotron 70B</option>
+                    <option value="nvidia/nemotron-3-nano-30b-a3b" className="bg-darkCard">Nemotron-3 Nano 30B</option>
+                    <option value="gpt-oss-120b" className="bg-darkCard">GPT OSS 120B</option>
                     <option value="mistralai/mixtral-8x22b-instruct-v0.1" className="bg-darkCard">Mixtral 8x22B</option>
                     <option value="custom" className="bg-darkCard">Custom Model...</option>
                   </select>
