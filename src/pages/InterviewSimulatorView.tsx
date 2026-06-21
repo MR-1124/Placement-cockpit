@@ -19,7 +19,9 @@ import {
   XCircle,
   CornerDownRight,
   ClipboardList,
-  ChevronRight
+  ChevronRight,
+  Maximize2,
+  Minimize2
 } from "lucide-react";
 
 export const InterviewSimulatorView: React.FC = () => {
@@ -53,6 +55,7 @@ export const InterviewSimulatorView: React.FC = () => {
   const [streamingDelta, setStreamingDelta] = useState("");
   const [evaluationReport, setEvaluationReport] = useState<MockInterviewReport | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [isEditorMaximized, setIsEditorMaximized] = useState(false);
   
   const chatEndRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<any>(null);
@@ -194,6 +197,13 @@ export const InterviewSimulatorView: React.FC = () => {
 
     startInterviewSession(selectedTopic, selectedDifficulty, selectedPersonality, problemDesc);
     setEvaluationReport(null);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendChatMessage();
+    }
   };
 
   // Chat message send handler
@@ -418,6 +428,24 @@ Rule: Do not output code solutions. Guide them using conceptual feedback. Keep r
     });
   };
 
+  const handleSubmitCodeToInterviewer = async () => {
+    if (isAiResponding || !activeSession || !inputCode.trim()) return;
+
+    setIsAiResponding(true);
+    setAiStatusText("Interviewer is reviewing your code...");
+    setStreamingDelta("");
+
+    const messageText = `[Candidate submits code solution for review]\nLanguage: ${selectedLang}\n\nCode:\n\`\`\`${selectedLang}\n${inputCode}\n\`\`\``;
+    
+    // Add user message to history
+    addInterviewChatMessage("user", messageText);
+
+    // Build Chat History for API call
+    const chatHistory = [...chatHistoryRef.current, { id: `temp-${Date.now()}`, role: "user" as const, content: messageText, timestamp: "" }];
+    
+    await getInterviewerResponse(chatHistory);
+  };
+
   const handleTimeOutSubmission = () => {
     triggerEvaluationFlow();
   };
@@ -593,10 +621,10 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
   // Exit interview confirmation
   const handleExitInterview = () => {
     confirmAction({
-      title: "Exit Interview Round?",
-      message: "Exiting the interview terminates the session. No report scorecard will be compiled, and you will lose your code progress. Are you sure you want to quit?",
-      confirmText: "Quit Session",
-      cancelText: "Stay & Code",
+      title: "End Interview Middle?",
+      message: "Warning: If you end the interview in the middle, it will not be evaluated and no scorecard report will be generated. Your progress will be lost. Are you sure you want to end the interview?",
+      confirmText: "Yes, End Interview",
+      cancelText: "Cancel & Continue",
       severity: "danger",
       onConfirm: () => {
         endInterviewSession(false);
@@ -708,7 +736,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
           /* Split Screen Panel */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
             {/* Left side: Dialogue & Chat Panel (5 Columns) */}
-            <div className="lg:col-span-5 flex flex-col h-[650px] bg-darkCard/80 border border-white/[0.06] rounded-2xl overflow-hidden backdrop-blur-md">
+            <div className={`${isEditorMaximized ? "hidden" : "lg:col-span-5"} flex flex-col h-[650px] bg-darkCard/80 border border-white/[0.06] rounded-2xl overflow-hidden backdrop-blur-md`}>
               <div className="px-4 py-3 border-b border-white/[0.06] bg-white/[0.01] flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2">
                   <UserCheck className="w-4 h-4 text-accentPrimary" />
@@ -763,28 +791,29 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
 
               {/* Chat Input message box */}
               <div className="p-3 border-t border-white/[0.06] bg-black/20 shrink-0">
-                <form onSubmit={handleSendChatMessage} className="flex gap-2">
-                  <input
-                    type="text"
+                <div className="flex gap-2 items-end">
+                  <textarea
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
                     disabled={isAiResponding}
-                    placeholder="Type your response here..."
-                    className="flex-1 min-w-0 bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-xs text-white placeholder-slate-600 focus:outline-none transition-colors"
+                    placeholder="Type response... (Enter to send, Shift+Enter for new line)"
+                    rows={2}
+                    className="flex-1 min-w-0 bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-xs text-white placeholder-slate-600 focus:outline-none transition-colors resize-none overflow-y-auto max-h-32"
                   />
                   <button
-                    type="submit"
+                    onClick={() => handleSendChatMessage()}
                     disabled={isAiResponding || !chatInput.trim()}
-                    className="w-8 h-8 rounded-lg bg-accentPrimary hover:bg-accentPrimary/90 disabled:bg-white/[0.02] text-white disabled:text-slate-600 flex items-center justify-center shrink-0 transition-colors cursor-pointer"
+                    className="w-8 h-8 rounded-lg bg-accentPrimary hover:bg-accentPrimary/90 disabled:bg-white/[0.02] text-white disabled:text-slate-600 flex items-center justify-center shrink-0 transition-colors cursor-pointer mb-0.5"
                   >
                     <Send className="w-3.5 h-3.5" />
                   </button>
-                </form>
+                </div>
               </div>
             </div>
 
             {/* Right side: Phase Specific Workspace Panel (7 Columns) */}
-            <div className="lg:col-span-7 flex flex-col h-[650px] bg-darkCard/80 border border-white/[0.06] rounded-2xl overflow-hidden backdrop-blur-md">
+            <div className={`${isEditorMaximized ? "lg:col-span-12" : "lg:col-span-7"} flex flex-col h-[650px] bg-darkCard/80 border border-white/[0.06] rounded-2xl overflow-hidden backdrop-blur-md`}>
               {activeSession.currentPhase === "dsa" ? (
                 <>
                   <div className="px-4 py-3 border-b border-white/[0.06] bg-white/[0.01] flex items-center justify-between shrink-0">
@@ -805,6 +834,19 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
                         <option value="python">Python (3.9)</option>
                         <option value="typescript">TypeScript (TS 4.9)</option>
                       </select>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsEditorMaximized(!isEditorMaximized)}
+                        className="p-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.08] text-slate-400 hover:text-white transition-colors cursor-pointer"
+                        title={isEditorMaximized ? "Minimize Workspace" : "Maximize Workspace"}
+                      >
+                        {isEditorMaximized ? (
+                          <Minimize2 className="w-3.5 h-3.5" />
+                        ) : (
+                          <Maximize2 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
                     </div>
                   </div>
 
@@ -837,15 +879,26 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
                       <span>Get Hint</span>
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={handleSubmitInterview}
-                      disabled={isAiResponding}
-                      className="px-4 py-1.5 rounded-lg bg-accentPrimary hover:bg-accentPrimary/90 border border-accentPrimary/20 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-lg shadow-accentPrimary/20 disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      <span>Conclude & Evaluate early</span>
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleExitInterview}
+                        className="px-3.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/20 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <XCircle className="w-4 h-4" />
+                        <span>End Interview Early</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleSubmitCodeToInterviewer}
+                        disabled={isAiResponding || !inputCode.trim()}
+                        className="px-4 py-1.5 rounded-lg bg-accentPrimary hover:bg-accentPrimary/90 border border-accentPrimary/20 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-lg shadow-accentPrimary/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        <span>Submit Code to Interviewer</span>
+                      </button>
+                    </div>
                   </div>
                 </>
               ) : activeSession.currentPhase === "intro" ? (
