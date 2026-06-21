@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAppState } from "../context/AppStateContext";
 import type { MockInterviewReport } from "../context/AppStateContext";
-import { motion, AnimatePresence } from "framer-motion";
 import { GlassCard } from "../components/Common";
 import { 
   Play, 
@@ -11,22 +10,16 @@ import {
   Sparkles, 
   Speech, 
   Award, 
-  Calendar, 
-  ChevronRight, 
-  AlertTriangle, 
   Clock, 
   Code2, 
   FileJson, 
-  BookOpen, 
   HelpCircle, 
-  RefreshCw,
   UserCheck,
   CheckCircle,
   XCircle,
   CornerDownRight,
   ClipboardList
 } from "lucide-react";
-import confetti from "canvas-confetti";
 
 export const InterviewSimulatorView: React.FC = () => {
   const { 
@@ -153,7 +146,6 @@ export const InterviewSimulatorView: React.FC = () => {
     if (!warmupCheck1 || !warmupCheck2) return;
     
     // Choose a random problem description matching difficulty and topic
-    let problemTitle = "Custom Challenge";
     let problemDesc = "";
     
     try {
@@ -171,11 +163,9 @@ export const InterviewSimulatorView: React.FC = () => {
 
       if (matchingProblems.length > 0) {
         const picked = matchingProblems[Math.floor(Math.random() * matchingProblems.length)];
-        problemTitle = picked.name;
         problemDesc = `Problem Name: ${picked.name}\nDifficulty: ${selectedDifficulty}\nLeetcode Reference: ${picked.url || "N/A"}\n\nTask: Design an optimal solution. You must explain your time and space complexity before typing the code in the editor workspace.`;
       } else {
         // Fallback placeholder dsa problem
-        problemTitle = "Kth Smallest Element in a Sorted Matrix";
         problemDesc = `Problem Name: Kth Smallest Element in a Sorted Matrix\nDifficulty: Medium\n\nGiven an n x n matrix where each of the rows and columns is sorted in ascending order, return the kth smallest element in the matrix.\n\nNote that it is the kth smallest element in the sorted order, not the kth distinct element.\nYou must find a solution with a memory complexity better than O(n^2).`;
       }
     } catch (e) {
