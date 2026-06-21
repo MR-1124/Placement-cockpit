@@ -224,6 +224,38 @@ const robustJsonParse = (text: string): any => {
   }
 };
 
+const loadPdfJs = (): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    if ((window as any).pdfjsLib) {
+      resolve((window as any).pdfjsLib);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js";
+    script.async = true;
+    script.onload = () => {
+      const pdfjsLib = (window as any).pdfjsLib;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js";
+      resolve(pdfjsLib);
+    };
+    script.onerror = () => reject(new Error("Failed to load PDF.js from CDN"));
+    document.body.appendChild(script);
+  });
+};
+
+const extractTextFromPdf = async (arrayBuffer: ArrayBuffer): Promise<string> => {
+  const pdfjsLib = await loadPdfJs();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let fullText = "";
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const textContent = await page.getTextContent();
+    const strings = textContent.items.map((item: any) => item.str);
+    fullText += strings.join(" ") + "\n";
+  }
+  return fullText;
+};
+
 export const InterviewSimulatorView: React.FC = () => {
   const { 
     state, 
@@ -246,6 +278,11 @@ export const InterviewSimulatorView: React.FC = () => {
   const [warmupCheck1, setWarmupCheck1] = useState(false);
   const [warmupCheck2, setWarmupCheck2] = useState(false);
   const [tempIntro, setTempIntro] = useState(state.user?.savedIntro || "");
+  const [resumeText, setResumeText] = useState("");
+  const [resumeFileName, setResumeFileName] = useState("");
+  const [isParsingResume, setIsParsingResume] = useState(false);
+  const [resumeError, setResumeError] = useState("");
+  const [showPasteArea, setShowPasteArea] = useState(false);
 
   // Sync tempIntro when state.user loads or updates
   useEffect(() => {
@@ -256,6 +293,63 @@ export const InterviewSimulatorView: React.FC = () => {
 
   const handleSaveIntro = () => {
     updateUserProfile({ savedIntro: tempIntro });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsParsingResume(true);
+    setResumeError("");
+    setResumeFileName(file.name);
+
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    if (ext === "txt" || ext === "md") {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const text = evt.target?.result as string;
+        setResumeText(text);
+        setIsParsingResume(false);
+      };
+      reader.onerror = () => {
+        setResumeError("Failed to read text file.");
+        setIsParsingResume(false);
+      };
+      reader.readAsText(file);
+    } else if (ext === "pdf") {
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        try {
+          const buffer = evt.target?.result as ArrayBuffer;
+          const text = await extractTextFromPdf(buffer);
+          if (!text.trim()) {
+            throw new Error("No text content found in PDF.");
+          }
+          setResumeText(text);
+        } catch (err: any) {
+          console.error("PDF parse failed", err);
+          setResumeError("Automatic PDF parsing failed. Please paste resume text manually.");
+          setShowPasteArea(true);
+        } finally {
+          setIsParsingResume(false);
+        }
+      };
+      reader.onerror = () => {
+        setResumeError("Failed to load PDF file bytes.");
+        setIsParsingResume(false);
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      setResumeError("Unsupported file type. Use .pdf, .txt, or .md. Or paste manually.");
+      setIsParsingResume(false);
+      setShowPasteArea(true);
+    }
+  };
+
+  const handleClearResume = () => {
+    setResumeText("");
+    setResumeFileName("");
+    setResumeError("");
   };
   
   // Interactive active states
@@ -439,7 +533,7 @@ export const InterviewSimulatorView: React.FC = () => {
       problemDesc = "Failed to load problem statement. General coding interview initiated.";
     }
 
-    startInterviewSession(selectedTopic, selectedDifficulty, selectedPersonality, problemDesc);
+    startInterviewSession(selectedTopic, selectedDifficulty, selectedPersonality, problemDesc, resumeText, resumeFileName);
     setEvaluationReport(null);
   };
 
@@ -504,6 +598,15 @@ export const InterviewSimulatorView: React.FC = () => {
 Your personality profile is: ${activeSession?.interviewerPersonality}.
 Target Topic: ${activeSession?.topic}
 Initial Difficulty Target: ${activeSession?.difficulty}
+
+Candidate Resume Text Profile:
+${activeSession?.resumeText || "No resume uploaded."}
+
+If a resume is uploaded above:
+- Read and understand candidate's technical skills, experience level, and listed projects.
+- Tailor the questions in DSA, Core CS, puzzles, and HR situational parts to align with their tech stack (e.g. if they know React/Node, ask web-related or appropriate system design questions. If they know C++/Java, focus on those language properties in Core CS).
+- Reference their resume projects or internship work at appropriate moments to simulate a highly realistic, customized corporate tech interview.
+- Acknowledge their resume highlights (such as internships, projects, or education) in your first message.
 
 The interview must proceed strictly through the following phases. You are responsible for guiding the candidate.
 At the start of your message, you MUST output two tags:
@@ -802,6 +905,9 @@ Rule: Do not output code solutions. Guide them using conceptual feedback. Keep r
 Topic: ${activeSession.topic}
 Difficulty: ${activeSession.difficulty}
 Interviewer Personality: ${activeSession.interviewerPersonality}
+
+Candidate Resume Text Profile:
+${activeSession.resumeText || "No resume uploaded."}
 
 Candidate's Final Code:
 \`\`\`${activeSession.language}
@@ -1747,6 +1853,103 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
                 ))}
               </div>
             </div>
+          </GlassCard>
+
+          {/* Resume Upload & Text Parser */}
+          <GlassCard className="p-6 space-y-4">
+            <div>
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono flex items-center gap-1.5">
+                <FileJson className="w-4 h-4 text-accentPrimary" /> Resume Upload & Parser
+              </h3>
+              <p className="text-[10px] text-slate-500 mt-1 leading-normal">
+                Upload your resume (.txt, .md, or .pdf) to let the AI Interviewer adapt questions to your experience and projects.
+              </p>
+            </div>
+
+            {!resumeText ? (
+              <div className="space-y-3">
+                {!showPasteArea ? (
+                  <div className="relative border border-dashed border-white/[0.08] hover:border-accentPrimary/40 rounded-xl p-6 transition-colors group flex flex-col items-center justify-center gap-2 bg-black/10">
+                    <input
+                      type="file"
+                      accept=".pdf,.txt,.md"
+                      onChange={handleFileChange}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      disabled={isParsingResume}
+                    />
+                    {isParsingResume ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <Loader2 className="w-6 h-6 text-accentPrimary animate-spin" />
+                        <span className="text-[10px] text-slate-400 font-mono">Extracting text details...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="w-8 h-8 rounded-full bg-white/[0.02] border border-white/[0.06] flex items-center justify-center text-slate-400 group-hover:text-accentPrimary group-hover:border-accentPrimary/20 transition-all">
+                          <ClipboardList className="w-4 h-4" />
+                        </div>
+                        <span className="text-[11px] text-slate-355 group-hover:text-white transition-colors">
+                          Drag & drop or Click to upload
+                        </span>
+                        <span className="text-[9px] text-slate-500 font-mono">Supports PDF, TXT, or MD</span>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-mono text-slate-500 uppercase block">Paste Plaintext / Markdown Resume</label>
+                    <textarea
+                      placeholder="Paste your resume details (Work Experience, Skills, Education, Projects) here..."
+                      rows={5}
+                      value={resumeText}
+                      onChange={(e) => setResumeText(e.target.value)}
+                      className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-xs text-slate-200 placeholder-slate-700 focus:outline-none transition-colors resize-none overflow-y-auto"
+                    />
+                  </div>
+                )}
+
+                {resumeError && (
+                  <p className="text-[10px] text-rose-400 leading-normal bg-rose-500/5 border border-rose-500/10 p-2 rounded-lg">
+                    {resumeError}
+                  </p>
+                )}
+
+                <div className="flex justify-between items-center pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowPasteArea(!showPasteArea)}
+                    className="text-[10px] font-mono text-slate-400 hover:text-accentPrimary transition-colors cursor-pointer"
+                  >
+                    {showPasteArea ? "Use file uploader instead" : "Paste text manually"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10 space-y-2.5">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                    <span className="text-[11px] font-bold text-white leading-none">
+                      Resume Loaded
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleClearResume}
+                    className="text-[9px] font-mono text-slate-500 hover:text-rose-400 transition-colors cursor-pointer"
+                  >
+                    Clear Resume
+                  </button>
+                </div>
+                <div className="bg-black/30 border border-white/[0.04] p-2 rounded-lg max-h-[80px] overflow-y-auto font-mono text-[9px] text-slate-400 leading-normal scrollbar-thin select-text">
+                  {resumeFileName ? (
+                    <span className="font-bold text-slate-350 block mb-1">File: {resumeFileName}</span>
+                  ) : (
+                    <span className="font-bold text-slate-350 block mb-1">Source: Copied Text</span>
+                  )}
+                  {resumeText.slice(0, 300)}...
+                </div>
+              </div>
+            )}
           </GlassCard>
 
           {/* Warmup Checklist */}

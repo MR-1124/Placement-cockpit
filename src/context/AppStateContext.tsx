@@ -164,6 +164,8 @@ export interface ActiveInterviewSession {
   subPhaseStatus?: string;
   lastSavedTime?: number; // timestamp
   goal?: string; // Boilerplate problem title/description
+  resumeText?: string;
+  resumeFileName?: string;
 }
 
 interface AppState {
@@ -242,7 +244,7 @@ interface AppContextType {
   togglePlanWeek: (planId: string, weekNum: number) => void;
   togglePlanTask: (planId: string, taskKey: string) => void;
   confirmAction: (options: ConfirmationOptions) => void;
-  startInterviewSession: (topic: string, difficulty: "Easy" | "Medium" | "Hard", personality: "Helpful Mentor" | "Quiet Observer" | "Strict Interviewer", problemDescription: string) => void;
+  startInterviewSession: (topic: string, difficulty: "Easy" | "Medium" | "Hard", personality: "Helpful Mentor" | "Quiet Observer" | "Strict Interviewer", problemDescription: string, resumeText?: string, resumeFileName?: string) => void;
   updateInterviewSession: (timeLeft: number, code: string, language: string, chatHistory: ChatMessage[], currentPhase: "intro" | "dsa" | "core" | "puzzles" | "hr" | "evaluating", subPhaseStatus?: string) => void;
   addInterviewChatMessage: (role: "user" | "assistant", content: string) => void;
   endInterviewSession: (completed: boolean, report?: MockInterviewReport) => void;
@@ -2096,7 +2098,14 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   };
 
-  const startInterviewSession = (topic: string, difficulty: "Easy" | "Medium" | "Hard", personality: "Helpful Mentor" | "Quiet Observer" | "Strict Interviewer", problemDescription: string) => {
+  const startInterviewSession = (
+    topic: string,
+    difficulty: "Easy" | "Medium" | "Hard",
+    personality: "Helpful Mentor" | "Quiet Observer" | "Strict Interviewer",
+    problemDescription: string,
+    resumeText?: string,
+    resumeFileName?: string
+  ) => {
     updateState(prev => ({
       ...prev,
       activeInterviewSession: {
@@ -2110,13 +2119,17 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           {
             id: `msg-${Date.now()}`,
             role: "assistant",
-            content: `Hello! Welcome to your technical interview. I will be your interviewer today, acting as a ${personality}.\n\nThis will be a structured technical interview consisting of several phases:\n1. Introduction & Resume highlights\n2. Data Structures & Algorithms (Easy to Hard progression)\n3. Core Computer Science concepts\n4. Brain Teaser / Puzzle\n5. Situational & HR questions\n\nTo begin, could you please introduce yourself, highlight your key projects, and tell me about your background?`,
+            content: resumeText
+              ? `Hello! Welcome to your technical interview. I will be your interviewer today, acting as a ${personality}.\n\nI have received and reviewed your resume (${resumeFileName || "uploaded file"}). Let's start the session. To begin, could you please introduce yourself, highlight some of your key projects, and tell me about your background?`
+              : `Hello! Welcome to your technical interview. I will be your interviewer today, acting as a ${personality}.\n\nThis will be a structured technical interview consisting of several phases:\n1. Introduction & Resume highlights\n2. Data Structures & Algorithms (Easy to Hard progression)\n3. Core Computer Science concepts\n4. Brain Teaser / Puzzle\n5. Situational & HR questions\n\nTo begin, could you please introduce yourself, highlight your key projects, and tell me about your background?`,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           }
         ],
         currentPhase: "intro",
         lastSavedTime: Date.now(),
-        goal: problemDescription
+        goal: problemDescription,
+        resumeText,
+        resumeFileName
       }
     }));
   };
