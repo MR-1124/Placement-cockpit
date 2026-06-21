@@ -142,6 +142,12 @@ export interface MockInterviewReport {
     strengths: string[];
     weaknesses: string[];
     feedback: string;
+    questionsFeedback?: {
+      question: string;
+      response: string;
+      rating: number; // 0 - 10
+      feedback: string;
+    }[];
   };
 }
 
@@ -153,7 +159,7 @@ export interface ActiveInterviewSession {
   code: string;
   language: string;
   chatHistory: ChatMessage[];
-  currentPhase: "intro" | "coding" | "qa" | "evaluating";
+  currentPhase: "intro" | "dsa" | "core" | "puzzles" | "hr" | "evaluating";
   lastSavedTime?: number; // timestamp
   goal?: string; // Boilerplate problem title/description
 }
@@ -235,7 +241,7 @@ interface AppContextType {
   togglePlanTask: (planId: string, taskKey: string) => void;
   confirmAction: (options: ConfirmationOptions) => void;
   startInterviewSession: (topic: string, difficulty: "Easy" | "Medium" | "Hard", personality: "Helpful Mentor" | "Quiet Observer" | "Strict Interviewer", problemDescription: string) => void;
-  updateInterviewSession: (timeLeft: number, code: string, language: string, chatHistory: ChatMessage[], currentPhase: "intro" | "coding" | "qa" | "evaluating") => void;
+  updateInterviewSession: (timeLeft: number, code: string, language: string, chatHistory: ChatMessage[], currentPhase: "intro" | "dsa" | "core" | "puzzles" | "hr" | "evaluating") => void;
   addInterviewChatMessage: (role: "user" | "assistant", content: string) => void;
   endInterviewSession: (completed: boolean, report?: MockInterviewReport) => void;
   deleteMockInterviewReport: (id: string) => void;
@@ -2089,12 +2095,13 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           {
             id: `msg-${Date.now()}`,
             role: "assistant",
-            content: `Hello! I am your interviewer today, acting as a ${personality}. We will be working on a ${difficulty} difficulty problem on the topic of ${topic}. Here is the problem description:\n\n${problemDescription}\n\nTo begin, please read the problem description, explain your understanding, and outline your approach (including time and space complexities) in the chat before you start coding.`,
+            content: `Hello! Welcome to your technical interview. I will be your interviewer today, acting as a ${personality}.\n\nThis will be a structured technical interview consisting of several phases:\n1. Introduction & Resume highlights\n2. Data Structures & Algorithms (Easy to Hard progression)\n3. Core Computer Science concepts\n4. Brain Teaser / Puzzle\n5. Situational & HR questions\n\nTo begin, could you please introduce yourself, highlight your key projects, and tell me about your background?`,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           }
         ],
         currentPhase: "intro",
-        lastSavedTime: Date.now()
+        lastSavedTime: Date.now(),
+        goal: problemDescription
       }
     }));
   };
@@ -2104,7 +2111,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     code: string,
     language: string,
     chatHistory: ChatMessage[],
-    currentPhase: "intro" | "coding" | "qa" | "evaluating"
+    currentPhase: "intro" | "dsa" | "core" | "puzzles" | "hr" | "evaluating"
   ) => {
     updateState(prev => {
       if (!prev.activeInterviewSession) return prev;
