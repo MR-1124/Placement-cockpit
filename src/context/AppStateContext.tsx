@@ -160,6 +160,7 @@ export interface ActiveInterviewSession {
   language: string;
   chatHistory: ChatMessage[];
   currentPhase: "intro" | "dsa" | "core" | "puzzles" | "hr" | "evaluating";
+  subPhaseStatus?: string;
   lastSavedTime?: number; // timestamp
   goal?: string; // Boilerplate problem title/description
 }
@@ -241,7 +242,7 @@ interface AppContextType {
   togglePlanTask: (planId: string, taskKey: string) => void;
   confirmAction: (options: ConfirmationOptions) => void;
   startInterviewSession: (topic: string, difficulty: "Easy" | "Medium" | "Hard", personality: "Helpful Mentor" | "Quiet Observer" | "Strict Interviewer", problemDescription: string) => void;
-  updateInterviewSession: (timeLeft: number, code: string, language: string, chatHistory: ChatMessage[], currentPhase: "intro" | "dsa" | "core" | "puzzles" | "hr" | "evaluating") => void;
+  updateInterviewSession: (timeLeft: number, code: string, language: string, chatHistory: ChatMessage[], currentPhase: "intro" | "dsa" | "core" | "puzzles" | "hr" | "evaluating", subPhaseStatus?: string) => void;
   addInterviewChatMessage: (role: "user" | "assistant", content: string) => void;
   endInterviewSession: (completed: boolean, report?: MockInterviewReport) => void;
   deleteMockInterviewReport: (id: string) => void;
@@ -2111,7 +2112,8 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     code: string,
     language: string,
     chatHistory: ChatMessage[],
-    currentPhase: "intro" | "dsa" | "core" | "puzzles" | "hr" | "evaluating"
+    currentPhase: "intro" | "dsa" | "core" | "puzzles" | "hr" | "evaluating",
+    subPhaseStatus?: string
   ) => {
     updateState(prev => {
       if (!prev.activeInterviewSession) return prev;
@@ -2124,6 +2126,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           language,
           chatHistory,
           currentPhase,
+          subPhaseStatus: subPhaseStatus !== undefined ? subPhaseStatus : prev.activeInterviewSession.subPhaseStatus,
           lastSavedTime: Date.now()
         }
       };

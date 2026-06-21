@@ -24,6 +24,102 @@ import {
   Minimize2
 } from "lucide-react";
 
+const renderInlineFormatting = (text: string) => {
+  const parts = text.split(/(\*\*.*?\*\*|`.*?`)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={index} className="font-bold text-white">{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return <code key={index} className="px-1 py-0.5 rounded bg-white/[0.06] font-mono text-[10px] text-accentPrimary">{part.slice(1, -1)}</code>;
+    }
+    return part;
+  });
+};
+
+const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
+  const parts = content.split(/(```[\s\S]*?```)/g);
+
+  return (
+    <div className="space-y-1.5 leading-relaxed">
+      {parts.map((part, index) => {
+        if (part.startsWith("```")) {
+          const match = part.match(/```(\w*)\n([\s\S]*?)```/);
+          const lang = match ? match[1] : "";
+          const code = match ? match[2] : part.slice(3, -3);
+
+          return (
+            <div key={index} className="my-2 bg-black/40 border border-white/[0.06] rounded-xl overflow-hidden font-mono text-[10.5px]">
+              {lang && (
+                <div className="px-3 py-1 bg-white/[0.02] border-b border-white/[0.04] text-slate-500 text-[8px] uppercase tracking-wider font-mono font-bold">
+                  {lang}
+                </div>
+              )}
+              <pre className="p-3 overflow-x-auto text-slate-300 leading-normal select-text whitespace-pre scrollbar-thin">
+                <code>{code}</code>
+              </pre>
+            </div>
+          );
+        } else {
+          const lines = part.split("\n");
+          return (
+            <div key={index} className="space-y-1">
+              {lines.map((line, lIdx) => {
+                const trimmed = line.trim();
+                if (!trimmed) return <div key={lIdx} className="h-1" />;
+
+                if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+                  return (
+                    <div key={lIdx} className="flex items-start gap-2 pl-2 text-slate-300">
+                      <span className="text-accentPrimary shrink-0 mt-1.5 text-[6px]">•</span>
+                      <span>{renderInlineFormatting(trimmed.slice(2))}</span>
+                    </div>
+                  );
+                }
+
+                const olMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
+                if (olMatch) {
+                  return (
+                    <div key={lIdx} className="flex items-start gap-2 pl-2 text-slate-300">
+                      <span className="text-accentPrimary font-mono font-bold shrink-0 text-[10px]">{olMatch[1]}.</span>
+                      <span>{renderInlineFormatting(olMatch[2])}</span>
+                    </div>
+                  );
+                }
+
+                const headerMatch = trimmed.match(/^(#{1,6})\s+(.*)/);
+                if (headerMatch) {
+                  const level = headerMatch[1].length;
+                  const text = headerMatch[2];
+                  const classes = level === 1 ? "text-xs font-extrabold text-white mt-2" : "text-[11px] font-bold text-white mt-1.5";
+                  return (
+                    <div key={lIdx} className={classes}>
+                      {renderInlineFormatting(text)}
+                    </div>
+                  );
+                }
+
+                return (
+                  <p key={lIdx} className="text-slate-300">
+                    {renderInlineFormatting(trimmed)}
+                  </p>
+                );
+              })}
+            </div>
+          );
+        }
+      })}
+    </div>
+  );
+};
+
+const cleanResponseTags = (text: string) => {
+  return text
+    .replace(/\[PHASE_TRANSITION:\s*(intro|dsa|core|puzzles|hr|evaluating)\]/gi, "")
+    .replace(/\[SUB_STATUS:\s*(.*?)\]/gi, "")
+    .trim();
+};
+
 export const InterviewSimulatorView: React.FC = () => {
   const { 
     state, 
@@ -85,6 +181,13 @@ export const InterviewSimulatorView: React.FC = () => {
     }
   }, [activeSession?.topic]); // Run once when session changes/loads
 
+  // Reset editor maximization when phase transitions away from DSA coding
+  useEffect(() => {
+    if (activeSession && activeSession.currentPhase !== "dsa") {
+      setIsEditorMaximized(false);
+    }
+  }, [activeSession?.currentPhase]);
+
   // 1. Time-delta reload persistence logic
   useEffect(() => {
     if (activeSession && activeSession.timeLeft > 0 && activeSession.currentPhase !== "evaluating") {
@@ -140,6 +243,23 @@ export const InterviewSimulatorView: React.FC = () => {
         chatHistoryRef.current,
         phaseRef.current as any
       );
+    }
+  };
+
+  const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      const start = e.currentTarget.selectionStart;
+      const end = e.currentTarget.selectionEnd;
+      const val = e.currentTarget.value;
+      const nextValue = val.substring(0, start) + "    " + val.substring(end);
+      handleCodeChange(nextValue);
+      // Reset cursor position
+      setTimeout(() => {
+        if (e.currentTarget) {
+          e.currentTarget.selectionStart = e.currentTarget.selectionEnd = start + 4;
+        }
+      }, 0);
     }
   };
 
@@ -260,47 +380,58 @@ Your personality profile is: ${activeSession?.interviewerPersonality}.
 Target Topic: ${activeSession?.topic}
 Initial Difficulty Target: ${activeSession?.difficulty}
 
-The interview must proceed strictly through the following phases. You are responsible for guiding the candidate and initiating transitions by outputting the tag [PHASE_TRANSITION: <new_phase>] at the start of your message when moving to a new phase.
+The interview must proceed strictly through the following phases. You are responsible for guiding the candidate.
+At the start of your message, you MUST output two tags:
+1. [SUB_STATUS: <progress_details>] - This represents the current question or task number in the active phase (e.g., [SUB_STATUS: Question 2 of 3] or [SUB_STATUS: Logic Discussion]).
+2. [PHASE_TRANSITION: <new_phase>] - ONLY output this tag when you are explicitly transitioning to a new phase. DO NOT output this tag if you are staying in the same phase.
 
 Current Phase: ${activeSession?.currentPhase}.
 
 Phase Details & Transitions:
 1. intro:
    - Topic: Introduction & Resume review.
-   - Action: Review the candidate's self-introduction and follow up with 1 short question about their background or projects.
-   - Transition: Once they answer, transition to the coding phase by outputting "[PHASE_TRANSITION: dsa]" followed by the DSA problem introduction.
+   - Action: 
+     - 1st Response: Welcome candidate, review self-introduction.
+     - 2nd Response: Ask 1 follow-up question about their background, project stacks, or target companies.
+     - You must ask at least 2 distinct questions/follow-ups in this phase.
+     - Transition: Only output "[PHASE_TRANSITION: dsa]" on the 3rd turn after the candidate answers the follow-up question.
 
 2. dsa:
    - Topic: Data Structures & Algorithms.
    - Action:
-     - Present an EASY version or basic starter problem related to "${activeSession?.topic}". The full problem description is: ${activeSession?.goal || "N/A"}.
-     - Prompt the candidate to explain their logic and complexities in the chat before they start writing code in the Workspace Editor on the right.
-     - Once they solve the Easy problem, present a MEDIUM difficulty follow-up extension of the problem.
-     - If they solve the Medium problem and time permits, present a HARD difficulty extension.
-     - CRITICAL: Evaluate fairly. Not everyone can solve Hard. If they struggle on Medium or Hard, offer gentle, supportive hints (if Helpful Mentor), or note their progress and move on. Do not get stuck or fail them immediately.
-     - Transition: Once the coding problem is resolved, attempted, or time is running short, transition to the core CS theory phase by outputting "[PHASE_TRANSITION: core]".
+     - Present the coding challenge: ${activeSession?.goal || "N/A"}.
+     - 1st response in DSA: Ask candidate to describe their logic, complexities (Time & Space) in the chat before they code.
+     - 2nd response in DSA: Review their logic. Give feedback, nudge them if logic is suboptimal. Tell them to write the code in the editor workspace on the right.
+     - 3rd response in DSA: Once code is submitted (or candidate says done), review code. Point out any bug, edge case, or optimization. If correct, ask them a Medium/Hard follow-up extension of the problem.
+     - Transition: Only output "[PHASE_TRANSITION: core]" after they have fully coded their solution, discussed complexities, and responded to your follow-up extension (at least 3 responses inside this phase).
 
 3. core:
    - Topic: Core Computer Science theory (DBMS, Operating Systems, Computer Networks, OOPS).
-   - Action: Ask 2-3 specific theoretical questions (e.g. process vs thread, database normalization, TCP vs UDP, polymorphism). Ask them one at a time.
-   - Transition: Once they respond to the questions, transition to the puzzles phase by outputting "[PHASE_TRANSITION: puzzles]".
+   - Action: 
+     - Ask exactly 3 specific theoretical questions (e.g. process vs thread, database normalization, TCP vs UDP, polymorphism). 
+     - Ask them one-by-one. Wait for their answer before asking the next question.
+     - Transition: ONLY output "[PHASE_TRANSITION: puzzles]" after the candidate has answered all 3 theoretical questions.
 
 4. puzzles:
    - Topic: Logic & Brain Teaser Puzzles.
-   - Action: Ask 1 classic engineering puzzle (e.g. 3-gallon and 5-gallon water jug problem, or cross the bridge with a torch, or 2 eggs 100 floors).
-   - Transition: Once they attempt the puzzle, transition to the situational/HR phase by outputting "[PHASE_TRANSITION: hr]".
+   - Action:
+     - Ask 1 classic engineering puzzle (e.g. 3-gallon and 5-gallon water jug problem, or cross the bridge with a torch, or 2 eggs 100 floors).
+     - Once they attempt, ask 1 follow-up explaining a variation or asking them to verify edge constraints.
+     - Transition: ONLY output "[PHASE_TRANSITION: hr]" after they have attempted both the puzzle and responded to your follow-up.
 
 5. hr:
    - Topic: HR & Situational Behavioral questions.
-   - Action: Ask 1 situational question (e.g. "Tell me about a time you had a conflict with a teammate, and how did you resolve it?", or "Tell me about a project that failed"). Encourage answers in STAR format.
-   - Transition: Once they answer, conclude the interview. Inform the candidate that the interview is completed and that you are preparing their scorecard. Output: "[PHASE_TRANSITION: evaluating]\n\nThank you! The interview is now complete. Please click the Submit & Evaluate button below to generate your detailed placement scorecard."
+   - Action: 
+     - Ask exactly 2 situational behavioral questions (e.g. conflict with teammate, handling project failure, or deadline pressure). 
+     - Ask them one-by-one. Wait for their answer before asking the second question.
+     - Transition: ONLY output "[PHASE_TRANSITION: evaluating]" after they have answered the second HR question. Inform them the interview is completed and that they should click the Submit button to generate their scorecard.
 
 Core Persona Rules:
 - Helpful Mentor: Supportive, friendly, offers logical guidance/clues, asks candidate to verify edge cases.
 - Quiet Observer: Highly professional, silent, keeps replies terse, does not offer hints unless directly asked.
 - Strict Interviewer: Demanding, points out edge cases/redundancies immediately, pushes for optimal complexities, evaluates strictly.
 
-Rule: Do not output code solutions. Guide them using conceptual feedback. Keep replies conversational. Always include the [PHASE_TRANSITION: <phase>] token on the very first line of your message when transitioning.`;
+Rule: Do not output code solutions. Guide them using conceptual feedback. Keep replies conversational. Always place the tags [SUB_STATUS: <details>] and [PHASE_TRANSITION: <phase>] on the very first lines of your response when needed.`;
 
     try {
       const apiMessages = [
@@ -373,7 +504,7 @@ Rule: Do not output code solutions. Guide them using conceptual feedback. Keep r
               const content = parsed.choices?.[0]?.delta?.content || "";
               if (content) {
                 accumulatedResponse += content;
-                setStreamingDelta(accumulatedResponse);
+                setStreamingDelta(cleanResponseTags(accumulatedResponse));
               }
             } catch (e) {}
           }
@@ -382,12 +513,19 @@ Rule: Do not output code solutions. Guide them using conceptual feedback. Keep r
 
       // Parse phase transitions
       let nextPhase = activeSession.currentPhase;
-      let cleanedResponse = accumulatedResponse;
       const phaseMatch = accumulatedResponse.match(/\[PHASE_TRANSITION:\s*(intro|dsa|core|puzzles|hr|evaluating)\]/i);
       if (phaseMatch) {
         nextPhase = phaseMatch[1].toLowerCase() as any;
-        cleanedResponse = accumulatedResponse.replace(/\[PHASE_TRANSITION:\s*(intro|dsa|core|puzzles|hr|evaluating)\]/gi, "").trim();
       }
+
+      // Parse sub-phase status
+      let nextSubStatus = activeSession.subPhaseStatus || "";
+      const subStatusMatch = accumulatedResponse.match(/\[SUB_STATUS:\s*(.*?)\]/i);
+      if (subStatusMatch) {
+        nextSubStatus = subStatusMatch[1].trim();
+      }
+
+      const cleanedResponse = cleanResponseTags(accumulatedResponse);
 
       setStreamingDelta("");
 
@@ -405,7 +543,8 @@ Rule: Do not output code solutions. Guide them using conceptual feedback. Keep r
         codeRef.current,
         langRef.current,
         newHistory,
-        nextPhase
+        nextPhase,
+        nextSubStatus
       );
     } catch (err: any) {
       console.error(err);
@@ -695,7 +834,14 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
               <Speech className="w-5 h-5 animate-pulse" />
             </div>
             <div>
-              <h1 className="text-sm font-bold text-white uppercase tracking-wider font-mono">Structured Technical Interview</h1>
+              <h1 className="text-sm font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
+                <span>Structured Technical Interview</span>
+                {activeSession.subPhaseStatus && (
+                  <span className="text-[10px] font-bold font-mono px-2.5 py-0.5 rounded-full bg-accentPrimary/10 border border-accentPrimary/35 text-accentPrimary animate-pulse">
+                    {activeSession.subPhaseStatus}
+                  </span>
+                )}
+              </h1>
               <p className="text-[10px] text-slate-500 font-mono">
                 Topic: <span className="text-white font-bold">{activeSession.topic}</span> | Difficulty Target: <span className="text-accentPrimary font-bold">{activeSession.difficulty}</span>
               </p>
@@ -759,7 +905,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
                         </div>
                       )}
                       <div className={`max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed ${isUser ? "bg-accentPrimary/10 border border-accentPrimary/20 rounded-tr-none text-slate-200" : "bg-white/[0.02] border border-white/[0.04] rounded-tl-none text-slate-300"}`}>
-                        <div className="whitespace-pre-wrap">{msg.content}</div>
+                        <MarkdownRenderer content={msg.content} />
                         <span className="block text-[8px] text-slate-600 font-mono text-right mt-1">
                           {msg.timestamp}
                         </span>
@@ -776,7 +922,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
                     </div>
                     <div className="max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed bg-white/[0.02] border border-white/[0.04] rounded-tl-none text-slate-300">
                       {streamingDelta ? (
-                        <div className="whitespace-pre-wrap">{streamingDelta}</div>
+                        <MarkdownRenderer content={streamingDelta} />
                       ) : (
                         <div className="flex items-center gap-2 py-1">
                           <Loader2 className="w-3.5 h-3.5 animate-spin text-accentPrimary" />
@@ -862,6 +1008,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
                     <textarea
                       value={inputCode}
                       onChange={(e) => handleCodeChange(e.target.value)}
+                      onKeyDown={handleEditorKeyDown}
                       placeholder="// Paste problem boilerplate or write your solution here...&#10;// Make sure to define time & space complexities before submissions."
                       className="flex-1 bg-transparent p-3 font-mono text-[11px] text-slate-200 placeholder-slate-700 focus:outline-none resize-none leading-relaxed overflow-y-auto"
                     />
