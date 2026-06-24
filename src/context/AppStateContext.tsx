@@ -49,7 +49,10 @@ export type {
 // They are imported above and re-exported for backwards compatibility.
 
 
+const SCHEMA_VERSION = 1;
+
 interface AppState {
+  version: number;
   user: UserProfile | null;
   completedWeeks: string[];
   dsaTopics: DsaTopic[];
@@ -331,6 +334,8 @@ const deserializeState = (serialized: Partial<SerializedProgress>, curriculum: a
   });
 
   return {
+    version: SCHEMA_VERSION,
+    user: serialized.user || null,
     completedWeeks: serialized.completedWeeks || [],
     dsaTopics,
     devCategories,
@@ -436,6 +441,7 @@ const getYesterdayString = () => {
 };
 
 const getInitialState = (curriculum: any): AppState => ({
+  version: SCHEMA_VERSION,
   user: null,
   completedWeeks: [],
   dsaTopics: curriculum.DEFAULT_DSA_TOPICS,
@@ -510,6 +516,12 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as AppState;
+        
+        // --- Schema Versioning Migration Logic ---
+        // If parsed.version < SCHEMA_VERSION, apply migrations here in the future
+        if (!parsed.version) {
+          parsed.version = SCHEMA_VERSION;
+        }
         
         // Dynamic day check for habits reset & streak retention
         const today = getTodayString();
