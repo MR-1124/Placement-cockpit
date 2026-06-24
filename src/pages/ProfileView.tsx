@@ -29,6 +29,7 @@ export const ProfileView: React.FC = () => {
     aiDependencyScore,
     readinessScore,
     level,
+    xpProgress,
     levelTitle,
     logoutUser,
     confirmAction
@@ -166,7 +167,7 @@ export const ProfileView: React.FC = () => {
               <div className="h-1.5 w-full bg-white/[0.03] rounded-full overflow-hidden">
                 <div
                   className="h-full bg-accentPrimary rounded-full transition-all duration-500"
-                  style={{ width: `${(state.xp % 100)}%` }}
+                  style={{ width: `${xpProgress}%` }}
                 />
               </div>
             </div>

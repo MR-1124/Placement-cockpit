@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAppState } from "../context/AppStateContext";
-import { ALL_PLANS } from "../data/curriculum";
+
 import type { Plan } from "../data/curriculum";
 import { 
   Search, 
@@ -23,8 +23,10 @@ export const PlansView: React.FC = () => {
     pausePlan, 
     unfollowPlan, 
     setPrimaryPlan,
-    confirmAction
+    curriculum
   } = useAppState();
+
+  const ALL_PLANS = curriculum.ALL_PLANS;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<"All" | "Mastery" | "Placement" | "Sprint">("All");

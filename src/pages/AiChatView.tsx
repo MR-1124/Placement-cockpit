@@ -47,6 +47,9 @@ export const AiChatView: React.FC = () => {
   const [sidebarTab, setSidebarTab] = useState<"templates" | "history">("templates");
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editTitleInput, setEditTitleInput] = useState("");
+
+  const activeSession = state.chatSessions?.find(s => s.id === state.currentSessionId);
+  const currentMessages = activeSession?.messages || [];
   
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatTextAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -60,12 +63,13 @@ export const AiChatView: React.FC = () => {
     }
   }, [chatInput]);
 
-  // Auto-scroll chat to bottom
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [state.chatMessages, isLoading, streamingResponse]);
+    scrollToBottom();
+  }, [currentMessages, isLoading, streamingResponse]);
 
   // Clean up controller on unmount
   useEffect(() => {
@@ -116,7 +120,7 @@ export const AiChatView: React.FC = () => {
     try {
       const apiMessages = [
         { role: "system", content: SYSTEM_PROMPT },
-        ...state.chatMessages.map(m => ({ role: m.role, content: m.content })),
+        ...currentMessages.map(m => ({ role: m.role, content: m.content })),
         { role: "user", content: inputVal }
       ];
 
@@ -495,7 +499,7 @@ export const AiChatView: React.FC = () => {
         </div>
 
         {/* Clear Button */}
-        {state.chatMessages.length > 0 && (
+        {currentMessages.length > 0 && (
           <button
             onClick={handleClearHistory}
             className="w-full py-2 border border-rose-500/20 hover:border-rose-500 bg-rose-500/5 hover:bg-rose-500 text-rose-400 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow shrink-0"
@@ -523,7 +527,7 @@ export const AiChatView: React.FC = () => {
 
         {/* Messages list */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4 select-text">
-          {state.chatMessages.length === 0 && !streamingResponse ? (
+          {currentMessages.length === 0 && !streamingResponse ? (
             <div className="flex flex-col items-center justify-center h-full text-center max-w-md mx-auto space-y-4">
               <div className="w-12 h-12 rounded-full bg-accentPrimary/5 border border-accentPrimary/20 flex items-center justify-center text-accentPrimary shadow-inner">
                 <Bot className="w-6 h-6 animate-pulse" />
@@ -546,7 +550,7 @@ export const AiChatView: React.FC = () => {
             </div>
           ) : (
             <>
-              {state.chatMessages.map((msg) => {
+              {currentMessages.map((msg) => {
                 const isUser = msg.role === "user";
                 return (
                   <div

@@ -18,7 +18,7 @@ import {
 
 
 export const NotesView: React.FC = () => {
-  const { state, addNote, updateNote, deleteNote } = useAppState();
+  const { state, addNote, updateNote, deleteNote, confirmAction } = useAppState();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
@@ -399,7 +399,16 @@ export const NotesView: React.FC = () => {
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={() => deleteNote(note.id)}
+                          onClick={() => {
+                            confirmAction({
+                              title: "Delete Note",
+                              message: "Are you sure you want to delete this note? This action cannot be undone.",
+                              confirmText: "Delete",
+                              cancelText: "Cancel",
+                              severity: "danger",
+                              onConfirm: () => deleteNote(note.id)
+                            });
+                          }}
                           className="text-slate-500 hover:text-rose-500 p-1 transition-colors"
                           title="Delete Note"
                         >

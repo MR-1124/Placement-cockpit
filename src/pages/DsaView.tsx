@@ -389,14 +389,14 @@ export const DsaView: React.FC = () => {
                               {/* Quick solution checklist links */}
                               <td className="py-3 px-5 text-center">
                                 <a
-                                  href={`https://www.youtube.com/results?search_query=leetcode+${encodeURIComponent(
+                                  href={`https://www.youtube.com/results?search_query=neetcode+${encodeURIComponent(
                                     problem.name
                                   )}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-[10px] text-slate-500 hover:text-accentPrimary font-mono transition-colors"
                                 >
-                                  Video Solution
+                                  Neetcode Video
                                 </a>
                               </td>
                             </tr>

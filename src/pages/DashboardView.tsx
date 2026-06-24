@@ -15,7 +15,7 @@ import {
   CheckCircle,
   AlertCircle
 } from "lucide-react";
-import { ALL_PLANS } from "../data/curriculum";
+
 
 interface DashboardViewProps {
   setActiveTab: (tab: string) => void;
@@ -36,8 +36,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
     toggleCustomTask,
     deleteCustomTask,
     level,
-    levelTitle
+    levelTitle,
+    curriculum
   } = useAppState();
+
+  const ALL_PLANS = curriculum.ALL_PLANS;
 
   const [newTaskName, setNewTaskName] = useState("");
   const [selectedHeatmapCell, setSelectedHeatmapCell] = useState<{ date: string; week: number; day: number; habitsCompleted: number } | null>(null);
@@ -87,7 +90,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
 
     if (heatmapMode === "plan") {
       const activeUserPlan = state.userPlans?.find(up => up.planId === primaryPlanId);
-      const startDateStr = activeUserPlan?.startedAt || state.lastActiveDate || today;
+      const earliestStartedAt = state.userPlans && state.userPlans.length > 0
+        ? state.userPlans.reduce((earliest, up) => (up.startedAt < earliest ? up.startedAt : earliest), state.userPlans[0].startedAt)
+        : null;
+      const startDateStr = earliestStartedAt || activeUserPlan?.startedAt || state.lastActiveDate || today;
       const startDate = new Date(startDateStr);
       const startDay = startDate.getDay(); // 0 (Sun) to 6 (Sat)
       const alignmentOffset = startDay;

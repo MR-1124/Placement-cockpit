@@ -1,10 +1,11 @@
 import React from "react";
 import { useAppState } from "../context/AppStateContext";
-import { DEFAULT_BADGES } from "../data/curriculum";
+
 import { GlassCard } from "../components/Common";
 
 export const BadgesView: React.FC = () => {
-  const { state } = useAppState();
+  const { state, curriculum } = useAppState();
+  const DEFAULT_BADGES = curriculum.DEFAULT_BADGES;
 
   const isBadgeUnlocked = (badgeId: string) => {
     return state.unlockedBadges.includes(badgeId);

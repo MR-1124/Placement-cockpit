@@ -43,7 +43,7 @@ import {
   ClipboardList,
   Speech
 } from "lucide-react";
-import { ALL_PLANS } from "./data/curriculum";
+
 
 const SYSTEM_PROMPT = `You are an elite technical mentor for a Computer Science Engineering student preparing for placements over the next 3-4 months.
 Your mission is to guide the student to placement readiness across DSA, Full Stack, and Project portfolios, while enforcing anti-vibe-coding discipline (avoiding blind copy-pasting, understanding code from first principles, and building self-reliance).
@@ -85,7 +85,9 @@ const AppContent: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isWideChat, setIsWideChat] = useState(false);
   const [chatInput, setChatInput] = useState("");
-  
+
+  const activeSession = state.chatSessions?.find(s => s.id === state.currentSessionId);
+  const currentMessages = activeSession?.messages || [];
   // Focus Mode state (restored from localStorage if active and not expired)
   const [focusSession, setFocusSession] = useState<{
     isOpen: boolean;
@@ -102,7 +104,7 @@ const AppContent: React.FC = () => {
             restoredTime = Math.max(0, parsed.timeLeft - elapsedSeconds);
           }
           if (restoredTime > 0) {
-            return { isOpen: true, active: parsed.active };
+            return { isOpen: true, active: { ...parsed.active, restoredTime, isPaused: parsed.isPaused } };
           } else {
             localStorage.removeItem("active_focus_session");
           }
@@ -144,7 +146,7 @@ const AppContent: React.FC = () => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [state.chatMessages, isLoading, streamingResponse]);
+  }, [currentMessages, isLoading, streamingResponse]);
 
   // Cleanup AbortController on unmount
   useEffect(() => {
@@ -201,7 +203,7 @@ const AppContent: React.FC = () => {
     try {
       const apiMessages = [
         { role: "system", content: SYSTEM_PROMPT },
-        ...state.chatMessages.map(m => ({ role: m.role, content: m.content })),
+        ...currentMessages.map(m => ({ role: m.role, content: m.content })),
         { role: "user", content: currentInput }
       ];
 
@@ -375,6 +377,7 @@ const AppContent: React.FC = () => {
   };
 
   const primaryPlanId = state.primaryPlanId || "16-week-mastery";
+  const ALL_PLANS = curriculum.ALL_PLANS;
   const primaryPlan = ALL_PLANS.find(p => p.id === primaryPlanId) || ALL_PLANS[0];
 
   const navigationItems = [
@@ -593,7 +596,7 @@ const AppContent: React.FC = () => {
           { id: "roadmap", label: "16-Week", icon: Map },
           { id: "dsa", label: "DSA", icon: Code2 },
           { id: "dev", label: "Full Stack", icon: Layers },
-          { id: "ai", label: "AI", icon: Terminal }
+          { id: "interview", label: "Mock", icon: Speech }
         ].map(item => {
           const Icon = item.icon;
           const active = activeTab === item.id;
@@ -643,7 +646,7 @@ const AppContent: React.FC = () => {
             <MessageSquare className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" />
             {/* Bug #10 fix: dot shows when there ARE messages (invite to review)
                 not when empty (the old inverted logic was counterintuitive) */}
-            {state.chatMessages.length > 0 && (
+            {currentMessages.length > 0 && (
               <>
                 <span className="absolute -top-1.5 -right-1.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-accentPrimary rounded-full animate-ping" />
                 <span className="absolute -top-1.5 -right-1.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-accentPrimary rounded-full" />
@@ -693,7 +696,7 @@ const AppContent: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {state.chatMessages.length > 0 && (
+                  {currentMessages.length > 0 && (
                     <button
                       onClick={handleClearHistory}
                       title="Clear chat history"
@@ -720,7 +723,7 @@ const AppContent: React.FC = () => {
 
               {/* Chat Message Area */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4 select-text">
-                {state.chatMessages.length === 0 && !streamingResponse ? (
+                {currentMessages.length === 0 && !streamingResponse ? (
                   <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-4">
                     <div className="w-12 h-12 rounded-full bg-accentPrimary/5 border border-accentPrimary/20 flex items-center justify-center text-accentPrimary shadow-inner">
                       <Bot className="w-6 h-6 animate-pulse" />
@@ -752,7 +755,7 @@ const AppContent: React.FC = () => {
                   </div>
                 ) : (
                   <>
-                    {state.chatMessages.map((msg) => {
+                    {currentMessages.map((msg) => {
                       const isUser = msg.role === "user";
                       return (
                         <div

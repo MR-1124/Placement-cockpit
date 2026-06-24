@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useAppState } from "../context/AppStateContext";
 import { GlassCard, ProgressBar } from "../components/Common";
-import { ALL_PLANS } from "../data/curriculum";
+
 import type { WeekPlan } from "../data/curriculum";
 import {
   ChevronDown,
@@ -16,8 +16,9 @@ import {
 } from "lucide-react";
 
 export const RoadmapView: React.FC = () => {
-  const { state, toggleWeek, toggleDsaProblem, updateDevSkill, confirmAction } = useAppState();
+  const { state, curriculum, toggleWeek, toggleDsaProblem, updateDevSkill, confirmAction } = useAppState();
   
+  const ALL_PLANS = curriculum.ALL_PLANS;
   const primaryPlanId = state.primaryPlanId || "16-week-mastery";
   const primaryPlan = ALL_PLANS.find(p => p.id === primaryPlanId) || ALL_PLANS[0];
   const roadmapWeeks = primaryPlan.roadmap;

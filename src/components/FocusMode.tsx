@@ -54,6 +54,18 @@ export const FocusMode: React.FC<FocusModeProps> = ({
   // Initialize timer when activeSession starts (or restore from localStorage if reloading)
   useEffect(() => {
     if (activeSession) {
+      if (activeSession.restoredTime !== undefined) {
+        if (activeSession.restoredTime <= 0) {
+          localStorage.removeItem("active_focus_session");
+          onEndSession(false);
+          return;
+        }
+        setTimeLeft(activeSession.restoredTime);
+        setIsPaused(activeSession.isPaused || false);
+        setHasStarted(true);
+        return;
+      }
+      
       const saved = localStorage.getItem("active_focus_session");
       if (saved) {
         try {

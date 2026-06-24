@@ -1,172 +1,53 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db, hasFirebaseKeys } from "../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, AlertCircle, Info } from "lucide-react";
-import {
-  DEFAULT_DSA_TOPICS,
-  DEFAULT_DEV_CATEGORIES,
-  DEFAULT_BADGES,
-  ALL_PLANS
-} from "../data/curriculum";
-import type { DsaTopic, DevCategory, UserPlan } from "../data/curriculum";
+import { Loader2 } from "lucide-react";
+import type { DsaTopic, DevCategory, UserPlan, Plan, Badge } from "../data/curriculum";
 
-export interface ConfirmationOptions {
-  title: string;
-  message: string;
-  confirmText?: string;
-  cancelText?: string;
-  severity?: "info" | "warning" | "danger";
-  onConfirm: () => void;
-}
+// Arch Debt #13 fix: import all domain types from centralised types file.
+import type {
+  ConfirmationOptions,
+  Project,
+  AiLog,
+  CustomTask,
+  DailyHabitState,
+  Note,
+  AppSettings,
+  ChatMessage,
+  ChatSession,
+  UserProfile,
+  HistoryItem,
+  MockInterviewReport,
+  ActiveInterviewSession,
+  InterviewPhase
+} from "../types/AppTypes";
 
+// Re-export all types so existing consumers (import { X } from '../context/AppStateContext')
+// continue to work without any changes across the codebase.
+export type {
+  ConfirmationOptions,
+  Project,
+  AiLog,
+  CustomTask,
+  DailyHabitState,
+  Note,
+  AppSettings,
+  ChatMessage,
+  ChatSession,
+  UserProfile,
+  HistoryItem,
+  MockInterviewReport,
+  ActiveInterviewSession,
+  InterviewPhase
+};
 
-export interface Project {
-  id: string;
-  name: string;
-  status: "Planning" | "In Progress" | "Testing" | "Deployed" | "Polished";
-  difficulty: "Easy" | "Medium" | "Hard";
-  completion: number;
-  techStack: string[];
-  notes: string;
-  links: { github?: string; live?: string };
-  interviewNotes: {
-    situation: string;
-    task: string;
-    action: string;
-    result: string;
-  };
-  checklists: {
-    readme: boolean;
-    deployment: boolean;
-    interviewReady: boolean;
-  };
-}
+// All domain interfaces are now in src/types/AppTypes.ts (Arch Debt #13).
+// They are imported above and re-exported for backwards compatibility.
 
-export interface AiLog {
-  id: string;
-  date: string; // YYYY-MM-DD
-  aiPercentage: number; // 0 - 100
-  selfSolvedTime: number; // minutes
-  aiAssistedTime: number; // minutes
-  triedFirst: boolean;
-  firstDraftSelf: boolean;
-  understoodCode: boolean;
-  copiedDirectly: boolean;
-  canRebuild: boolean;
-}
-
-export interface CustomTask {
-  id: string;
-  name: string;
-  isCompleted: boolean;
-}
-
-export interface DailyHabitState {
-  solveDsa: boolean;
-  reviseOld: boolean;
-  buildFeature: boolean;
-  avoidAi: boolean;
-  pushGithub: boolean;
-  readDoc: boolean;
-}
-
-export interface Note {
-  id: string;
-  title: string;
-  content: string;
-  category: "DSA" | "Development" | "Mistake" | "Concept" | "General";
-  tags: string[];
-  updatedAt: string;
-}
-
-export interface AppSettings {
-  accentColor: "violet" | "emerald" | "amber" | "rose" | "blue";
-  compactUi: boolean;
-  remindersEnabled: boolean;
-  reminderFrequency: "daily" | "weekly";
-  showSections: Record<string, boolean>;
-  nvidiaApiKey: string;
-  nvidiaModelName: string;
-}
-
-export interface ChatMessage {
-  id: string;
-  role: "user" | "assistant" | "system";
-  content: string;
-  timestamp: string;
-}
-
-export interface ChatSession {
-  id: string;
-  title: string;
-  messages: ChatMessage[];
-  createdAt: string;
-  isPinned?: boolean;
-}
-
-export interface UserProfile {
-  uid: string;
-  name: string;
-  email: string;
-  avatar: string;
-  targetCompanies: string[];
-  linkedinUrl: string;
-  githubUrl: string;
-  resumeLink: string;
-  cohort: string;
-  savedIntro?: string;
-}
-
-export interface HistoryItem {
-  date: string; // YYYY-MM-DD
-  habitsCompleted: number; // count
-}
-
-export interface MockInterviewReport {
-  id: string;
-  date: string; // YYYY-MM-DD
-  topic: string;
-  difficulty: "Easy" | "Medium" | "Hard";
-  interviewerPersonality: "Helpful Mentor" | "Quiet Observer" | "Strict Interviewer";
-  codeSolution: string;
-  language: string;
-  chatHistory: ChatMessage[];
-  scorecard: {
-    problemSolving: number; // 0 - 10
-    codeQuality: number; // 0 - 10
-    communication: number; // 0 - 10
-    overallScore: number; // 0 - 10
-    recommendation: "Strong Hire" | "Hire" | "Leaning Hire" | "No Hire";
-    strengths: string[];
-    weaknesses: string[];
-    feedback: string;
-    questionsFeedback?: {
-      question: string;
-      response: string;
-      rating: number; // 0 - 10
-      feedback: string;
-    }[];
-  };
-}
-
-export interface ActiveInterviewSession {
-  topic: string;
-  difficulty: "Easy" | "Medium" | "Hard";
-  interviewerPersonality: "Helpful Mentor" | "Quiet Observer" | "Strict Interviewer";
-  timeLeft: number; // seconds remaining
-  code: string;
-  language: string;
-  chatHistory: ChatMessage[];
-  currentPhase: "intro" | "dsa" | "core" | "puzzles" | "hr" | "evaluating";
-  subPhaseStatus?: string;
-  lastSavedTime?: number; // timestamp
-  goal?: string; // Boilerplate problem title/description
-  resumeText?: string;
-  resumeFileName?: string;
-}
 
 interface AppState {
   user: UserProfile | null;
@@ -184,7 +65,7 @@ interface AppState {
   lastActiveDate: string;
   unlockedBadges: string[];
   xp: number;
-  chatMessages: ChatMessage[];
+
   chatSessions?: ChatSession[];
   currentSessionId?: string;
   userPlans?: UserPlan[];
@@ -195,6 +76,12 @@ interface AppState {
 
 interface AppContextType {
   state: AppState;
+  curriculum: {
+    DEFAULT_DSA_TOPICS: DsaTopic[];
+    DEFAULT_DEV_CATEGORIES: DevCategory[];
+    DEFAULT_BADGES: Badge[];
+    ALL_PLANS: Plan[];
+  };
   overallCompletion: number;
   dsaCompletion: number;
   devCompletion: number;
@@ -302,6 +189,9 @@ interface SerializedProgress {
     resumeLink: string;
     cohort: string;
     savedIntro?: string;
+    /** Arch Debt #16: persisted resume for re-use across sessions */
+    resumeText?: string;
+    resumeFileName?: string;
   };
   userPlans?: UserPlan[];
   primaryPlanId?: string;
@@ -388,13 +278,16 @@ const serializeState = (state: AppState): Omit<SerializedProgress, "user"> => {
       githubUrl: state.user.githubUrl || "",
       resumeLink: state.user.resumeLink || "",
       cohort: state.user.cohort || "",
-      savedIntro: state.user.savedIntro || ""
+      savedIntro: state.user.savedIntro || "",
+      // Arch Debt #16: persist resume to profile
+      resumeText: state.user.resumeText || "",
+      resumeFileName: state.user.resumeFileName || ""
     } : undefined
   };
 };
 
-const deserializeState = (serialized: Partial<SerializedProgress>): Partial<AppState> => {
-  const dsaTopics = DEFAULT_DSA_TOPICS.map(defaultTopic => {
+const deserializeState = (serialized: Partial<SerializedProgress>, curriculum: any): AppState => {
+  const dsaTopics = curriculum.DEFAULT_DSA_TOPICS.map((defaultTopic: DsaTopic) => {
     const mastery = serialized.dsaTopicMastery?.[defaultTopic.id] || defaultTopic.mastery;
     const problems = defaultTopic.problems.map(defaultProb => {
       const savedProb = serialized.dsaProblems?.[defaultProb.id];
@@ -418,7 +311,7 @@ const deserializeState = (serialized: Partial<SerializedProgress>): Partial<AppS
     };
   });
 
-  const devCategories = DEFAULT_DEV_CATEGORIES.map(defaultCat => {
+  const devCategories = curriculum.DEFAULT_DEV_CATEGORIES.map((defaultCat: DevCategory) => {
     const skills = defaultCat.skills.map(defaultSkill => {
       const savedSkill = serialized.devSkills?.[defaultSkill.id];
       if (!savedSkill) return defaultSkill;
@@ -542,11 +435,11 @@ const getYesterdayString = () => {
   return d.toISOString().split("T")[0];
 };
 
-const INITIAL_STATE: AppState = {
+const getInitialState = (curriculum: any): AppState => ({
   user: null,
   completedWeeks: [],
-  dsaTopics: DEFAULT_DSA_TOPICS,
-  devCategories: DEFAULT_DEV_CATEGORIES,
+  dsaTopics: curriculum.DEFAULT_DSA_TOPICS,
+  devCategories: curriculum.DEFAULT_DEV_CATEGORIES,
   projects: [],
   aiLogs: [],
   dailyHabits: {
@@ -584,7 +477,7 @@ const INITIAL_STATE: AppState = {
   lastActiveDate: "",
   unlockedBadges: [],
   xp: 0,
-  chatMessages: [],
+
   chatSessions: [
     {
       id: "default-session",
@@ -609,9 +502,9 @@ const INITIAL_STATE: AppState = {
   primaryPlanId: "16-week-mastery",
   mockInterviews: [],
   activeInterviewSession: null
-};
+});
 
-export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: any }> = ({ children, curriculum }) => {
   const [state, setState] = useState<AppState>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -634,11 +527,11 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
 
         // Merge saved dsaTopics progress with fresh DEFAULT_DSA_TOPICS definitions
-        updatedState.dsaTopics = DEFAULT_DSA_TOPICS.map(defaultTopic => {
+        updatedState.dsaTopics = curriculum.DEFAULT_DSA_TOPICS.map((defaultTopic: any) => {
           const savedTopic = (parsed.dsaTopics || []).find(t => t.id === defaultTopic.id);
           if (!savedTopic) return defaultTopic;
 
-          const mergedProblems = defaultTopic.problems.map(defaultProb => {
+          const mergedProblems = defaultTopic.problems.map((defaultProb: any) => {
             const savedProb = savedTopic.problems.find(p => p.id === defaultProb.id);
             if (!savedProb) return defaultProb;
 
@@ -666,16 +559,14 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           updatedState.xp = 0;
         }
         
-        if (updatedState.chatMessages === undefined) {
-          updatedState.chatMessages = [];
-        }
+
 
         if (updatedState.chatSessions === undefined || updatedState.chatSessions.length === 0) {
           updatedState.chatSessions = [
             {
               id: "default-session",
               title: "Placement Chat Room",
-              messages: updatedState.chatMessages || [],
+              messages: (updatedState as any).chatMessages || [],
               createdAt: new Date().toLocaleDateString(),
               isPinned: false
             }
@@ -773,7 +664,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       } catch {}
     }
     return {
-      ...INITIAL_STATE,
+      ...getInitialState(curriculum),
       user: initialUser,
       lastActiveDate: getTodayString()
     };
@@ -786,22 +677,37 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     confirmText?: string;
     cancelText?: string;
     severity?: "info" | "warning" | "danger";
-    onConfirm?: () => void;
   }>({
     isOpen: false,
     title: "",
     message: ""
   });
 
+  const onConfirmRef = useRef<(() => void) | null>(null);
+
+  const resetAllData = () => {
+    confirmAction({
+      title: "Hard Reset Confirmation",
+      message: "Are you absolutely sure you want to completely erase all your progress? This includes DSA completion, project statuses, AI analytics, and logs. This action cannot be undone.",
+      confirmText: "Yes, Reset Everything",
+      cancelText: "Cancel",
+      severity: "danger",
+      onConfirm: () => {
+        setState(getInitialState(curriculum));
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    });
+  };
+
   const confirmAction = (options: ConfirmationOptions) => {
+    onConfirmRef.current = options.onConfirm;
     setConfirmState({
       isOpen: true,
       title: options.title,
       message: options.message,
       confirmText: options.confirmText,
       cancelText: options.cancelText,
-      severity: options.severity || "info",
-      onConfirm: options.onConfirm
+      severity: options.severity || "info"
     });
   };
 
@@ -916,7 +822,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             const docSnap = await getDoc(userDocRef);
             if (docSnap.exists()) {
               const data = docSnap.data();
-              const deserialized = deserializeState(data);
+              const deserialized = deserializeState(data, curriculum);
 
               if (data.profile) {
                 userProfile = {
@@ -1014,10 +920,11 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   };
 
-  // Save state to localStorage whenever it changes
-
   // Dynamic Badge Unlocking Engine
-  const checkAndTriggerBadges = (updatedState: AppState) => {
+  const checkAndUnlockBadges = (updatedState: AppState) => {
+    const newUnlocked = new Set(updatedState.unlockedBadges);
+    let justUnlocked: string[] = [];
+
     // 1. Calculate values
     const dsaSolvedCount = updatedState.dsaTopics.reduce(
       (acc, topic) => acc + topic.problems.filter(p => p.isCompleted).length,
@@ -1073,9 +980,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       logCount
     );
 
-    const freshlyUnlocked: string[] = [];
-
-    DEFAULT_BADGES.forEach(badge => {
+    curriculum.DEFAULT_BADGES.forEach((badge: Badge) => {
       if (updatedState.unlockedBadges.includes(badge.id)) return;
 
       let passes = false;
@@ -1286,10 +1191,10 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             isCompleted,
             lastSolved: isCompleted ? getTodayString() : prob.lastSolved,
             // Automatically queue for revision in 3 days if solved
-            revisionInterval: isCompleted ? 3 : undefined,
+            revisionInterval: isCompleted ? 3 : 0,
             nextRevisionDate: isCompleted
               ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
-              : undefined
+              : ""
           };
         });
         return { ...topic, problems };
@@ -1365,7 +1270,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           if (prob.id !== problemId) return prob;
           const nextRevisionDate = interval > 0
             ? new Date(Date.now() + interval * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
-            : undefined;
+            : "";
 
           const prevInterval = prob.revisionInterval || 0;
           if (interval >= 30 && prevInterval < 30) {
@@ -1595,8 +1500,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
       return {
         ...prev,
-        chatSessions: updatedSessions,
-        chatMessages
+        chatSessions: updatedSessions
       };
     });
   };
@@ -1610,8 +1514,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       });
       return {
         ...prev,
-        chatSessions,
-        chatMessages: []
+        chatSessions
       };
     });
   };
@@ -1629,8 +1532,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return {
         ...prev,
         chatSessions,
-        currentSessionId: newSession.id,
-        chatMessages: []
+        currentSessionId: newSession.id
       };
     });
   };
@@ -1641,8 +1543,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const session = chatSessions.find(s => s.id === sessionId);
       return {
         ...prev,
-        currentSessionId: sessionId,
-        chatMessages: session ? session.messages : []
+        currentSessionId: sessionId
       };
     });
   };
@@ -1671,8 +1572,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return {
         ...prev,
         chatSessions,
-        currentSessionId,
-        chatMessages: activeSession ? activeSession.messages : []
+        currentSessionId
       };
     });
   };
@@ -2106,32 +2006,45 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     resumeText?: string,
     resumeFileName?: string
   ) => {
-    updateState(prev => ({
-      ...prev,
-      activeInterviewSession: {
-        topic,
-        difficulty,
-        interviewerPersonality: personality,
-        timeLeft: 45 * 60,
-        code: "",
-        language: "cpp",
-        chatHistory: [
-          {
-            id: `msg-${Date.now()}`,
-            role: "assistant",
-            content: resumeText
-              ? `Hello! Welcome to your technical interview. I will be your interviewer today, acting as a ${personality}.\n\nI have received and reviewed your resume (${resumeFileName || "uploaded file"}). Let's start the session. To begin, could you please introduce yourself, highlight some of your key projects, and tell me about your background?`
-              : `Hello! Welcome to your technical interview. I will be your interviewer today, acting as a ${personality}.\n\nThis will be a structured technical interview consisting of several phases:\n1. Introduction & Resume highlights\n2. Data Structures & Algorithms (Easy to Hard progression)\n3. Core Computer Science concepts\n4. Brain Teaser / Puzzle\n5. Situational & HR questions\n\nTo begin, could you please introduce yourself, highlight your key projects, and tell me about your background?`,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          }
-        ],
-        currentPhase: "intro",
-        lastSavedTime: Date.now(),
-        goal: problemDescription,
-        resumeText,
-        resumeFileName
-      }
-    }));
+    updateState(prev => {
+      // Arch Debt #16 fix: fall back to user-profile resume when no upload in this session.
+      // This means users only need to upload once; subsequent interviews pick it up automatically.
+      const effectiveResumeText = resumeText || prev.user?.resumeText || "";
+      const effectiveResumeFileName = resumeFileName || prev.user?.resumeFileName || "";
+
+      // If a new resume was uploaded this session, persist it to the user profile.
+      const updatedUser = resumeText && prev.user
+        ? { ...prev.user, resumeText, resumeFileName: resumeFileName || prev.user.resumeFileName }
+        : prev.user;
+
+      return {
+        ...prev,
+        user: updatedUser,
+        activeInterviewSession: {
+          topic,
+          difficulty,
+          interviewerPersonality: personality,
+          timeLeft: 45 * 60,
+          code: "",
+          language: "cpp",
+          chatHistory: [
+            {
+              id: `msg-${Date.now()}`,
+              role: "assistant",
+              content: effectiveResumeText
+                ? `Hello! Welcome to your technical interview. I will be your interviewer today, acting as a ${personality}.\n\nI have received and reviewed your resume (${effectiveResumeFileName || "uploaded file"}). Let's start the session. To begin, could you please introduce yourself, highlight some of your key projects, and tell me about your background?`
+                : `Hello! Welcome to your technical interview. I will be your interviewer today, acting as a ${personality}.\n\nThis will be a structured technical interview consisting of several phases:\n1. Introduction & Resume highlights\n2. Data Structures & Algorithms (Easy to Hard progression)\n3. Core Computer Science concepts\n4. Brain Teaser / Puzzle\n5. Situational & HR questions\n\nTo begin, could you please introduce yourself, highlight your key projects, and tell me about your background?`,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }
+          ],
+          currentPhase: "intro",
+          lastSavedTime: Date.now(),
+          goal: problemDescription,
+          resumeText: effectiveResumeText,
+          resumeFileName: effectiveResumeFileName
+        }
+      };
+    });
   };
 
   const updateInterviewSession = (
@@ -2219,6 +2132,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     <AppContext.Provider
       value={{
         state,
+        curriculum,
         overallCompletion,
         dsaCompletion,
         devCompletion,
@@ -2336,10 +2250,10 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                   </button>
                   <button
                     onClick={() => {
-                      if (confirmState.onConfirm) confirmState.onConfirm();
+                      if (onConfirmRef.current) onConfirmRef.current();
                       setConfirmState(prev => ({ ...prev, isOpen: false }));
                     }}
-                    className={`px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all cursor-pointer ${
+                    className={`px-4 py-2 rounded-xl text-xs font-bold text-white transition-all cursor-pointer ${
                       confirmState.severity === "danger"
                         ? "bg-rose-600 hover:bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.3)]"
                         : confirmState.severity === "warning"
@@ -2357,6 +2271,29 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       </AnimatePresence>
     </AppContext.Provider>
   );
+};
+
+export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [curriculumLoaded, setCurriculumLoaded] = useState(false);
+  const [curriculumData, setCurriculumData] = useState<any>(null);
+
+  useEffect(() => {
+    import("../data/curriculum").then((mod) => {
+      setCurriculumData(mod);
+      setCurriculumLoaded(true);
+    });
+  }, []);
+
+  if (!curriculumLoaded) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white gap-4">
+        <Loader2 className="w-8 h-8 animate-spin text-accentPrimary" />
+        <span className="text-xs font-mono text-slate-500 uppercase tracking-widest">Loading Curriculum Data...</span>
+      </div>
+    );
+  }
+
+  return <AppStateProviderInner curriculum={curriculumData}>{children}</AppStateProviderInner>;
 };
 
 export const useAppState = () => {

@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAppState } from "../context/AppStateContext";
-import type { MockInterviewReport } from "../context/AppStateContext";
+import type { MockInterviewReport } from "../types/AppTypes";
 import { GlassCard } from "../components/Common";
 import { MarkdownRenderer } from "../components/MarkdownRenderer";
+import { InterviewScorecard } from "../components/InterviewScorecard";
+import { InterviewSetupPanel, InterviewHistoryPanel } from "../components/InterviewSetupComponents";
+import { nvidiaFetch } from "../lib/nvidiaApi";
 import { 
   Play, 
   Trash2, 
@@ -141,37 +144,6 @@ const robustJsonParse = (text: string): any => {
   }
 };
 
-const loadPdfJs = (): Promise<any> => {
-  return new Promise((resolve, reject) => {
-    if ((window as any).pdfjsLib) {
-      resolve((window as any).pdfjsLib);
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js";
-    script.async = true;
-    script.onload = () => {
-      const pdfjsLib = (window as any).pdfjsLib;
-      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js";
-      resolve(pdfjsLib);
-    };
-    script.onerror = () => reject(new Error("Failed to load PDF.js from CDN"));
-    document.body.appendChild(script);
-  });
-};
-
-const extractTextFromPdf = async (arrayBuffer: ArrayBuffer): Promise<string> => {
-  const pdfjsLib = await loadPdfJs();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  let fullText = "";
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const textContent = await page.getTextContent();
-    const strings = textContent.items.map((item: any) => item.str);
-    fullText += strings.join(" ") + "\n";
-  }
-  return fullText;
-};
 
 export const InterviewSimulatorView: React.FC = () => {
   const { 
@@ -188,87 +160,7 @@ export const InterviewSimulatorView: React.FC = () => {
   const apiKey = state.settings.nvidiaApiKey;
   const modelName = state.settings.nvidiaModelName || "meta/llama-3.1-70b-instruct";
 
-  // Setup view states
-  const [selectedTopic, setSelectedTopic] = useState("Any");
-  const [selectedDifficulty, setSelectedDifficulty] = useState<"Easy" | "Medium" | "Hard">("Medium");
-  const [selectedPersonality, setSelectedPersonality] = useState<"Helpful Mentor" | "Quiet Observer" | "Strict Interviewer">("Helpful Mentor");
-  const [warmupCheck1, setWarmupCheck1] = useState(false);
-  const [warmupCheck2, setWarmupCheck2] = useState(false);
-  const [tempIntro, setTempIntro] = useState(state.user?.savedIntro || "");
-  const [resumeText, setResumeText] = useState("");
-  const [resumeFileName, setResumeFileName] = useState("");
-  const [isParsingResume, setIsParsingResume] = useState(false);
-  const [resumeError, setResumeError] = useState("");
-  const [showPasteArea, setShowPasteArea] = useState(false);
 
-  // Sync tempIntro when state.user loads or updates
-  useEffect(() => {
-    if (state.user?.savedIntro) {
-      setTempIntro(state.user.savedIntro);
-    }
-  }, [state.user?.savedIntro]);
-
-  const handleSaveIntro = () => {
-    updateUserProfile({ savedIntro: tempIntro });
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsParsingResume(true);
-    setResumeError("");
-    setResumeFileName(file.name);
-
-    const ext = file.name.split(".").pop()?.toLowerCase();
-    if (ext === "txt" || ext === "md") {
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        const text = evt.target?.result as string;
-        setResumeText(text);
-        setIsParsingResume(false);
-      };
-      reader.onerror = () => {
-        setResumeError("Failed to read text file.");
-        setIsParsingResume(false);
-      };
-      reader.readAsText(file);
-    } else if (ext === "pdf") {
-      const reader = new FileReader();
-      reader.onload = async (evt) => {
-        try {
-          const buffer = evt.target?.result as ArrayBuffer;
-          const text = await extractTextFromPdf(buffer);
-          if (!text.trim()) {
-            throw new Error("No text content found in PDF.");
-          }
-          setResumeText(text);
-        } catch (err: any) {
-          console.error("PDF parse failed", err);
-          setResumeError("Automatic PDF parsing failed. Please paste resume text manually.");
-          setShowPasteArea(true);
-        } finally {
-          setIsParsingResume(false);
-        }
-      };
-      reader.onerror = () => {
-        setResumeError("Failed to load PDF file bytes.");
-        setIsParsingResume(false);
-      };
-      reader.readAsArrayBuffer(file);
-    } else {
-      setResumeError("Unsupported file type. Use .pdf, .txt, or .md. Or paste manually.");
-      setIsParsingResume(false);
-      setShowPasteArea(true);
-    }
-  };
-
-  const handleClearResume = () => {
-    setResumeText("");
-    setResumeFileName("");
-    setResumeError("");
-  };
-  
   // Interactive active states
   const activeSession = state.activeInterviewSession;
   const [inputCode, setInputCode] = useState("");
@@ -279,7 +171,29 @@ export const InterviewSimulatorView: React.FC = () => {
   const [streamingDelta, setStreamingDelta] = useState("");
   const [evaluationReport, setEvaluationReport] = useState<MockInterviewReport | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [evalMsgIndex, setEvalMsgIndex] = useState(0);
   const [isEditorMaximized, setIsEditorMaximized] = useState(false);
+
+  const EVALUATION_MESSAGES = [
+    "Analyzing logical code soundness...",
+    "Evaluating time and space complexity...",
+    "Checking for edge cases and unhandled errors...",
+    "Assessing communication and explanation clarity...",
+    "Generating feedback and scorecard...",
+    "Finalizing evaluation report..."
+  ];
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (isEvaluating || activeSession?.currentPhase === "evaluating") {
+      interval = setInterval(() => {
+        setEvalMsgIndex(prev => (prev + 1) % EVALUATION_MESSAGES.length);
+      }, 5000); // Change message every 5 seconds
+    } else {
+      setEvalMsgIndex(0);
+    }
+    return () => clearInterval(interval);
+  }, [isEvaluating, activeSession?.currentPhase, EVALUATION_MESSAGES.length]);
   
   const chatEndRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<any>(null);
@@ -431,42 +345,10 @@ export const InterviewSimulatorView: React.FC = () => {
     }
   }, [activeSession?.chatHistory, streamingDelta, isAiResponding]);
 
-  // Start interview launcher
-  const handleLaunchSession = async () => {
-    if (!warmupCheck1 || !warmupCheck2) return;
-    // Bug-fix #5: reset editor maximize state before new session
+  const handleLaunchSession = (topic: string, difficulty: "Easy" | "Medium" | "Hard", personality: "Helpful Mentor" | "Quiet Observer" | "Strict Interviewer", problemDesc: string, resumeText: string, resumeFileName: string) => {
     setIsEditorMaximized(false);
-    // Bug-fix #1/#2: reset evaluation guard for fresh session
     isEvaluatingRef.current = false;
-    
-    // Choose a random problem description matching difficulty and topic
-    let problemDesc = "";
-    
-    try {
-      // Pick dynamic problems from static curriculum data
-      const matchingProblems: { name: string; desc?: string; url?: string }[] = [];
-      state.dsaTopics.forEach(t => {
-        if (selectedTopic === "Any" || t.name.toLowerCase().includes(selectedTopic.toLowerCase())) {
-          t.problems.forEach(p => {
-            if (p.difficulty === selectedDifficulty) {
-              matchingProblems.push({ name: p.name, url: p.url });
-            }
-          });
-        }
-      });
-
-      if (matchingProblems.length > 0) {
-        const picked = matchingProblems[Math.floor(Math.random() * matchingProblems.length)];
-        problemDesc = `Problem Name: ${picked.name}\nDifficulty: ${selectedDifficulty}\nLeetcode Reference: ${picked.url || "N/A"}\n\nTask: Design an optimal solution. You must explain your time and space complexity before typing the code in the editor workspace.`;
-      } else {
-        // Fallback placeholder dsa problem
-        problemDesc = `Problem Name: Kth Smallest Element in a Sorted Matrix\nDifficulty: Medium\n\nGiven an n x n matrix where each of the rows and columns is sorted in ascending order, return the kth smallest element in the matrix.\n\nNote that it is the kth smallest element in the sorted order, not the kth distinct element.\nYou must find a solution with a memory complexity better than O(n^2).`;
-      }
-    } catch (e) {
-      problemDesc = "Failed to load problem statement. General coding interview initiated.";
-    }
-
-    startInterviewSession(selectedTopic, selectedDifficulty, selectedPersonality, problemDesc, resumeText, resumeFileName);
+    startInterviewSession(topic, difficulty, personality, problemDesc, resumeText, resumeFileName);
     setEvaluationReport(null);
   };
 
@@ -603,106 +485,15 @@ Rule: Do not output code solutions. Guide them using conceptual feedback. Keep r
         ...chatHistory.map(c => ({ role: c.role, content: c.content }))
       ];
 
-      let response: Response | null = null;
-      let lastError: any = null;
-
-      // Try 1: Proxy with configured model
-      try {
-        response = await fetch("/api-nvidia/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: modelName,
-            messages: apiMessages,
-            temperature: 0.4,
-            max_tokens: 1000,
-            stream: true
-          })
-        });
-        if (!response.ok) {
-          const contentType = response.headers.get("content-type") || "";
-          if (contentType.includes("application/json")) {
-            const errJson = await response.json().catch(() => null);
-            if (errJson) {
-              throw new Error(errJson.error?.message || errJson.message || `Proxy error: ${response.status}`);
-            }
-          }
-          throw new Error(`Proxy error: ${response.status}`);
-        }
-      } catch (err: any) {
-        lastError = err;
-      }
-
-      // Try 2: Direct NIM API with configured model
-      if (!response || !response.ok) {
-        try {
-          response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${apiKey}`,
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              model: modelName,
-              messages: apiMessages,
-              temperature: 0.4,
-              max_tokens: 1000,
-              stream: true
-            })
-          });
-          if (!response.ok) {
-            const contentType = response.headers.get("content-type") || "";
-            if (contentType.includes("application/json")) {
-              const errJson = await response.json().catch(() => null);
-              if (errJson) {
-                throw new Error(errJson.error?.message || errJson.message || `API error: ${response.status}`);
-              }
-            }
-            throw new Error(`API error: ${response.status}`);
-          }
-        } catch (err: any) {
-          lastError = err;
-        }
-      }
-
-      // Try 3: Direct NIM API with default model
-      if ((!response || !response.ok) && modelName !== "meta/llama-3.1-70b-instruct") {
-        try {
-          response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${apiKey}`,
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              model: "meta/llama-3.1-70b-instruct",
-              messages: apiMessages,
-              temperature: 0.4,
-              max_tokens: 1000,
-              stream: true
-            })
-          });
-          if (!response.ok) {
-            const contentType = response.headers.get("content-type") || "";
-            if (contentType.includes("application/json")) {
-              const errJson = await response.json().catch(() => null);
-              if (errJson) {
-                throw new Error(errJson.error?.message || errJson.message || `API fallback error: ${response.status}`);
-              }
-            }
-            throw new Error(`API fallback error: ${response.status}`);
-          }
-        } catch (err: any) {
-          lastError = err;
-        }
-      }
-
-      if (!response || !response.ok) {
-        throw lastError || new Error("Failed to connect to AI server.");
-      }
+      // Arch Debt #14 fix: replaced 3-try copy-paste with shared nvidiaFetch utility
+      const response = await nvidiaFetch({
+        apiKey,
+        modelName,
+        messages: apiMessages,
+        temperature: 0.4,
+        maxTokens: 1000,
+        stream: true
+      });
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder("utf-8");
@@ -894,104 +685,22 @@ Evaluate the candidate and return a JSON object ONLY matching this schema:
 Identify each question asked (including self-introduction, DSA problems, Core CS, Puzzles, and HR) and list it in the questionsFeedback array.
 Ensure the output is valid JSON. Do not include markdown codeblocks or other explanations outside the JSON payload.`;
 
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 45000); // 45s timeout
+
     try {
-      let response: Response | null = null;
-      let lastError: any = null;
+      // Arch Debt #14 fix: replaced 3-try copy-paste with shared nvidiaFetch utility
+      const response = await nvidiaFetch({
+        apiKey,
+        modelName,
+        messages: [{ role: "user", content: evaluationPrompt }],
+        temperature: 0.2,
+        maxTokens: 2000,
+        stream: false,
+        signal: abortController.signal
+      });
 
-      // Try 1: Proxy with configured model
-      try {
-        response = await fetch("/api-nvidia/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: modelName,
-            messages: [{ role: "user", content: evaluationPrompt }],
-            temperature: 0.2,
-            max_tokens: 2000
-          })
-        });
-        if (!response.ok) {
-          const contentType = response.headers.get("content-type") || "";
-          if (contentType.includes("application/json")) {
-            const errJson = await response.json().catch(() => null);
-            if (errJson) {
-              throw new Error(errJson.error?.message || errJson.message || `Proxy error: ${response.status}`);
-            }
-          }
-          throw new Error(`Proxy error: ${response.status}`);
-        }
-      } catch (err: any) {
-        lastError = err;
-      }
-
-      // Try 2: Direct NIM API with configured model
-      if (!response || !response.ok) {
-        try {
-          response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${apiKey}`,
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              model: modelName,
-              messages: [{ role: "user", content: evaluationPrompt }],
-              temperature: 0.2,
-              max_tokens: 2000
-            })
-          });
-          if (!response.ok) {
-            const contentType = response.headers.get("content-type") || "";
-            if (contentType.includes("application/json")) {
-              const errJson = await response.json().catch(() => null);
-              if (errJson) {
-                throw new Error(errJson.error?.message || errJson.message || `API error: ${response.status}`);
-              }
-            }
-            throw new Error(`API error: ${response.status}`);
-          }
-        } catch (err: any) {
-          lastError = err;
-        }
-      }
-
-      // Try 3: Direct NIM API with default model
-      if ((!response || !response.ok) && modelName !== "meta/llama-3.1-70b-instruct") {
-        try {
-          response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${apiKey}`,
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              model: "meta/llama-3.1-70b-instruct",
-              messages: [{ role: "user", content: evaluationPrompt }],
-              temperature: 0.2,
-              max_tokens: 2000
-            })
-          });
-          if (!response.ok) {
-            const contentType = response.headers.get("content-type") || "";
-            if (contentType.includes("application/json")) {
-              const errJson = await response.json().catch(() => null);
-              if (errJson) {
-                throw new Error(errJson.error?.message || errJson.message || `API fallback error: ${response.status}`);
-              }
-            }
-            throw new Error(`API fallback error: ${response.status}`);
-          }
-        } catch (err: any) {
-          lastError = err;
-        }
-      }
-
-      if (!response || !response.ok) {
-        throw lastError || new Error("Failed to connect to evaluation API.");
-      }
+      clearTimeout(timeoutId);
 
       const data = await response.json();
       const content = data.choices?.[0]?.message?.content || "";
@@ -1022,8 +731,22 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
 
       setEvaluationReport(report);
       endInterviewSession(true, report);
-    } catch (err) {
+    } catch (err: any) {
+      clearTimeout(timeoutId);
       console.error("Evaluation failed", err);
+
+      if (err.name === "AbortError" || err.message?.includes("timeout") || err.message?.includes("Abort")) {
+        alert("The AI evaluation timed out after 45 seconds. The API might be heavily loaded. Please click 'End Interview' to try again.");
+        // Revert phase to allow retry
+        updateInterviewSession(
+          timeLeftRef.current,
+          currentCode,
+          currentLang,
+          currentHistory,
+          "interview"
+        );
+        return;
+      }
       // Fallback dummy report in case parsing fails
       const fallbackReport: MockInterviewReport = {
         id: `report-${Date.now()}`,
@@ -1083,20 +806,8 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 8) return "text-emerald-400";
-    if (score >= 6) return "text-amber-400";
-    return "text-rose-400";
-  };
-
-  const getRecBadge = (rec: string) => {
-    if (rec === "Strong Hire") return "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
-    if (rec === "Hire") return "bg-cyan-500/10 text-cyan-400 border-cyan-500/20";
-    if (rec === "Leaning Hire") return "bg-amber-500/10 text-amber-400 border-amber-500/20";
-    return "bg-rose-500/10 text-rose-400 border-rose-500/20";
-  };
-
   // Render View Selector
+
   if (activeSession) {
     // Phase 2: SPLIT SCREEN WORKSPACE
     return (
@@ -1178,8 +889,8 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
             </div>
             <div className="space-y-2">
               <h3 className="text-lg font-bold text-white">Recruiting AI Evaluator Active</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
-                Analyzing logical code soundness, time/space complexity optimization, error margins, and explanation readability. Please wait...
+              <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed h-10 transition-opacity duration-500">
+                {EVALUATION_MESSAGES[evalMsgIndex]}
               </p>
             </div>
           </div>
@@ -1513,200 +1224,10 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
   // Phase 3: SCORECARD EVALUATION REPORT VIEW
   if (evaluationReport) {
     return (
-      <div className="max-w-3xl mx-auto space-y-6">
-        <div className="bg-darkCard/50 border border-white/[0.04] p-4 rounded-xl backdrop-blur-md flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <Award className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider font-mono">Interview Evaluation Scorecard</h2>
-              <p className="text-[10px] text-slate-500 font-mono">Completed: {evaluationReport.date}</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setEvaluationReport(null)}
-            className="px-4 py-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:text-white text-xs font-bold transition-all cursor-pointer"
-          >
-            Start New Round
-          </button>
-        </div>
-
-        {/* Scorecard Box */}
-        <GlassCard className="p-6 sm:p-8 space-y-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-accentPrimary/10 rounded-full blur-2xl pointer-events-none" />
-
-          {/* Top Recommendation Badge */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-white/[0.06]">
-            <div>
-              <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest block">Overall Evaluation</span>
-              <span className={`inline-block px-3 py-1 mt-1 text-sm font-bold rounded-lg border font-mono uppercase ${getRecBadge(evaluationReport.scorecard.recommendation)}`}>
-                {evaluationReport.scorecard.recommendation}
-              </span>
-            </div>
-            <div className="text-right">
-              <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest block">Average Score</span>
-              <span className={`text-4xl font-extrabold font-mono ${getScoreColor(evaluationReport.scorecard.overallScore)}`}>
-                {evaluationReport.scorecard.overallScore}/10
-              </span>
-            </div>
-          </div>
-
-          {/* Sub Criteria Scores */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4">
-            <div className="space-y-1.5 p-3 rounded-lg bg-white/[0.01] border border-white/[0.04]">
-              <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider block">Problem Solving</span>
-              <div className="flex items-baseline gap-2">
-                <span className={`text-2xl font-extrabold font-mono ${getScoreColor(evaluationReport.scorecard.problemSolving)}`}>
-                  {evaluationReport.scorecard.problemSolving}
-                </span>
-                <span className="text-xs text-slate-600">/ 10</span>
-              </div>
-              <p className="text-[10px] text-slate-500">Edge cases logic correctness</p>
-            </div>
-
-            <div className="space-y-1.5 p-3 rounded-lg bg-white/[0.01] border border-white/[0.04]">
-              <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider block">Code Quality</span>
-              <div className="flex items-baseline gap-2">
-                <span className={`text-2xl font-extrabold font-mono ${getScoreColor(evaluationReport.scorecard.codeQuality)}`}>
-                  {evaluationReport.scorecard.codeQuality}
-                </span>
-                <span className="text-xs text-slate-600">/ 10</span>
-              </div>
-              <p className="text-[10px] text-slate-500">Naming, structure & optimization</p>
-            </div>
-
-            <div className="space-y-1.5 p-3 rounded-lg bg-white/[0.01] border border-white/[0.04]">
-              <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider block">Communication</span>
-              <div className="flex items-baseline gap-2">
-                <span className={`text-2xl font-extrabold font-mono ${getScoreColor(evaluationReport.scorecard.communication)}`}>
-                  {evaluationReport.scorecard.communication}
-                </span>
-                <span className="text-xs text-slate-600">/ 10</span>
-              </div>
-              <p className="text-[10px] text-slate-500">Explanation of approach & complexities</p>
-            </div>
-          </div>
-
-          {/* Feedback & Bullet Lists */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">AI Recruiter Feedback</h3>
-            <p className="text-xs text-slate-300 leading-relaxed bg-white/[0.01] border border-white/[0.04] p-4 rounded-xl">
-              {evaluationReport.scorecard.feedback}
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-              <div className="space-y-2.5">
-                <h4 className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
-                  <CheckCircle className="w-4 h-4" />
-                  <span>Key Strengths</span>
-                </h4>
-                <ul className="space-y-1.5">
-                  {evaluationReport.scorecard.strengths.map((str, idx) => (
-                    <li key={idx} className="text-xs text-slate-400 flex items-start gap-2">
-                      <CornerDownRight className="w-3.5 h-3.5 text-emerald-500/60 shrink-0 mt-0.5" />
-                      <span>{str}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="space-y-2.5">
-                <h4 className="text-[11px] font-bold text-rose-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
-                  <XCircle className="w-4 h-4" />
-                  <span>Areas of Improvement</span>
-                </h4>
-                <ul className="space-y-1.5">
-                  {evaluationReport.scorecard.weaknesses.map((weak, idx) => (
-                    <li key={idx} className="text-xs text-slate-400 flex items-start gap-2">
-                      <CornerDownRight className="w-3.5 h-3.5 text-rose-500/60 shrink-0 mt-0.5" />
-                      <span>{weak}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            {/* Question-by-Question Breakdown */}
-            {evaluationReport.scorecard.questionsFeedback && evaluationReport.scorecard.questionsFeedback.length > 0 && (
-              <div className="space-y-4 pt-4 border-t border-white/[0.06]">
-                <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono flex items-center gap-1.5">
-                  <ClipboardList className="w-4 h-4 text-accentPrimary" />
-                  <span>Detailed Response Feedback</span>
-                </h3>
-                
-                <div className="space-y-3">
-                  {evaluationReport.scorecard.questionsFeedback.map((qf, index) => {
-                    const rating = qf.rating;
-                    const badgeColor = rating >= 8 ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : rating >= 5 ? "bg-amber-500/10 text-amber-400 border-amber-500/20" : "bg-rose-500/10 text-rose-400 border-rose-500/20";
-                    
-                    return (
-                      <div key={index} className="p-4 rounded-xl bg-white/[0.01] border border-white/[0.04] space-y-2.5">
-                        <div className="flex justify-between items-start gap-4">
-                          <span className="text-[11px] font-bold text-slate-350 font-mono">Q{index + 1}: {qf.question}</span>
-                          <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded border ${badgeColor}`}>
-                            Score: {rating}/10
-                          </span>
-                        </div>
-                        {qf.response && (
-                          <p className="text-[10px] text-slate-500 bg-black/20 p-2 rounded-lg font-mono whitespace-pre-wrap leading-normal">
-                            Candidate Response: {qf.response}
-                          </p>
-                        )}
-                        <p className="text-[10px] text-slate-400 leading-relaxed font-sans">
-                          <span className="font-bold text-accentPrimary font-mono">AI Critique: </span>
-                          {qf.feedback}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Expandable Technical Code Solution & Dialogue Log */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/[0.06]">
-              {/* Code Solution Accordion */}
-              <details className="group bg-white/[0.01] border border-white/[0.04] rounded-xl overflow-hidden cursor-pointer select-none">
-                <summary className="px-4 py-3 flex justify-between items-center text-xs font-bold text-slate-300 font-mono hover:bg-white/[0.02] transition-colors">
-                  <div className="flex items-center gap-2">
-                    <Code2 className="w-4 h-4 text-accentPrimary" />
-                    <span>Submitted Code Solution ({evaluationReport.language})</span>
-                  </div>
-                  <span className="text-[10px] text-slate-500 group-open:rotate-180 transition-transform">▼</span>
-                </summary>
-                <div className="p-4 bg-black/40 border-t border-white/[0.04] font-mono text-[10px] text-slate-200 overflow-x-auto select-text cursor-text">
-                  <pre className="whitespace-pre-wrap">{evaluationReport.codeSolution || "// No code was submitted"}</pre>
-                </div>
-              </details>
-
-              {/* Dialogue Log Accordion */}
-              <details className="group bg-white/[0.01] border border-white/[0.04] rounded-xl overflow-hidden cursor-pointer select-none">
-                <summary className="px-4 py-3 flex justify-between items-center text-xs font-bold text-slate-300 font-mono hover:bg-white/[0.02] transition-colors">
-                  <div className="flex items-center gap-2">
-                    <Speech className="w-4 h-4 text-accentPrimary" />
-                    <span>Interview Chat Transcript</span>
-                  </div>
-                  <span className="text-[10px] text-slate-500 group-open:rotate-180 transition-transform">▼</span>
-                </summary>
-                <div className="p-4 bg-black/40 border-t border-white/[0.04] max-h-60 overflow-y-auto space-y-3 cursor-text select-text">
-                  {evaluationReport.chatHistory.map((msg, index) => {
-                    const isUser = msg.role === "user";
-                    return (
-                      <div key={msg.id || index} className="text-[10px] leading-relaxed">
-                        <span className={`font-bold font-mono ${isUser ? "text-accentPrimary" : "text-slate-400"}`}>
-                          {isUser ? "Candidate" : "Interviewer"}:
-                        </span>
-                        <p className="text-slate-300 ml-2 whitespace-pre-wrap leading-normal">{msg.content}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </details>
-            </div>
-          </div>
-        </GlassCard>
-      </div>
+      <InterviewScorecard 
+        report={evaluationReport} 
+        onDismiss={() => setEvaluationReport(null)} 
+      />
     );
   }
 
@@ -1727,314 +1248,12 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
         {/* Setup Parameters (Left side, 2 Cols) */}
         <div className="md:col-span-2 space-y-6">
-          <GlassCard className="p-6 space-y-6">
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">Simulator Configuration</h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {/* Topic Select */}
-              <div className="space-y-2">
-                <label className="text-[10px] font-mono text-slate-500 uppercase block">DSA Focus Area</label>
-                <select
-                  value={selectedTopic}
-                  onChange={(e) => setSelectedTopic(e.target.value)}
-                  className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2.5 px-3 text-xs text-slate-200 focus:outline-none transition-colors cursor-pointer"
-                >
-                  <option value="Any">Any (Randomized Challenge)</option>
-                  {state.dsaTopics.map(t => (
-                    <option key={t.id} value={t.name}>{t.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Difficulty Select */}
-              <div className="space-y-2">
-                <label className="text-[10px] font-mono text-slate-500 uppercase block">Interview Difficulty</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(["Easy", "Medium", "Hard"] as const).map(diff => (
-                    <button
-                      key={diff}
-                      type="button"
-                      onClick={() => setSelectedDifficulty(diff)}
-                      className={`py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
-                        selectedDifficulty === diff
-                          ? "bg-accentPrimary/10 border-accentPrimary/30 text-white"
-                          : "bg-black/35 border-transparent text-slate-500 hover:text-slate-350"
-                      }`}
-                    >
-                      {diff}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Personality Select */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-mono text-slate-500 uppercase block">Interviewer Personality Profile</label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {[
-                  {
-                    id: "Helpful Mentor",
-                    title: "Helpful Mentor",
-                    desc: "Provides progressive hints & points out bugs gently."
-                  },
-                  {
-                    id: "Quiet Observer",
-                    title: "Quiet Observer",
-                    desc: "Speaks very little. Only answers specific questions."
-                  },
-                  {
-                    id: "Strict Interviewer",
-                    title: "Strict Interviewer",
-                    desc: "Interrupts with edge cases & strict complexity evaluations."
-                  }
-                ].map(persona => (
-                  <button
-                    key={persona.id}
-                    type="button"
-                    onClick={() => setSelectedPersonality(persona.id as any)}
-                    className={`p-4 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer h-full ${
-                      selectedPersonality === persona.id
-                        ? "bg-accentPrimary/5 border-accentPrimary/30"
-                        : "bg-black/20 border-white/[0.04] hover:border-white/[0.08]"
-                    }`}
-                  >
-                    <span className={`text-xs font-bold font-mono ${selectedPersonality === persona.id ? "text-white" : "text-slate-400"}`}>
-                      {persona.title}
-                    </span>
-                    <span className="text-[10px] text-slate-500 leading-normal">
-                      {persona.desc}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </GlassCard>
-
-          {/* Resume Upload & Text Parser */}
-          <GlassCard className="p-6 space-y-4">
-            <div>
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono flex items-center gap-1.5">
-                <FileJson className="w-4 h-4 text-accentPrimary" /> Resume Upload & Parser
-              </h3>
-              <p className="text-[10px] text-slate-500 mt-1 leading-normal">
-                Upload your resume (.txt, .md, or .pdf) to let the AI Interviewer adapt questions to your experience and projects.
-              </p>
-            </div>
-
-            {!resumeText ? (
-              <div className="space-y-3">
-                {!showPasteArea ? (
-                  <div className="relative border border-dashed border-white/[0.08] hover:border-accentPrimary/40 rounded-xl p-6 transition-colors group flex flex-col items-center justify-center gap-2 bg-black/10">
-                    <input
-                      type="file"
-                      accept=".pdf,.txt,.md"
-                      onChange={handleFileChange}
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                      disabled={isParsingResume}
-                    />
-                    {isParsingResume ? (
-                      <div className="flex flex-col items-center gap-2">
-                        <Loader2 className="w-6 h-6 text-accentPrimary animate-spin" />
-                        <span className="text-[10px] text-slate-400 font-mono">Extracting text details...</span>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="w-8 h-8 rounded-full bg-white/[0.02] border border-white/[0.06] flex items-center justify-center text-slate-400 group-hover:text-accentPrimary group-hover:border-accentPrimary/20 transition-all">
-                          <ClipboardList className="w-4 h-4" />
-                        </div>
-                        <span className="text-[11px] text-slate-355 group-hover:text-white transition-colors">
-                          Drag & drop or Click to upload
-                        </span>
-                        <span className="text-[9px] text-slate-500 font-mono">Supports PDF, TXT, or MD</span>
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-mono text-slate-500 uppercase block">Paste Plaintext / Markdown Resume</label>
-                    <textarea
-                      placeholder="Paste your resume details (Work Experience, Skills, Education, Projects) here..."
-                      rows={5}
-                      value={resumeText}
-                      onChange={(e) => setResumeText(e.target.value)}
-                      className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-xs text-slate-200 placeholder-slate-700 focus:outline-none transition-colors resize-none overflow-y-auto"
-                    />
-                  </div>
-                )}
-
-                {resumeError && (
-                  <p className="text-[10px] text-rose-400 leading-normal bg-rose-500/5 border border-rose-500/10 p-2 rounded-lg">
-                    {resumeError}
-                  </p>
-                )}
-
-                <div className="flex justify-between items-center pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setShowPasteArea(!showPasteArea)}
-                    className="text-[10px] font-mono text-slate-400 hover:text-accentPrimary transition-colors cursor-pointer"
-                  >
-                    {showPasteArea ? "Use file uploader instead" : "Paste text manually"}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10 space-y-2.5">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-emerald-400" />
-                    <span className="text-[11px] font-bold text-white leading-none">
-                      Resume Loaded
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleClearResume}
-                    className="text-[9px] font-mono text-slate-500 hover:text-rose-400 transition-colors cursor-pointer"
-                  >
-                    Clear Resume
-                  </button>
-                </div>
-                <div className="bg-black/30 border border-white/[0.04] p-2 rounded-lg max-h-[80px] overflow-y-auto font-mono text-[9px] text-slate-400 leading-normal scrollbar-thin select-text">
-                  {resumeFileName ? (
-                    <span className="font-bold text-slate-350 block mb-1">File: {resumeFileName}</span>
-                  ) : (
-                    <span className="font-bold text-slate-350 block mb-1">Source: Copied Text</span>
-                  )}
-                  {resumeText.slice(0, 300)}...
-                </div>
-              </div>
-            )}
-          </GlassCard>
-
-          {/* Warmup Checklist */}
-          {/* Standard Candidate Introduction */}
-          <GlassCard className="p-6 space-y-4">
-            <div>
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">Standard Candidate Pitch</h3>
-              <p className="text-[10px] text-slate-500 mt-1 leading-normal">
-                Save your standard personal introduction, target project achievements, and technical stack details to quickly paste it during intro phases.
-              </p>
-            </div>
-            <textarea
-              value={tempIntro}
-              onChange={(e) => setTempIntro(e.target.value)}
-              placeholder="Hello! I am a final year Computer Science student. I build full stack applications using React and Node.js..."
-              rows={4}
-              className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-xs text-slate-200 placeholder-slate-700 focus:outline-none transition-colors resize-none overflow-y-auto"
-            />
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={handleSaveIntro}
-                className="px-4 py-1.5 rounded-lg bg-accentPrimary/15 hover:bg-accentPrimary/25 border border-accentPrimary/30 hover:border-accentPrimary/50 text-accentPrimary text-[11px] font-bold font-mono transition-all cursor-pointer"
-              >
-                Save Pitch Template
-              </button>
-            </div>
-          </GlassCard>
-
-          <GlassCard className="p-6 space-y-4">
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">Warmup Protocol Checklists</h3>
-            
-            <div className="space-y-3">
-              <label className="flex items-start gap-3 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={warmupCheck1}
-                  onChange={(e) => setWarmupCheck1(e.target.checked)}
-                  className="mt-0.5 rounded border-white/[0.08] bg-black/40 text-accentPrimary focus:ring-0 focus:ring-offset-0 cursor-pointer"
-                />
-                <div className="space-y-0.5">
-                  <span className="text-xs font-bold text-slate-350 group-hover:text-white transition-colors">I will explain my logic out loud</span>
-                  <p className="text-[10px] text-slate-500 leading-normal">Top engineering candidates explain their approaches, complexity targets, and logic tradeoffs before typing code.</p>
-                </div>
-              </label>
-
-              <label className="flex items-start gap-3 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={warmupCheck2}
-                  onChange={(e) => setWarmupCheck2(e.target.checked)}
-                  className="mt-0.5 rounded border-white/[0.08] bg-black/40 text-accentPrimary focus:ring-0 focus:ring-offset-0 cursor-pointer"
-                />
-                <div className="space-y-0.5">
-                  <span className="text-xs font-bold text-slate-350 group-hover:text-white transition-colors">I will test edge cases manually</span>
-                  <p className="text-[10px] text-slate-500 leading-normal">I will evaluate empty arrays, duplicate values, overflow thresholds, and boundary inputs in my logical descriptions.</p>
-                </div>
-              </label>
-            </div>
-
-            <button
-              onClick={handleLaunchSession}
-              disabled={!warmupCheck1 || !warmupCheck2 || !apiKey}
-              className="w-full h-11 bg-accentPrimary hover:bg-accentPrimary/90 disabled:bg-white/[0.02] text-white disabled:text-slate-600 border border-accentPrimary/20 disabled:border-transparent font-bold rounded-xl flex items-center justify-center gap-2 active:scale-98 transition-all shadow-lg shadow-accentPrimary/10 cursor-pointer text-xs disabled:cursor-not-allowed"
-            >
-              <Play className="w-4 h-4 fill-current" />
-              <span>{apiKey ? "Launch Timed Mock Interview Room" : "NVIDIA API Key Missing (Go to Settings)"}</span>
-            </button>
-          </GlassCard>
+          <InterviewSetupPanel onLaunch={handleLaunchSession} />
         </div>
 
         {/* History Scorecards (Right side, 1 Col) */}
         <div className="space-y-6">
-          <GlassCard className="p-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <ClipboardList className="w-4 h-4 text-accentPrimary" />
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">Past Interview History</h3>
-            </div>
-
-            {(!state.mockInterviews || state.mockInterviews.length === 0) ? (
-              <div className="text-center py-8 space-y-3">
-                <div className="w-8 h-8 rounded-full bg-white/[0.02] border border-white/[0.08] flex items-center justify-center text-slate-600 mx-auto">
-                  <FileJson className="w-4 h-4" />
-                </div>
-                <p className="text-[10px] text-slate-500">No mock interview records saved yet.</p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
-                {state.mockInterviews.map((rep) => (
-                  <div 
-                    key={rep.id} 
-                    className="p-3 rounded-lg bg-white/[0.01] hover:bg-white/[0.03] border border-white/[0.04] flex flex-col gap-2 transition-all cursor-pointer group"
-                    onClick={() => setEvaluationReport(rep)}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <span className="text-[11px] font-bold text-white group-hover:text-accentPrimary transition-colors block leading-tight">{rep.topic} ({rep.difficulty})</span>
-                        <span className="text-[9px] font-mono text-slate-500 mt-0.5 block">{rep.date}</span>
-                      </div>
-                      <span className={`text-xs font-extrabold font-mono ${getScoreColor(rep.scorecard.overallScore)}`}>
-                        {rep.scorecard.overallScore}/10
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between items-center text-[9px] font-mono text-slate-500 mt-1 pt-1.5 border-t border-white/[0.04]">
-                      <span>{rep.interviewerPersonality}</span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          confirmAction({
-                            title: "Delete Scorecard Report?",
-                            message: "Are you sure you want to permanently delete this mock interview report from your history?",
-                            confirmText: "Delete Report",
-                            cancelText: "Cancel",
-                            severity: "danger",
-                            onConfirm: () => deleteMockInterviewReport(rep.id)
-                          });
-                        }}
-                        className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-rose-400 p-1 rounded transition-all cursor-pointer"
-                        title="Delete scorecard"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </GlassCard>
+          <InterviewHistoryPanel onViewReport={setEvaluationReport} />
         </div>
       </div>
     </div>
