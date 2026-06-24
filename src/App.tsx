@@ -161,6 +161,8 @@ const AppContent: React.FC = () => {
       abortControllerRef.current = null;
       setIsLoading(false);
       setChatStatus("");
+      // Bug #11 fix: clear partial streaming text on abort
+      setStreamingResponse("");
       setChatError("Request cancelled by user.");
     }
   };
@@ -639,7 +641,9 @@ const AppContent: React.FC = () => {
         ) : (
           <div className="relative">
             <MessageSquare className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" />
-            {state.chatMessages.length === 0 && (
+            {/* Bug #10 fix: dot shows when there ARE messages (invite to review)
+                not when empty (the old inverted logic was counterintuitive) */}
+            {state.chatMessages.length > 0 && (
               <>
                 <span className="absolute -top-1.5 -right-1.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-accentPrimary rounded-full animate-ping" />
                 <span className="absolute -top-1.5 -right-1.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-accentPrimary rounded-full" />
@@ -843,7 +847,7 @@ const AppContent: React.FC = () => {
                     disabled={isLoading || !state.settings.nvidiaApiKey}
                     placeholder={
                       state.settings.nvidiaApiKey
-                        ? "Ask about DSA, projects, STAR method..."
+                        ? "Ask about DSA, projects, STAR method... (Shift+Enter for new line)"
                         : "Configure API Key in settings to chat"
                     }
                     rows={1}

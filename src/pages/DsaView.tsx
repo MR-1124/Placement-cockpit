@@ -27,6 +27,10 @@ export const DsaView: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState<string>("All");
+  // Bug #6 fix: separate show-all-levels toggle.
+  // When searching or filtering by difficulty, we override the mastery level filter
+  // so users don't get silently empty results when two orthogonal filters conflict.
+  const [showAllLevels, setShowAllLevels] = useState(false);
   const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({
     "arrays-hashing": true,
     "two-pointers": true
@@ -76,16 +80,22 @@ export const DsaView: React.FC = () => {
   };
 
   const filteredTopics = state.dsaTopics.map(topic => {
-    // Filter problems
+    // Bug #6 fix: the mastery level filter (matchesLevel) is a default study-mode filter.
+    // It is automatically bypassed when:
+    //   - user has typed a search query (they want to find ANY matching problem)
+    //   - user has selected a specific difficulty (orthogonal filter dimension)
+    //   - user explicitly toggled showAllLevels
+    const levelFilterActive = !showAllLevels && searchQuery === "" && difficultyFilter === "All";
+
     const problems = topic.problems.filter(prob => {
       const matchesSearch = prob.name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesDifficulty = difficultyFilter === "All" || prob.difficulty === difficultyFilter;
-      const matchesLevel = prob.level === topic.mastery;
+      const matchesLevel = !levelFilterActive || prob.level === topic.mastery;
       return matchesSearch && matchesDifficulty && matchesLevel;
     });
 
     return { ...topic, problems };
-  }).filter(topic => topic.problems.length > 0 || searchQuery === "");
+  }).filter(topic => topic.problems.length > 0 || (searchQuery === "" && difficultyFilter === "All"));
 
   return (
     <div className="space-y-6">
@@ -128,6 +138,21 @@ export const DsaView: React.FC = () => {
             </button>
           ))}
         </div>
+
+        {/* Bug #6 fix: explicit "Show All Levels" toggle visible when in default browse mode */}
+        {searchQuery === "" && difficultyFilter === "All" && (
+          <button
+            onClick={() => setShowAllLevels(v => !v)}
+            title={showAllLevels ? "Currently showing all difficulty levels. Click to filter by your mastery level." : "Currently filtered to your mastery level per topic. Click to show all levels."}
+            className={`px-3 py-1.5 rounded-xl text-[10px] font-mono font-bold border transition-all whitespace-nowrap ${
+              showAllLevels
+                ? "bg-accentPrimary/10 border-accentPrimary/30 text-accentPrimary"
+                : "bg-white/[0.02] border-white/[0.04] text-slate-500 hover:text-slate-300"
+            }`}
+          >
+            {showAllLevels ? "All Levels" : "Mastery Level"}
+          </button>
+        )}
       </div>
 
       {/* Topics Expansion Panel */}

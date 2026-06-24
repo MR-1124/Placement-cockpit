@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useAppState } from "../context/AppStateContext";
 import type { Note } from "../context/AppStateContext";
 import { GlassCard } from "../components/Common";
+import { MarkdownRenderer } from "../components/MarkdownRenderer";
 import {
   Plus,
   Trash2,
@@ -11,37 +12,10 @@ import {
   Save
 } from "lucide-react";
 
-const renderMarkdown = (text: string) => {
-  if (!text) return "";
-  
-  // Escaping basic HTML to prevent XSS
-  let html = text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+// Bug #8 fix: private renderMarkdown removed.
+// Was using dangerouslySetInnerHTML with a naive XSS escape that was bypassable.
+// Now using shared MarkdownRenderer from components/MarkdownRenderer.tsx everywhere.
 
-  // Code blocks: ```javascript ... ```
-  html = html.replace(/```([\s\S]*?)```/g, '<pre class="bg-black/40 border border-white/[0.08] rounded-lg p-2.5 my-2 font-mono text-[10px] overflow-x-auto text-emerald-400"><code>$1</code></pre>');
-
-  // Inline code: `code`
-  html = html.replace(/`([^`\n]+)`/g, '<code class="bg-white/5 px-1 py-0.2 rounded font-mono text-amber-400">$1</code>');
-
-  // Headers: # Header, ## Header, ### Header
-  html = html.replace(/^### (.*$)/gim, '<h4 class="text-xs font-bold text-white mt-3 mb-1">$1</h4>');
-  html = html.replace(/^## (.*$)/gim, '<h3 class="text-sm font-bold text-white mt-4 mb-2 border-b border-white/5 pb-1">$1</h3>');
-  html = html.replace(/^# (.*$)/gim, '<h2 class="text-base font-bold text-white mt-4 mb-2">$1</h2>');
-
-  // Bold: **text**
-  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
-
-  // Bullet points: - item or * item
-  html = html.replace(/^\s*[-*]\s+(.*$)/gim, '<li class="list-disc ml-4 my-1 text-slate-300">$1</li>');
-
-  // Line breaks
-  html = html.replace(/\n/g, "<br />");
-
-  return html;
-};
 
 export const NotesView: React.FC = () => {
   const { state, addNote, updateNote, deleteNote } = useAppState();
@@ -213,10 +187,9 @@ export const NotesView: React.FC = () => {
 
               <div className="space-y-1">
                 <label className="font-mono text-slate-400">Formatted Preview</label>
-                <div 
-                  className="w-full h-72 bg-black/30 border border-white/[0.06] rounded-xl p-3 text-slate-300 overflow-y-auto leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
-                />
+                <div className="w-full h-72 bg-black/30 border border-white/[0.06] rounded-xl p-3 text-slate-300 overflow-y-auto leading-relaxed">
+                  <MarkdownRenderer content={content} />
+                </div>
               </div>
             </div>
 
@@ -311,10 +284,9 @@ export const NotesView: React.FC = () => {
 
               <div className="space-y-1">
                 <label className="font-mono text-slate-400">Formatted Preview</label>
-                <div 
-                  className="w-full h-72 bg-black/30 border border-white/[0.06] rounded-xl p-3 text-slate-300 overflow-y-auto leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: renderMarkdown(editingNote.content) }}
-                />
+                <div className="w-full h-72 bg-black/30 border border-white/[0.06] rounded-xl p-3 text-slate-300 overflow-y-auto leading-relaxed">
+                  <MarkdownRenderer content={editingNote.content} />
+                </div>
               </div>
             </div>
 
@@ -436,11 +408,10 @@ export const NotesView: React.FC = () => {
                       </div>
                     </div>
                     
-                    {/* Content text */}
-                    <div 
-                      className="text-xs text-slate-400 leading-relaxed max-h-[160px] overflow-y-auto pr-1"
-                      dangerouslySetInnerHTML={{ __html: renderMarkdown(note.content) }}
-                    />
+                    {/* Content preview */}
+                    <div className="text-xs text-slate-400 leading-relaxed max-h-[160px] overflow-y-auto pr-1">
+                      <MarkdownRenderer content={note.content} />
+                    </div>
                   </div>
 
                   {/* Footnote information */}

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useAppState } from "../context/AppStateContext";
 import type { MockInterviewReport } from "../context/AppStateContext";
 import { GlassCard } from "../components/Common";
+import { MarkdownRenderer } from "../components/MarkdownRenderer";
 import { 
   Play, 
   Trash2, 
@@ -24,94 +25,10 @@ import {
   Minimize2
 } from "lucide-react";
 
-const renderInlineFormatting = (text: string) => {
-  const parts = text.split(/(\*\*.*?\*\*|`.*?`)/g);
-  return parts.map((part, index) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={index} className="font-bold text-white">{part.slice(2, -2)}</strong>;
-    }
-    if (part.startsWith("`") && part.endsWith("`")) {
-      return <code key={index} className="px-1 py-0.5 rounded bg-white/[0.06] font-mono text-[10px] text-accentPrimary">{part.slice(1, -1)}</code>;
-    }
-    return part;
-  });
-};
+// Private MarkdownRenderer removed (Bug #7 fix).
+// Now using shared MarkdownRenderer from components/MarkdownRenderer.tsx
+// which supports: tables, mermaid diagrams, think-blocks, copy buttons.
 
-const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
-  const parts = content.split(/(```[\s\S]*?```)/g);
-
-  return (
-    <div className="space-y-1.5 leading-relaxed">
-      {parts.map((part, index) => {
-        if (part.startsWith("```")) {
-          const match = part.match(/```(\w*)\n([\s\S]*?)```/);
-          const lang = match ? match[1] : "";
-          const code = match ? match[2] : part.slice(3, -3);
-
-          return (
-            <div key={index} className="my-2 bg-black/40 border border-white/[0.06] rounded-xl overflow-hidden font-mono text-[10.5px]">
-              {lang && (
-                <div className="px-3 py-1 bg-white/[0.02] border-b border-white/[0.04] text-slate-500 text-[8px] uppercase tracking-wider font-mono font-bold">
-                  {lang}
-                </div>
-              )}
-              <pre className="p-3 overflow-x-auto text-slate-300 leading-normal select-text whitespace-pre scrollbar-thin">
-                <code>{code}</code>
-              </pre>
-            </div>
-          );
-        } else {
-          const lines = part.split("\n");
-          return (
-            <div key={index} className="space-y-1">
-              {lines.map((line, lIdx) => {
-                const trimmed = line.trim();
-                if (!trimmed) return <div key={lIdx} className="h-1" />;
-
-                if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
-                  return (
-                    <div key={lIdx} className="flex items-start gap-2 pl-2 text-slate-300">
-                      <span className="text-accentPrimary shrink-0 mt-1.5 text-[6px]">•</span>
-                      <span>{renderInlineFormatting(trimmed.slice(2))}</span>
-                    </div>
-                  );
-                }
-
-                const olMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
-                if (olMatch) {
-                  return (
-                    <div key={lIdx} className="flex items-start gap-2 pl-2 text-slate-300">
-                      <span className="text-accentPrimary font-mono font-bold shrink-0 text-[10px]">{olMatch[1]}.</span>
-                      <span>{renderInlineFormatting(olMatch[2])}</span>
-                    </div>
-                  );
-                }
-
-                const headerMatch = trimmed.match(/^(#{1,6})\s+(.*)/);
-                if (headerMatch) {
-                  const level = headerMatch[1].length;
-                  const text = headerMatch[2];
-                  const classes = level === 1 ? "text-xs font-extrabold text-white mt-2" : "text-[11px] font-bold text-white mt-1.5";
-                  return (
-                    <div key={lIdx} className={classes}>
-                      {renderInlineFormatting(text)}
-                    </div>
-                  );
-                }
-
-                return (
-                  <p key={lIdx} className="text-slate-300">
-                    {renderInlineFormatting(trimmed)}
-                  </p>
-                );
-              })}
-            </div>
-          );
-        }
-      })}
-    </div>
-  );
-};
 
 const cleanResponseTags = (text: string) => {
   return text
