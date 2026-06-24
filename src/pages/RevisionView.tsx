@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { MarkdownRenderer } from "../components/MarkdownRenderer";
 import { useAppState } from "../context/AppStateContext";
 import { GlassCard } from "../components/Common";
 import { motion } from "framer-motion";
@@ -16,7 +17,8 @@ import type { DsaProblem, DsaTopic } from "../data/curriculum";
 export const RevisionView: React.FC = () => {
   const { state, scheduleRevision, toggleDsaWeak } = useAppState();
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const now = new Date();
+  const todayStr = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().split("T")[0];
 
   const [activeCardIndex, setActiveCardIndex] = useState<number>(0);
   const [approachRevealed, setApproachRevealed] = useState(false);
@@ -57,7 +59,7 @@ export const RevisionView: React.FC = () => {
   };
 
   const handleResetInterval = (topicId: string, problemId: string) => {
-    scheduleRevision(topicId, problemId, 1); // reset back to 1 day interval
+    scheduleRevision(topicId, problemId, 3); // reset back to Level 1 (3 days)
   };
 
   return (
@@ -171,9 +173,9 @@ export const RevisionView: React.FC = () => {
                   {currentCard.problem.notes.trim() ? (
                     <div>
                       <span className="text-[10px] font-mono text-slate-500 uppercase block mb-1">Your Key Insights</span>
-                      <p className="text-xs text-slate-300 bg-white/[0.02] border border-white/[0.04] p-3 rounded-lg leading-relaxed font-mono whitespace-pre-wrap">
-                        {currentCard.problem.notes}
-                      </p>
+                      <div className="text-xs text-slate-300 bg-white/[0.02] border border-white/[0.04] p-3 rounded-lg leading-relaxed max-h-[150px] overflow-y-auto">
+                        <MarkdownRenderer content={currentCard.problem.notes} />
+                      </div>
                     </div>
                   ) : (
                     <p className="text-xs text-slate-500 italic">No notes logged for this problem yet. Open the DSA Board to save notes.</p>
@@ -259,7 +261,7 @@ export const RevisionView: React.FC = () => {
                       <button
                         onClick={() => handleResetInterval(topic.id, problem.id)}
                         className="bg-white/[0.01] hover:bg-white/[0.04] text-slate-400 hover:text-rose-400 border border-white/[0.04] text-[10px] px-2.5 py-1.5 rounded transition-all font-mono"
-                        title="Fail review, reset to 1-day interval"
+                        title="Fail review, reset to 3-day interval"
                       >
                         Reset Interval
                       </button>

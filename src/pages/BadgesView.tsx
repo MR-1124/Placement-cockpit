@@ -11,6 +11,46 @@ export const BadgesView: React.FC = () => {
     return state.unlockedBadges.includes(badgeId);
   };
 
+  // Pre-calculate metrics for progress tracking
+  const dsaCount = state.dsaTopics.flatMap(t => t.problems).filter(p => p.isCompleted).length;
+  const devCount = state.devCategories.flatMap(c => c.topics).filter(t => t.completed).length;
+  const logCount = state.auditLogs.length;
+  const avgAiPercent = logCount > 0 ? Math.round(state.auditLogs.reduce((acc, l) => acc + l.aiDependencyPercent, 0) / logCount) : 0;
+  
+  let consecutiveZero = 0;
+  let maxConsecutiveZero = 0;
+  for (const log of state.auditLogs) {
+    if (log.aiDependencyPercent === 0) {
+      consecutiveZero++;
+      maxConsecutiveZero = Math.max(maxConsecutiveZero, consecutiveZero);
+    } else {
+      consecutiveZero = 0;
+    }
+  }
+  const zeroCopyLogs = maxConsecutiveZero;
+  const streak = state.streak;
+  
+  let revisionCount = 0;
+  state.dsaTopics.forEach(t => t.problems.forEach(p => {
+    if (p.isCompleted && p.revisionInterval && p.revisionInterval > 3) revisionCount++; // Assuming > Level 1 is a successful revision
+  }));
+  
+  // A rough mock for readinessScore since we don't calculate it globally here yet
+  const readinessScore = Math.min(100, Math.round(((dsaCount/40) * 50) + ((devCount/12) * 50)));
+
+  const getProgressString = (badge: any) => {
+    if (badge.requirement.includes("dsaCount >= 10")) return `${dsaCount} / 10`;
+    if (badge.requirement.includes("dsaCount >= 40")) return `${dsaCount} / 40`;
+    if (badge.requirement.includes("devCount >= 5")) return `${devCount} / 5`;
+    if (badge.requirement.includes("devCount >= 12")) return `${devCount} / 12`;
+    if (badge.requirement.includes("avgAiPercent <= 20")) return `Avg AI: ${avgAiPercent}% (Logs: ${logCount}/3)`;
+    if (badge.requirement.includes("zeroCopyLogs >= 5")) return `${zeroCopyLogs} / 5 consecutive`;
+    if (badge.requirement.includes("streak >= 7")) return `${streak} / 7 days`;
+    if (badge.requirement.includes("revisionCount >= 10")) return `${revisionCount} / 10 topics`;
+    if (badge.requirement.includes("readinessScore >= 85")) return `${readinessScore} / 85 score`;
+    return "Locked";
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -77,18 +117,8 @@ export const BadgesView: React.FC = () => {
               {/* Requirement description */}
               <div className="w-full border-t border-white/[0.04] pt-3 flex items-center justify-between text-[10px] font-mono text-slate-500">
                 <span>Objective</span>
-                <span className={unlocked ? "text-slate-400" : "text-slate-600"}>
-                  {badge.requirement.includes("dsaCount")
-                    ? "Solve DSA Problems"
-                    : badge.requirement.includes("devCount")
-                    ? "Master dev skills"
-                    : badge.requirement.includes("avgAiPercent")
-                    ? "Keep low AI reliance"
-                    : badge.requirement.includes("streak")
-                    ? "Daily Prep streak"
-                    : badge.requirement.includes("revision")
-                    ? "Spaced Reviews"
-                    : "Readiness Index"}
+                <span className={unlocked ? "text-slate-400" : "text-amber-500/80 font-bold tracking-tight"}>
+                  {unlocked ? "Unlocked" : `Progress: ${getProgressString(badge)}`}
                 </span>
               </div>
             </GlassCard>

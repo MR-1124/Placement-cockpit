@@ -135,24 +135,6 @@ export const SettingsView: React.FC = () => {
                 </button>
               </div>
 
-              {/* Reminders toggle */}
-              <div className="flex justify-between items-center bg-white/[0.005] border border-white/[0.04] p-3 rounded-lg">
-                <div>
-                  <span className="font-semibold text-slate-200 block">Enable Reminder Alerts</span>
-                  <p className="text-[10px] text-slate-500 leading-normal mt-0.5">Toggle spacing warning labels inside dashboard panes.</p>
-                </div>
-                <button
-                  onClick={() => updateSettings({ remindersEnabled: !state.settings.remindersEnabled })}
-                  className={`px-3 py-1.5 rounded-lg font-bold border transition-all ${
-                    state.settings.remindersEnabled
-                      ? "bg-accentPrimary/5 border-accentPrimary/20 text-accentPrimary"
-                      : "bg-white/[0.01] border-white/[0.04] text-slate-400"
-                  }`}
-                >
-                  {state.settings.remindersEnabled ? "Enabled" : "Disabled"}
-                </button>
-              </div>
-
             </div>
           </GlassCard>
 

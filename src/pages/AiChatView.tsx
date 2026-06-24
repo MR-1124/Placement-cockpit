@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useAppState } from "../context/AppStateContext";
 import { MarkdownRenderer } from "../components/MarkdownRenderer";
 import { GlassCard } from "../components/Common";
+import { SYSTEM_PROMPT } from "../lib/prompts";
 import {
   Bot,
   User,
@@ -17,15 +18,6 @@ import {
   AlertTriangle
 } from "lucide-react";
 
-const SYSTEM_PROMPT = `You are an elite technical mentor for a Computer Science Engineering student preparing for placements over the next 3-4 months.
-Your mission is to guide the student to placement readiness across DSA, Full Stack, and Project portfolios, while enforcing anti-vibe-coding discipline (avoiding blind copy-pasting, understanding code from first principles, and building self-reliance).
-
-Respond according to these core guidelines:
-1. DSA: Explain logic clearly using pseudocode or structural descriptions first. Provide optimized solutions in C++, Java, Python, or TypeScript. Explain Time/Space complexities meticulously.
-2. Full Stack: Guide them on system design, state management, database schemas (SQL/NoSQL), REST/GraphQL APIs, and deployment pipelines.
-3. Anti-Vibe Coding: Push them to rebuild from scratch, explain why a bug occurs, and write code logic incrementally. Ask challenging questions to test their understanding.
-4. Interview Prep: Frame project discussions using the STAR method (Situation, Task, Action, Result) to make them sound like structured professionals.
-5. Tone: Be concise, highly professional, encouraging, and clear. Avoid overly long walls of generic text.`;
 
 export const AiChatView: React.FC = () => {
   const {
@@ -547,6 +539,33 @@ export const AiChatView: React.FC = () => {
                   </p>
                 </div>
               )}
+
+              {/* Always show templates in empty state */}
+              <div className="w-full mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+                {promptTemplates.map((item, idx) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setChatInput(item.prompt);
+                        if (chatTextAreaRef.current) {
+                          chatTextAreaRef.current.focus();
+                        }
+                      }}
+                      className="bg-white/[0.01] hover:bg-white/[0.03] border border-white/[0.04] p-3 rounded-xl transition-all cursor-pointer group flex flex-col items-start gap-2 h-full"
+                    >
+                      <div className="w-6 h-6 rounded-md bg-accentPrimary/5 border border-accentPrimary/10 flex items-center justify-center text-accentPrimary shrink-0">
+                        <Icon className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <span className="text-[11px] font-bold text-slate-200 block mb-0.5">{item.title}</span>
+                        <span className="text-[9px] text-slate-500 block">{item.desc}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           ) : (
             <>

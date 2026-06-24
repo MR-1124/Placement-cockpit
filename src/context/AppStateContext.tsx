@@ -355,8 +355,7 @@ const deserializeState = (serialized: Partial<SerializedProgress>, curriculum: a
     settings: {
       accentColor: serialized.settings?.accentColor ?? "violet",
       compactUi: serialized.settings?.compactUi ?? false,
-      remindersEnabled: serialized.settings?.remindersEnabled ?? true,
-      reminderFrequency: serialized.settings?.reminderFrequency ?? "daily",
+      reminderFrequency: serialized.settings?.reminderFrequency ?? "weekly",
       showSections: serialized.settings?.showSections ?? {
         dashboard: true,
         roadmap: true,
@@ -462,8 +461,7 @@ const getInitialState = (curriculum: any): AppState => ({
   settings: {
     accentColor: "violet",
     compactUi: false,
-    remindersEnabled: true,
-    reminderFrequency: "daily",
+    reminderFrequency: "weekly",
     showSections: {
       dashboard: true,
       roadmap: true,
