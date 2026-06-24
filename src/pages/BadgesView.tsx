@@ -13,14 +13,14 @@ export const BadgesView: React.FC = () => {
 
   // Pre-calculate metrics for progress tracking
   const dsaCount = state.dsaTopics.flatMap(t => t.problems).filter(p => p.isCompleted).length;
-  const devCount = state.devCategories.flatMap(c => c.topics).filter(t => t.completed).length;
-  const logCount = state.auditLogs.length;
-  const avgAiPercent = logCount > 0 ? Math.round(state.auditLogs.reduce((acc, l) => acc + l.aiDependencyPercent, 0) / logCount) : 0;
+  const devCount = state.devCategories.flatMap(c => c.skills).filter(t => t.learned).length;
+  const logCount = state.aiLogs.length;
+  const avgAiPercent = logCount > 0 ? Math.round(state.aiLogs.reduce((acc: number, l: any) => acc + l.aiPercentage, 0) / logCount) : 0;
   
   let consecutiveZero = 0;
   let maxConsecutiveZero = 0;
-  for (const log of state.auditLogs) {
-    if (log.aiDependencyPercent === 0) {
+  for (const log of state.aiLogs) {
+    if (log.aiPercentage === 0) {
       consecutiveZero++;
       maxConsecutiveZero = Math.max(maxConsecutiveZero, consecutiveZero);
     } else {

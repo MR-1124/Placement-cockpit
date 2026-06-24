@@ -11,8 +11,11 @@ import {
   Edit2,
   Bookmark,
   CheckSquare,
-  Award
+  Award,
+  Dices,
+  Plus
 } from "lucide-react";
+import { MarkdownRenderer } from "../components/MarkdownRenderer";
 
 export const DsaView: React.FC = () => {
   const {
@@ -22,7 +25,8 @@ export const DsaView: React.FC = () => {
     toggleDsaWeak,
     scheduleRevision,
     updateDsaMastery,
-    updateDsaComplexity
+    updateDsaComplexity,
+    incrementDsaSubmissions
   } = useAppState();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -46,6 +50,7 @@ export const DsaView: React.FC = () => {
     spaceComplexity: string;
   } | null>(null);
 
+  const [previewNotes, setPreviewNotes] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(2700);
   const [timerRunning, setTimerRunning] = useState(false);
 
@@ -97,18 +102,54 @@ export const DsaView: React.FC = () => {
     return { ...topic, problems };
   }).filter(topic => topic.problems.length > 0 || (searchQuery === "" && difficultyFilter === "All"));
 
+  const handleRandomProblem = () => {
+    // Flatten all currently filtered problems
+    const allFilteredProblems = filteredTopics.flatMap(topic => 
+      topic.problems.map(prob => ({ ...prob, topicId: topic.id }))
+    );
+    
+    // Fallback to all problems if filtered list is empty
+    let pool = allFilteredProblems;
+    if (pool.length === 0) {
+      pool = state.dsaTopics.flatMap(topic => 
+        topic.problems.map(prob => ({ ...prob, topicId: topic.id }))
+      );
+    }
+    
+    if (pool.length > 0) {
+      const randomIndex = Math.floor(Math.random() * pool.length);
+      const selected = pool[randomIndex];
+                      setActiveEditProblem({
+        topicId: selected.topicId,
+        problemId: selected.id,
+        problemName: selected.name,
+        notes: selected.notes || "",
+        timeComplexity: selected.timeComplexity || "",
+        spaceComplexity: selected.spaceComplexity || ""
+      });
+      setPreviewNotes(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/[0.06] pb-6">
-        <div>
-          <span className="text-xs uppercase font-mono tracking-widest text-slate-500">Practice Board</span>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">DSA Learning Tracker</h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Build problem-solving velocity. Track LeetCode classic lists, log mistakes, and schedule spaced revisions.
-          </p>
+          <div>
+            <span className="text-xs uppercase font-mono tracking-widest text-slate-500">Practice Board</span>
+            <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">DSA Learning Tracker</h1>
+            <p className="text-sm text-slate-400 mt-1">
+              Build problem-solving velocity. Track LeetCode classic lists, log mistakes, and schedule spaced revisions.
+            </p>
+          </div>
+          <button
+            onClick={handleRandomProblem}
+            className="flex items-center gap-2 px-4 py-2 bg-accentPrimary/10 border border-accentPrimary/20 text-accentPrimary hover:bg-accentPrimary hover:text-white rounded-lg text-sm font-bold transition-all shrink-0"
+          >
+            <Dices className="w-4 h-4" />
+            <span>Random Problem</span>
+          </button>
         </div>
-      </div>
 
       {/* Filter and Search controls */}
       <div className="flex flex-col sm:flex-row gap-3 items-center">
@@ -239,6 +280,7 @@ export const DsaView: React.FC = () => {
                           <th className="py-3 px-5 w-12 text-center">Status</th>
                           <th className="py-3 px-3">Problem Name</th>
                           <th className="py-3 px-3 w-24">Difficulty</th>
+                          <th className="py-3 px-3 w-24 text-center">Attempts</th>
                           <th className="py-3 px-3 w-36">Spaced Revision</th>
                           <th className="py-3 px-3 w-24 text-center">Weak Spot</th>
                           <th className="py-3 px-3 w-16 text-center">Notes</th>
@@ -319,6 +361,22 @@ export const DsaView: React.FC = () => {
                                 </span>
                               </td>
 
+                              {/* Attempts Tracker */}
+                              <td className="py-3 px-3 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <span className="text-xs font-mono font-bold text-slate-300">
+                                    {(problem as any).submissions || 0}
+                                  </span>
+                                  <button
+                                    onClick={() => incrementDsaSubmissions(topic.id, problem.id)}
+                                    className="p-1 rounded bg-white/[0.02] border border-white/[0.04] text-slate-400 hover:bg-white/[0.06] hover:text-white transition-all cursor-pointer"
+                                    title="Log another attempt/submission"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </td>
+
                               {/* Spaced repetition scheduler dropdown */}
                               <td className="py-3 px-3">
                                 <div className="flex items-center gap-1">
@@ -368,6 +426,7 @@ export const DsaView: React.FC = () => {
                                   onClick={() => {
                                     setTimerSeconds(2700);
                                     setTimerRunning(false);
+                                    setPreviewNotes(false);
                                     setActiveEditProblem({
                                       topicId: topic.id,
                                       problemId: problem.id,
@@ -492,14 +551,29 @@ export const DsaView: React.FC = () => {
               </div>
             </div>
             
-            <textarea
-              value={activeEditProblem.notes}
-              onChange={e =>
-                setActiveEditProblem(prev => (prev ? { ...prev, notes: e.target.value } : null))
-              }
-              placeholder="Write core insights, time complexity, corner test cases or recursive code steps..."
-              className="w-full h-44 bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 text-xs text-slate-300 font-mono placeholder-slate-700 focus:outline-none focus:border-accentPrimary resize-none"
-            />
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-[10px] font-mono text-slate-500 uppercase">Notes & Concept Mapping</span>
+              <button
+                onClick={() => setPreviewNotes(!previewNotes)}
+                className="text-[10px] font-mono bg-white/[0.04] border border-white/[0.08] text-slate-300 px-2 py-1 rounded cursor-pointer hover:bg-white/[0.1] transition-colors"
+              >
+                {previewNotes ? "Edit" : "Preview Markdown"}
+              </button>
+            </div>
+            {previewNotes ? (
+              <div className="w-full h-44 bg-white/[0.01] border border-white/[0.06] rounded-xl p-3 text-xs text-slate-200 overflow-y-auto font-sans leading-relaxed break-words">
+                <MarkdownRenderer content={activeEditProblem.notes || "_No notes yet._"} />
+              </div>
+            ) : (
+              <textarea
+                value={activeEditProblem.notes}
+                onChange={e =>
+                  setActiveEditProblem(prev => (prev ? { ...prev, notes: e.target.value } : null))
+                }
+                placeholder="Write core insights, time complexity, corner test cases or recursive code steps..."
+                className="w-full h-44 bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 text-xs text-slate-300 font-mono placeholder-slate-700 focus:outline-none focus:border-accentPrimary resize-none"
+              />
+            )}
 
             <div className="flex justify-end gap-3 text-xs pt-2">
               <button

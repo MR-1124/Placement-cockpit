@@ -20,7 +20,8 @@ import {
   SkipBack,
   SkipForward,
   ArrowRight,
-  ArrowLeft
+  ArrowLeft,
+  Printer
 } from "lucide-react";
 import type { MockInterviewReport } from "../types/AppTypes";
 
@@ -79,9 +80,9 @@ export const InterviewScorecard: React.FC<InterviewScorecardProps> = ({ report, 
   }, [replayIndex, replayMode]);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="print-area max-w-3xl mx-auto space-y-6">
       {/* Header bar */}
-      <div className="bg-darkCard/50 border border-white/[0.04] p-4 rounded-xl backdrop-blur-md flex items-center justify-between">
+      <div className="bg-darkCard/50 border border-white/[0.04] p-4 rounded-xl backdrop-blur-md flex items-center justify-between no-print">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
             <Award className="w-5 h-5" />
@@ -96,6 +97,13 @@ export const InterviewScorecard: React.FC<InterviewScorecardProps> = ({ report, 
               <Sparkles className="w-4 h-4 text-yellow-400" />
               <span className="text-xs font-bold text-yellow-400 font-mono">+300 XP</span>
             </div>
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-accentPrimary/10 border border-accentPrimary/20 text-accentPrimary hover:bg-accentPrimary hover:text-white text-xs font-bold transition-all cursor-pointer"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Export PDF</span>
+            </button>
             <button
               onClick={onDismiss}
               className="px-4 py-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:text-white text-xs font-bold transition-all cursor-pointer"
@@ -142,6 +150,24 @@ export const InterviewScorecard: React.FC<InterviewScorecardProps> = ({ report, 
             </div>
           ))}
         </div>
+
+        {/* Phase Scores */}
+        {report.scorecard.phaseScores && (
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 pb-4">
+            {[
+              { label: "Intro", value: report.scorecard.phaseScores.intro },
+              { label: "DSA", value: report.scorecard.phaseScores.dsa },
+              { label: "Core CS", value: report.scorecard.phaseScores.core },
+              { label: "Puzzles", value: report.scorecard.phaseScores.puzzles },
+              { label: "HR", value: report.scorecard.phaseScores.hr }
+            ].filter(p => p.value !== undefined).map(({ label, value }) => (
+              <div key={label} className="p-2 rounded bg-white/[0.01] border border-white/[0.04] text-center">
+                <span className="text-[9px] font-mono text-slate-500 uppercase tracking-wider block mb-1">{label}</span>
+                <span className={`text-lg font-bold font-mono ${getScoreColor(value as number)}`}>{value}/10</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Feedback section */}
         <div className="space-y-4">

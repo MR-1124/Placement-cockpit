@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAppState } from "../context/AppStateContext";
 import type { Note } from "../context/AppStateContext";
 import { GlassCard } from "../components/Common";
@@ -8,8 +8,10 @@ import {
   Trash2,
   Edit2,
   Search,
-  Calendar,
-  Save
+  Download,
+  Upload,
+  Save,
+  Calendar
 } from "lucide-react";
 
 // Bug #8 fix: private renderMarkdown removed.
@@ -33,6 +35,63 @@ export const NotesView: React.FC = () => {
   const [category, setCategory] = useState<Note["category"]>("General");
   const [content, setContent] = useState("");
   const [tagsInput, setTagsInput] = useState("");
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key.toLowerCase() === "n") {
+        e.preventDefault();
+        setShowAddForm(true);
+        setEditingNote(null);
+        setTitle("");
+        setContent("");
+        setTagsInput("");
+        setCategory("General");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const handleExport = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.notes, null, 2));
+    const downloadAnchorNode = document.createElement("a");
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `notes_export_${new Date().toISOString().split("T")[0]}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const importedNotes = JSON.parse(event.target?.result as string);
+        if (Array.isArray(importedNotes)) {
+          importedNotes.forEach((note: any) => {
+            if (note.title && note.content && note.category) {
+              addNote({
+                title: note.title,
+                category: note.category,
+                content: note.content,
+                tags: Array.isArray(note.tags) ? note.tags : []
+              });
+            }
+          });
+          alert("Notes imported successfully!");
+        }
+      } catch (err) {
+        alert("Failed to parse JSON file.");
+      }
+    };
+    reader.readAsText(file);
+    // Reset file input
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const handleCreateNote = (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,14 +174,40 @@ export const NotesView: React.FC = () => {
           </p>
         </div>
 
-        {!showAddForm && !editingNote && (
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="bg-accentPrimary hover:bg-accentPrimary/90 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-2 shadow-md transition-all animate-fade-in"
-          >
-            <Plus className="w-4 h-4" /> Write Note
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {!showAddForm && !editingNote && (
+            <>
+              <input 
+                type="file" 
+                accept=".json" 
+                className="hidden" 
+                ref={fileInputRef} 
+                onChange={handleImport} 
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] text-slate-300 font-bold text-xs px-3 py-2 rounded-xl flex items-center gap-2 transition-all cursor-pointer"
+                title="Import Notes JSON"
+              >
+                <Upload className="w-4 h-4" /> <span className="hidden sm:inline">Import</span>
+              </button>
+              <button
+                onClick={handleExport}
+                className="bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] text-slate-300 font-bold text-xs px-3 py-2 rounded-xl flex items-center gap-2 transition-all cursor-pointer"
+                title="Export Notes JSON"
+              >
+                <Download className="w-4 h-4" /> <span className="hidden sm:inline">Export</span>
+              </button>
+              <button
+                onClick={() => setShowAddForm(true)}
+                className="bg-accentPrimary hover:bg-accentPrimary/90 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-2 shadow-md transition-all animate-fade-in"
+                title="Shortcut: Ctrl+N"
+              >
+                <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Write Note</span>
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Editor views */}

@@ -18,6 +18,7 @@ export interface DsaProblem {
   companies?: string[];
   frequency?: "High" | "Medium" | "Low";
   starred?: boolean;
+  submissions?: number;
   revisionCount?: number;
 }
 

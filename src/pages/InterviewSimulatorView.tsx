@@ -1,19 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAppState } from "../context/AppStateContext";
 import type { MockInterviewReport } from "../types/AppTypes";
-import { GlassCard } from "../components/Common";
 import { MarkdownRenderer } from "../components/MarkdownRenderer";
 import { InterviewScorecard } from "../components/InterviewScorecard";
 import { InterviewSetupPanel, InterviewHistoryPanel } from "../components/InterviewSetupComponents";
 import { nvidiaFetch } from "../lib/nvidiaApi";
 import { 
   Play, 
-  Trash2, 
   Send, 
   Loader2, 
   Sparkles, 
   Speech, 
-  Award, 
   Clock, 
   Code2, 
   FileJson, 
@@ -21,7 +18,6 @@ import {
   UserCheck,
   CheckCircle,
   XCircle,
-  CornerDownRight,
   ClipboardList,
   ChevronRight,
   Maximize2,
@@ -208,9 +204,7 @@ export const InterviewSimulatorView: React.FC = () => {
     startInterviewSession, 
     updateInterviewSession, 
     addInterviewChatMessage, 
-    endInterviewSession, 
-    deleteMockInterviewReport,
-    updateUserProfile
+    endInterviewSession
   } = useAppState();
 
   const apiKey = state.settings.nvidiaApiKey;
@@ -765,6 +759,13 @@ Evaluate the candidate and return a JSON object ONLY matching this schema:
   "codeQuality": [Score from 0 to 10],
   "communication": [Score from 0 to 10],
   "overallScore": [Score from 0 to 10],
+  "phaseScores": {
+    "intro": [Score from 0 to 10],
+    "dsa": [Score from 0 to 10],
+    "core": [Score from 0 to 10],
+    "puzzles": [Score from 0 to 10],
+    "hr": [Score from 0 to 10]
+  },
   "recommendation": ["Strong Hire", "Hire", "Leaning Hire", "No Hire"],
   "strengths": ["Strength 1", "Strength 2"],
   "weaknesses": ["Weakness 1", "Weakness 2"],
@@ -818,6 +819,13 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
           codeQuality: Number(scores.codeQuality) || 5,
           communication: Number(scores.communication) || 5,
           overallScore: Number(scores.overallScore) || 5,
+          phaseScores: {
+            intro: Number(scores.phaseScores?.intro) || undefined,
+            dsa: Number(scores.phaseScores?.dsa) || undefined,
+            core: Number(scores.phaseScores?.core) || undefined,
+            puzzles: Number(scores.phaseScores?.puzzles) || undefined,
+            hr: Number(scores.phaseScores?.hr) || undefined
+          },
           recommendation: scores.recommendation || "No Hire",
           strengths: Array.isArray(scores.strengths) ? scores.strengths : [],
           weaknesses: Array.isArray(scores.weaknesses) ? scores.weaknesses : [],
@@ -859,6 +867,12 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
           codeQuality: 6,
           communication: 8,
           overallScore: 7,
+          phaseScores: {
+            intro: 7,
+            dsa: 6,
+            core: 7,
+            hr: 8
+          },
           recommendation: "Leaning Hire",
           strengths: ["Attempted all sections", "Explained approach"],
           weaknesses: ["Logic had unverified edge cases"],

@@ -143,6 +143,13 @@ export interface MockInterviewReport {
     strengths: string[];
     weaknesses: string[];
     feedback: string;
+    phaseScores?: {
+      intro?: number;
+      dsa?: number;
+      core?: number;
+      puzzles?: number;
+      hr?: number;
+    };
     questionsFeedback?: {
       question: string;
       response: string;

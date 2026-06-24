@@ -105,6 +105,7 @@ interface AppContextType {
   scheduleRevision: (topicId: string, problemId: string, interval: number) => void;
   updateDsaMastery: (topicId: string, mastery: "Beginner" | "Intermediate" | "Master") => void;
   updateDsaComplexity: (topicId: string, problemId: string, timeComplexity: string, spaceComplexity: string) => void;
+  incrementDsaSubmissions: (topicId: string, problemId: string) => void;
   updateDevSkill: (skillId: string, field: "learned" | "practiced" | "built" | "deployed" | "revised") => void;
   addAiLog: (log: Omit<AiLog, "id" | "date">) => void;
   toggleHabit: (key: keyof DailyHabitState) => void;
@@ -144,6 +145,8 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 interface SerializedProgress {
+  version?: number;
+  user?: UserProfile;
   completedWeeks: string[];
   dsaProblems: {
     [problemId: string]: {
@@ -155,6 +158,7 @@ interface SerializedProgress {
       nextRevisionDate?: string;
       timeComplexity?: string;
       spaceComplexity?: string;
+      submissions?: number;
     };
   };
   dsaTopicMastery: {
@@ -202,7 +206,7 @@ interface SerializedProgress {
   activeInterviewSession?: ActiveInterviewSession | null;
 }
 
-const serializeState = (state: AppState): Omit<SerializedProgress, "user"> => {
+const serializeState = (state: AppState): SerializedProgress => {
   const dsaProblems: SerializedProgress["dsaProblems"] = {};
   const dsaTopicMastery: SerializedProgress["dsaTopicMastery"] = {};
 
@@ -219,7 +223,8 @@ const serializeState = (state: AppState): Omit<SerializedProgress, "user"> => {
         prob.revisionInterval ||
         prob.nextRevisionDate ||
         prob.timeComplexity ||
-        prob.spaceComplexity
+        prob.spaceComplexity ||
+        (prob as any).submissions
       ) {
         dsaProblems[prob.id] = {
           ...(prob.isCompleted && { isCompleted: true }),
@@ -229,7 +234,8 @@ const serializeState = (state: AppState): Omit<SerializedProgress, "user"> => {
           ...(prob.revisionInterval !== undefined && { revisionInterval: prob.revisionInterval }),
           ...(prob.nextRevisionDate && { nextRevisionDate: prob.nextRevisionDate }),
           ...(prob.timeComplexity && { timeComplexity: prob.timeComplexity }),
-          ...(prob.spaceComplexity && { spaceComplexity: prob.spaceComplexity })
+          ...(prob.spaceComplexity && { spaceComplexity: prob.spaceComplexity }),
+          ...((prob as any).submissions && { submissions: (prob as any).submissions })
         };
       }
     });
@@ -251,6 +257,8 @@ const serializeState = (state: AppState): Omit<SerializedProgress, "user"> => {
   });
 
   return {
+    version: state.version,
+    user: state.user || undefined,
     completedWeeks: state.completedWeeks || [],
     dsaProblems,
     dsaTopicMastery,
@@ -304,7 +312,8 @@ const deserializeState = (serialized: Partial<SerializedProgress>, curriculum: a
         revisionInterval: savedProb.revisionInterval ?? defaultProb.revisionInterval,
         nextRevisionDate: savedProb.nextRevisionDate ?? defaultProb.nextRevisionDate,
         timeComplexity: savedProb.timeComplexity ?? defaultProb.timeComplexity,
-        spaceComplexity: savedProb.spaceComplexity ?? defaultProb.spaceComplexity
+        spaceComplexity: savedProb.spaceComplexity ?? defaultProb.spaceComplexity,
+        submissions: savedProb.submissions ?? 0
       };
     });
     return {
@@ -334,7 +343,7 @@ const deserializeState = (serialized: Partial<SerializedProgress>, curriculum: a
   });
 
   return {
-    version: SCHEMA_VERSION,
+    version: serialized.version || SCHEMA_VERSION,
     user: serialized.user || null,
     completedWeeks: serialized.completedWeeks || [],
     dsaTopics,
@@ -554,7 +563,8 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
               revisionInterval: savedProb.revisionInterval ?? defaultProb.revisionInterval,
               nextRevisionDate: savedProb.nextRevisionDate ?? defaultProb.nextRevisionDate,
               timeComplexity: savedProb.timeComplexity ?? defaultProb.timeComplexity,
-              spaceComplexity: savedProb.spaceComplexity ?? defaultProb.spaceComplexity
+              spaceComplexity: savedProb.spaceComplexity ?? defaultProb.spaceComplexity,
+              submissions: savedProb.submissions ?? 0
             };
           });
 
@@ -832,7 +842,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
             const docSnap = await getDoc(userDocRef);
             if (docSnap.exists()) {
               const data = docSnap.data();
-              const deserialized = deserializeState(data, curriculum);
+              const deserialized = deserializeState(data as SerializedProgress, curriculum);
 
               if (data.profile) {
                 userProfile = {
@@ -932,8 +942,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
   // Dynamic Badge Unlocking Engine
   const checkAndUnlockBadges = (updatedState: AppState) => {
-    const newUnlocked = new Set(updatedState.unlockedBadges);
-    let justUnlocked: string[] = [];
+    let freshlyUnlocked: string[] = [];
 
     // 1. Calculate values
     const dsaSolvedCount = updatedState.dsaTopics.reduce(
@@ -990,6 +999,8 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       logCount
     );
 
+    const hasFullStackProject = updatedState.projects.some(p => p.completion === 100);
+
     curriculum.DEFAULT_BADGES.forEach((badge: Badge) => {
       if (updatedState.unlockedBadges.includes(badge.id)) return;
 
@@ -1030,6 +1041,10 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       }
     });
 
+    if (hasFullStackProject && dsaSolvedCount >= 10 && readinessScore >= 60 && !updatedState.unlockedBadges.includes("pioneer")) {
+      freshlyUnlocked.push("pioneer");
+    }
+
     if (freshlyUnlocked.length > 0) {
       // Trigger Confetti!
       confetti({
@@ -1052,7 +1067,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
   const updateState = (updater: (prev: AppState) => AppState) => {
     setState(prev => {
       const next = updater(prev);
-      return checkAndTriggerBadges(next);
+      return checkAndUnlockBadges(next);
     });
   };
 
@@ -1116,7 +1131,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
   );
 
   const primaryPlanId = state.primaryPlanId || "16-week-mastery";
-  const primaryPlan = ALL_PLANS.find(p => p.id === primaryPlanId) || ALL_PLANS[0];
+  const primaryPlan = curriculum.ALL_PLANS.find((p: any) => p.id === primaryPlanId) || curriculum.ALL_PLANS[0];
   const overallCompletion = Math.round(
     (state.completedWeeks.length / primaryPlan.roadmap.length) * 100
   );
@@ -1316,6 +1331,20 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     });
   };
 
+  const incrementDsaSubmissions = (topicId: string, problemId: string) => {
+    updateState(prev => {
+      const dsaTopics = prev.dsaTopics.map(topic => {
+        if (topic.id !== topicId) return topic;
+        const problems = topic.problems.map(prob => {
+          if (prob.id !== problemId) return prob;
+          return { ...prob, submissions: ((prob as any).submissions || 0) + 1 };
+        });
+        return { ...topic, problems };
+      });
+      return { ...prev, dsaTopics };
+    });
+  };
+
   const updateDsaMastery = (topicId: string, mastery: "Beginner" | "Intermediate" | "Master") => {
     updateState(prev => {
       const dsaTopics = prev.dsaTopics.map(topic => {
@@ -1505,9 +1534,6 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         };
       });
 
-      const activeSession = updatedSessions.find(s => s.id === activeId);
-      const chatMessages = activeSession ? activeSession.messages : [];
-
       return {
         ...prev,
         chatSessions: updatedSessions
@@ -1549,8 +1575,6 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
   const setActiveSession = (sessionId: string) => {
     updateState(prev => {
-      const chatSessions = prev.chatSessions || [];
-      const session = chatSessions.find(s => s.id === sessionId);
       return {
         ...prev,
         currentSessionId: sessionId
@@ -1576,8 +1600,6 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       } else if (currentSessionId === sessionId) {
         currentSessionId = chatSessions[0].id;
       }
-      
-      const activeSession = chatSessions.find(s => s.id === currentSessionId);
       
       return {
         ...prev,
@@ -1648,13 +1670,6 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         ...prev,
         settings: { ...prev.settings, ...updatedFields }
       };
-    });
-  };
-
-  const resetAllData = () => {
-    setState({
-      ...INITIAL_STATE,
-      lastActiveDate: getTodayString()
     });
   };
 
@@ -2163,6 +2178,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         scheduleRevision,
         updateDsaMastery,
         updateDsaComplexity,
+        incrementDsaSubmissions,
         updateDevSkill,
         addAiLog,
         toggleHabit,
