@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import { GlassCard } from "./Common";
 import { useAppState } from "../context/AppStateContext";
 import {
@@ -8,9 +7,7 @@ import {
   Loader2,
   FileJson,
   CheckCircle,
-  XCircle,
-  ClipboardList,
-  Speech
+  ClipboardList
 } from "lucide-react";
 import { getScoreColor } from "./InterviewScorecard";
 
@@ -64,7 +61,6 @@ interface InterviewSetupPanelProps {
 
 export const InterviewSetupPanel: React.FC<InterviewSetupPanelProps> = ({ onLaunch }) => {
   const { state, updateUserProfile } = useAppState();
-  const navigate = useNavigate();
 
   const [selectedTopic, setSelectedTopic] = useState<string>("Any");
   const [selectedDifficulty, setSelectedDifficulty] = useState<"Easy" | "Medium" | "Hard">("Medium");
@@ -394,7 +390,7 @@ export const InterviewSetupPanel: React.FC<InterviewSetupPanelProps> = ({ onLaun
         <button
           onClick={() => {
             if (!apiKey) {
-              navigate("/settings");
+              alert("Please configure your Gemini API Key in the Settings tab first.");
             } else {
               handleLaunchClicked();
             }

@@ -4,7 +4,7 @@
  * Pure presentational component — receives the completed report and a callback
  * to dismiss it. No API calls, no context reads, no side effects.
  */
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { GlassCard } from "../components/Common";
 import {
   Award,
@@ -14,7 +14,13 @@ import {
   ClipboardList,
   Code2,
   Speech,
-  Sparkles
+  Sparkles,
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  ArrowRight,
+  ArrowLeft
 } from "lucide-react";
 import type { MockInterviewReport } from "../types/AppTypes";
 
@@ -43,6 +49,35 @@ interface InterviewScorecardProps {
 }
 
 export const InterviewScorecard: React.FC<InterviewScorecardProps> = ({ report, onDismiss }) => {
+  const [replayMode, setReplayMode] = useState(false);
+  const [replayIndex, setReplayIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const replayContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (isPlaying && replayMode) {
+      interval = setInterval(() => {
+        setReplayIndex(prev => {
+          if (prev >= report.chatHistory.length - 1) {
+            setIsPlaying(false);
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 1500); // Wait 1.5 seconds per message
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isPlaying, replayMode, report.chatHistory.length]);
+
+  useEffect(() => {
+    if (replayMode && replayContainerRef.current) {
+      replayContainerRef.current.scrollTop = replayContainerRef.current.scrollHeight;
+    }
+  }, [replayIndex, replayMode]);
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Header bar */}
@@ -201,19 +236,88 @@ export const InterviewScorecard: React.FC<InterviewScorecardProps> = ({ report, 
               </div>
             </details>
 
-            <details className="group bg-white/[0.01] border border-white/[0.04] rounded-xl overflow-hidden cursor-pointer select-none">
+            <details className="group bg-white/[0.01] border border-white/[0.04] rounded-xl overflow-hidden cursor-pointer select-none" onToggle={(e) => {
+              if (!(e.target as HTMLDetailsElement).open) {
+                setReplayMode(false);
+                setIsPlaying(false);
+              }
+            }}>
               <summary className="px-4 py-3 flex justify-between items-center text-xs font-bold text-slate-300 font-mono hover:bg-white/[0.02] transition-colors">
                 <div className="flex items-center gap-2">
                   <Speech className="w-4 h-4 text-accentPrimary" />
                   <span>Interview Chat Transcript</span>
                 </div>
-                <span className="text-[10px] text-slate-500 group-open:rotate-180 transition-transform">▼</span>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (!replayMode) {
+                        setReplayMode(true);
+                        setReplayIndex(0);
+                      } else {
+                        setReplayMode(false);
+                        setIsPlaying(false);
+                      }
+                    }}
+                    className={`px-2 py-1 rounded text-[9px] font-bold border transition-colors ${replayMode ? 'bg-accentPrimary/20 text-accentPrimary border-accentPrimary/40' : 'bg-white/[0.05] text-slate-400 border-white/[0.1] hover:text-white'}`}
+                  >
+                    {replayMode ? "Exit Replay" : "Replay Mode"}
+                  </button>
+                  <span className="text-[10px] text-slate-500 group-open:rotate-180 transition-transform">▼</span>
+                </div>
               </summary>
-              <div className="p-4 bg-black/40 border-t border-white/[0.04] max-h-60 overflow-y-auto space-y-3 cursor-text select-text">
+              
+              {replayMode && (
+                <div className="px-4 py-2 border-t border-white/[0.04] bg-black/60 flex items-center justify-between cursor-default">
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => { setIsPlaying(false); setReplayIndex(0); }}
+                      disabled={replayIndex === 0}
+                      className="p-1 rounded hover:bg-white/[0.1] disabled:opacity-30"
+                    >
+                      <SkipBack className="w-3.5 h-3.5 text-slate-300" />
+                    </button>
+                    <button 
+                      onClick={() => { setIsPlaying(false); setReplayIndex(Math.max(0, replayIndex - 1)); }}
+                      disabled={replayIndex === 0}
+                      className="p-1 rounded hover:bg-white/[0.1] disabled:opacity-30"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5 text-slate-300" />
+                    </button>
+                    <button 
+                      onClick={() => setIsPlaying(!isPlaying)}
+                      className="p-1.5 rounded bg-accentPrimary/20 hover:bg-accentPrimary/30 text-accentPrimary"
+                    >
+                      {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                    </button>
+                    <button 
+                      onClick={() => { setIsPlaying(false); setReplayIndex(Math.min(report.chatHistory.length - 1, replayIndex + 1)); }}
+                      disabled={replayIndex >= report.chatHistory.length - 1}
+                      className="p-1 rounded hover:bg-white/[0.1] disabled:opacity-30"
+                    >
+                      <ArrowRight className="w-3.5 h-3.5 text-slate-300" />
+                    </button>
+                    <button 
+                      onClick={() => { setIsPlaying(false); setReplayIndex(report.chatHistory.length - 1); }}
+                      disabled={replayIndex >= report.chatHistory.length - 1}
+                      className="p-1 rounded hover:bg-white/[0.1] disabled:opacity-30"
+                    >
+                      <SkipForward className="w-3.5 h-3.5 text-slate-300" />
+                    </button>
+                  </div>
+                  <div className="text-[10px] font-mono text-slate-400">
+                    Msg {replayIndex + 1} of {report.chatHistory.length}
+                  </div>
+                </div>
+              )}
+
+              <div ref={replayContainerRef} className="p-4 bg-black/40 border-t border-white/[0.04] max-h-60 overflow-y-auto space-y-3 cursor-text select-text scroll-smooth">
                 {report.chatHistory.map((msg, index) => {
+                  if (replayMode && index > replayIndex) return null;
+                  
                   const isUser = msg.role === "user";
                   return (
-                    <div key={msg.id || index} className="text-[10px] leading-relaxed">
+                    <div key={msg.id || index} className={`text-[10px] leading-relaxed transition-all duration-300 ${replayMode && index === replayIndex ? "opacity-100 scale-100" : "opacity-75"}`}>
                       <span className={`font-bold font-mono ${isUser ? "text-accentPrimary" : "text-slate-400"}`}>
                         {isUser ? "Candidate" : "Interviewer"}:
                       </span>

@@ -25,7 +25,12 @@ import {
   ClipboardList,
   ChevronRight,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Copy,
+  Check,
+  RotateCcw,
+  Pause,
+  ChevronDown
 } from "lucide-react";
 
 // Private MarkdownRenderer removed (Bug #7 fix).
@@ -144,6 +149,57 @@ const robustJsonParse = (text: string): any => {
   }
 };
 
+const LANGUAGE_BOILERPLATES: Record<string, string> = {
+  cpp: `#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+
+using namespace std;
+
+class Solution {
+public:
+    void solve() {
+        // Write your logic here
+    }
+};
+
+int main() {
+    Solution sol;
+    sol.solve();
+    return 0;
+}`,
+  java: `import java.util.*;
+
+class Solution {
+    public void solve() {
+        // Write your logic here
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Solution sol = new Solution();
+        sol.solve();
+    }
+}`,
+  python: `class Solution:
+    def solve(self):
+        # Write your logic here
+        pass
+
+if __name__ == "__main__":
+    sol = Solution()
+    sol.solve()`,
+  typescript: `class Solution {
+    solve(): void {
+        // Write your logic here
+    }
+}
+
+const sol = new Solution();
+sol.solve();`
+};
 
 export const InterviewSimulatorView: React.FC = () => {
   const { 
@@ -173,6 +229,9 @@ export const InterviewSimulatorView: React.FC = () => {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [evalMsgIndex, setEvalMsgIndex] = useState(0);
   const [isEditorMaximized, setIsEditorMaximized] = useState(false);
+  const [isSessionPaused, setIsSessionPaused] = useState(false);
+  const [isGoalExpanded, setIsGoalExpanded] = useState(true);
+  const [copyCodeSuccess, setCopyCodeSuccess] = useState(false);
 
   const EVALUATION_MESSAGES = [
     "Analyzing logical code soundness...",
@@ -206,6 +265,11 @@ export const InterviewSimulatorView: React.FC = () => {
   const timeLeftRef = useRef(45 * 60);
   // Bug-fix #1/#2: guard ref prevents double evaluation trigger
   const isEvaluatingRef = useRef(false);
+  const isPausedRef = useRef(false);
+
+  useEffect(() => {
+    isPausedRef.current = isSessionPaused;
+  }, [isSessionPaused]);
 
   useEffect(() => {
     if (activeSession) {
@@ -260,29 +324,31 @@ export const InterviewSimulatorView: React.FC = () => {
       // Interval countdown tick
       let secondsLeft = correctedTime;
       timerRef.current = setInterval(() => {
-        secondsLeft = Math.max(0, secondsLeft - 1);
+        if (!isPausedRef.current) {
+          secondsLeft = Math.max(0, secondsLeft - 1);
 
-        if (secondsLeft === 0) {
-          // Bug-fix #2: clear timer BEFORE setting phase and calling evaluation
-          // so the timer never fires again and cannot re-trigger handleTimeOutSubmission
-          clearInterval(timerRef.current);
-          timerRef.current = null;
-          updateInterviewSession(
-            0,
-            codeRef.current,
-            langRef.current,
-            chatHistoryRef.current,
-            "evaluating"
-          );
-          handleTimeOutSubmission();
-        } else {
-          updateInterviewSession(
-            secondsLeft,
-            codeRef.current,
-            langRef.current,
-            chatHistoryRef.current,
-            phaseRef.current as any
-          );
+          if (secondsLeft === 0) {
+            // Bug-fix #2: clear timer BEFORE setting phase and calling evaluation
+            // so the timer never fires again and cannot re-trigger handleTimeOutSubmission
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+            updateInterviewSession(
+              0,
+              codeRef.current,
+              langRef.current,
+              chatHistoryRef.current,
+              "evaluating"
+            );
+            handleTimeOutSubmission();
+          } else {
+            updateInterviewSession(
+              secondsLeft,
+              codeRef.current,
+              langRef.current,
+              chatHistoryRef.current,
+              phaseRef.current as any
+            );
+          }
         }
       }, 1000);
     }
@@ -327,16 +393,45 @@ export const InterviewSimulatorView: React.FC = () => {
   const handleLangChange = (lang: string) => {
     setSelectedLang(lang);
     langRef.current = lang;
+    
+    // Auto-fill boilerplate if editor is empty or matches old boilerplate
+    const currentCode = codeRef.current.trim();
+    const isCodeEmpty = currentCode === "";
+    const matchesOldBoilerplate = Object.values(LANGUAGE_BOILERPLATES).some(bp => bp.trim() === currentCode);
+    
+    let newCode = codeRef.current;
+    if (isCodeEmpty || matchesOldBoilerplate) {
+      newCode = LANGUAGE_BOILERPLATES[lang] || "";
+      setInputCode(newCode);
+      codeRef.current = newCode;
+    }
+
     if (activeSession) {
       updateInterviewSession(
         activeSession.timeLeft,
-        codeRef.current,
+        newCode,
         lang,
         chatHistoryRef.current,
         phaseRef.current as any
       );
     }
   };
+
+  // Ensure boilerplate is injected on initial mount if empty and in DSA phase
+  useEffect(() => {
+    if (activeSession && activeSession.currentPhase === "dsa" && !codeRef.current.trim()) {
+      const defaultCode = LANGUAGE_BOILERPLATES[langRef.current] || "";
+      setInputCode(defaultCode);
+      codeRef.current = defaultCode;
+      updateInterviewSession(
+        activeSession.timeLeft,
+        defaultCode,
+        langRef.current,
+        chatHistoryRef.current,
+        "dsa"
+      );
+    }
+  }, [activeSession?.currentPhase]);
 
   // Scroll chat to bottom
   useEffect(() => {
@@ -347,6 +442,8 @@ export const InterviewSimulatorView: React.FC = () => {
 
   const handleLaunchSession = (topic: string, difficulty: "Easy" | "Medium" | "Hard", personality: "Helpful Mentor" | "Quiet Observer" | "Strict Interviewer", problemDesc: string, resumeText: string, resumeFileName: string) => {
     setIsEditorMaximized(false);
+    setIsSessionPaused(false);
+    isPausedRef.current = false;
     isEvaluatingRef.current = false;
     startInterviewSession(topic, difficulty, personality, problemDesc, resumeText, resumeFileName);
     setEvaluationReport(null);
@@ -481,8 +578,8 @@ Rule: Do not output code solutions. Guide them using conceptual feedback. Keep r
 
     try {
       const apiMessages = [
-        { role: "system", content: systemPrompt },
-        ...chatHistory.map(c => ({ role: c.role, content: c.content }))
+        { role: "system" as const, content: systemPrompt },
+        ...chatHistory.map(c => ({ role: c.role as "user" | "assistant" | "system", content: c.content }))
       ];
 
       // Arch Debt #14 fix: replaced 3-try copy-paste with shared nvidiaFetch utility
@@ -743,7 +840,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
           currentCode,
           currentLang,
           currentHistory,
-          "interview"
+          phaseRef.current as any
         );
         return;
       }
@@ -795,6 +892,38 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
       severity: "danger",
       onConfirm: () => {
         endInterviewSession(false);
+      }
+    });
+  };
+
+  const handleCopyCode = async () => {
+    if (inputCode) {
+      await navigator.clipboard.writeText(inputCode);
+      setCopyCodeSuccess(true);
+      setTimeout(() => setCopyCodeSuccess(false), 2000);
+    }
+  };
+
+  const handleResetCode = () => {
+    confirmAction({
+      title: "Reset Code?",
+      message: "Are you sure you want to reset the editor? All your written code will be lost.",
+      confirmText: "Reset Code",
+      cancelText: "Cancel",
+      severity: "danger",
+      onConfirm: () => {
+        const defaultCode = LANGUAGE_BOILERPLATES[langRef.current] || "";
+        setInputCode(defaultCode);
+        codeRef.current = defaultCode;
+        if (activeSession) {
+          updateInterviewSession(
+            activeSession.timeLeft,
+            defaultCode,
+            langRef.current,
+            chatHistoryRef.current,
+            activeSession.currentPhase as any
+          );
+        }
       }
     });
   };
@@ -865,6 +994,14 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
           </div>
 
           <div className="flex items-center gap-4 w-full sm:w-auto">
+            {/* Play/Pause Timer */}
+            <button
+              onClick={() => setIsSessionPaused(!isSessionPaused)}
+              className={`p-1.5 rounded-lg border transition-colors cursor-pointer flex items-center justify-center ${isSessionPaused ? 'bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20' : 'bg-white/[0.02] hover:bg-white/[0.06] border-white/[0.08] text-slate-400 hover:text-white'}`}
+              title={isSessionPaused ? "Resume Session" : "Pause Session"}
+            >
+              {isSessionPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+            </button>
             {/* 45 Min Timer */}
             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border font-mono text-sm font-bold ${activeSession.timeLeft < 300 ? "bg-rose-500/10 border-rose-500/20 text-rose-400 animate-pulse" : "bg-white/[0.02] border-white/[0.08] text-white"}`}>
               <Clock className="w-4 h-4" />
@@ -987,14 +1124,14 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    disabled={isAiResponding}
+                    disabled={isAiResponding || isSessionPaused}
                     placeholder="Type response... (Enter to send, Shift+Enter for new line)"
                     rows={2}
                     className="flex-1 min-w-0 bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-xs text-white placeholder-slate-600 focus:outline-none transition-colors resize-none overflow-y-auto max-h-32"
                   />
                   <button
                     onClick={() => handleSendChatMessage()}
-                    disabled={isAiResponding || !chatInput.trim()}
+                    disabled={isAiResponding || !chatInput.trim() || isSessionPaused}
                     className="w-8 h-8 rounded-lg bg-accentPrimary hover:bg-accentPrimary/90 disabled:bg-white/[0.02] text-white disabled:text-slate-600 flex items-center justify-center shrink-0 transition-colors cursor-pointer mb-0.5"
                   >
                     <Send className="w-3.5 h-3.5" />
@@ -1019,6 +1156,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
                         value={selectedLang}
                         onChange={(e) => handleLangChange(e.target.value)}
                         className="bg-black/50 border border-white/[0.08] rounded-md text-[10px] font-mono text-slate-300 py-1 px-2 focus:outline-none focus:border-accentPrimary cursor-pointer"
+                        disabled={isSessionPaused}
                       >
                         <option value="cpp">C++ (G++ 17)</option>
                         <option value="java">Java (JDK 17)</option>
@@ -1041,6 +1179,22 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
                     </div>
                   </div>
 
+                  {/* Problem Description Panel */}
+                  <div className="border-b border-white/[0.06] bg-black/20 shrink-0">
+                    <button 
+                      onClick={() => setIsGoalExpanded(!isGoalExpanded)}
+                      className="w-full flex items-center justify-between px-4 py-2 hover:bg-white/[0.02] transition-colors cursor-pointer group"
+                    >
+                      <span className="text-[10px] font-bold text-slate-400 font-mono group-hover:text-white transition-colors">Problem Statement</span>
+                      <ChevronDown className={`w-3.5 h-3.5 text-slate-500 transition-transform ${isGoalExpanded ? "rotate-180" : ""}`} />
+                    </button>
+                    {isGoalExpanded && (
+                      <div className="px-4 pb-4 text-xs text-slate-300 leading-relaxed font-mono max-h-48 overflow-y-auto">
+                        <MarkdownRenderer content={activeSession.goal || ""} />
+                      </div>
+                    )}
+                  </div>
+
                   {/* Code TextArea Editor body */}
                   <div className="flex-1 relative overflow-hidden flex">
                     {/* Simulated Line numbers */}
@@ -1054,22 +1208,43 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
                       value={inputCode}
                       onChange={(e) => handleCodeChange(e.target.value)}
                       onKeyDown={handleEditorKeyDown}
+                      disabled={isSessionPaused}
                       placeholder="// Paste problem boilerplate or write your solution here...&#10;// Make sure to define time & space complexities before submissions."
-                      className="flex-1 bg-transparent p-3 font-mono text-[11px] text-slate-200 placeholder-slate-700 focus:outline-none resize-none leading-relaxed overflow-y-auto"
+                      className="flex-1 bg-transparent p-3 font-mono text-[11px] text-slate-200 placeholder-slate-700 focus:outline-none resize-none leading-relaxed overflow-y-auto disabled:opacity-50"
                     />
                   </div>
 
                   {/* Action bar */}
                   <div className="p-4 border-t border-white/[0.06] bg-black/30 flex justify-between items-center shrink-0">
-                    <button
-                      type="button"
-                      onClick={handleRequestHint}
-                      disabled={isAiResponding}
-                      className="px-3.5 py-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/[0.12] text-slate-300 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      <HelpCircle className="w-4 h-4" />
-                      <span>Get Hint</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleRequestHint}
+                        disabled={isAiResponding || isSessionPaused}
+                        className="px-3.5 py-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/[0.12] text-slate-300 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <HelpCircle className="w-4 h-4" />
+                        <span className="hidden sm:inline">Get Hint</span>
+                      </button>
+                      <div className="w-px h-6 bg-white/[0.08] mx-1"></div>
+                      <button
+                        type="button"
+                        onClick={handleCopyCode}
+                        className="px-2.5 py-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/[0.12] text-slate-300 text-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                        title="Copy Code"
+                      >
+                        {copyCodeSuccess ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleResetCode}
+                        disabled={isSessionPaused}
+                        className="px-2.5 py-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/[0.12] text-slate-300 hover:text-rose-400 text-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        title="Reset to Boilerplate"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                      </button>
+                    </div>
 
                     <div className="flex gap-2">
                       <button
@@ -1084,11 +1259,11 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
                       <button
                         type="button"
                         onClick={handleSubmitCodeToInterviewer}
-                        disabled={isAiResponding || !inputCode.trim()}
+                        disabled={isAiResponding || !inputCode.trim() || isSessionPaused}
                         className="px-4 py-1.5 rounded-lg bg-accentPrimary hover:bg-accentPrimary/90 border border-accentPrimary/20 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-lg shadow-accentPrimary/20 disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         <CheckCircle className="w-4 h-4" />
-                        <span>Submit Code to Interviewer</span>
+                        <span className="hidden sm:inline">Submit Code</span>
                       </button>
                     </div>
                   </div>

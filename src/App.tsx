@@ -46,6 +46,7 @@ import {
 
 
 import { SYSTEM_PROMPT } from "./lib/prompts";
+import { ALL_PLANS } from "./data/curriculum";
 
 const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>(() => {
@@ -368,8 +369,7 @@ const AppContent: React.FC = () => {
   };
 
   const primaryPlanId = state.primaryPlanId || "16-week-mastery";
-  const ALL_PLANS = curriculum.ALL_PLANS;
-  const primaryPlan = ALL_PLANS.find(p => p.id === primaryPlanId) || ALL_PLANS[0];
+  const primaryPlan = ALL_PLANS.find((p: any) => p.id === primaryPlanId) || ALL_PLANS[0];
 
   const navigationItems = [
     { id: "dashboard", name: "Dashboard", icon: LayoutDashboard },

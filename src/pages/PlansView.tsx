@@ -23,7 +23,8 @@ export const PlansView: React.FC = () => {
     pausePlan, 
     unfollowPlan, 
     setPrimaryPlan,
-    curriculum
+    curriculum,
+    confirmAction
   } = useAppState();
 
   const ALL_PLANS = curriculum.ALL_PLANS;

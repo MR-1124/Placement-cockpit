@@ -19,6 +19,8 @@ interface FocusSessionConfig {
   duration: number; // in minutes
   linkedDsaQuestion?: { topicId: string; problemId: string; name: string; difficulty: string };
   linkedProjectTask?: { projectId: string; taskKey: string; name: string };
+  restoredTime?: number;
+  isPaused?: boolean;
 }
 
 interface FocusModeProps {
