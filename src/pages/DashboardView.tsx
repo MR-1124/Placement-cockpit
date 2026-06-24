@@ -35,6 +35,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
     addCustomTask,
     toggleCustomTask,
     deleteCustomTask,
+    addWeeklyGoal,
+    toggleWeeklyGoal,
+    deleteWeeklyGoal,
     level,
     levelTitle,
     curriculum
@@ -43,6 +46,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
   const ALL_PLANS = curriculum.ALL_PLANS;
 
   const [newTaskName, setNewTaskName] = useState("");
+  const [newGoalText, setNewGoalText] = useState("");
   const [selectedHeatmapCell, setSelectedHeatmapCell] = useState<{ date: string; week: number; day: number; habitsCompleted: number } | null>(null);
   const [showReadinessExplainer, setShowReadinessExplainer] = useState(false);
   const [heatmapMode, setHeatmapMode] = useState<"plan" | "6months" | "1year" | "month">("plan");
@@ -66,6 +70,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
     if (newTaskName.trim()) {
       addCustomTask(newTaskName.trim());
       setNewTaskName("");
+    }
+  };
+
+  const handleAddWeeklyGoal = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newGoalText.trim()) {
+      addWeeklyGoal(newGoalText.trim());
+      setNewGoalText("");
     }
   };
 
@@ -371,6 +383,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
 
   const aiZone = getAiZone(aiDependencyScore);
 
+  // AI Dependency Trend (Last 7 Days)
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return d.toISOString().split("T")[0];
+  });
+
+  const aiTrendData = last7Days.map(dateStr => {
+    const queries = state.aiLogs.filter(log => log.date === dateStr).length;
+    return { date: dateStr, queries };
+  });
+
+  const maxQueries = Math.max(1, ...aiTrendData.map(d => d.queries));
+
   return (
     <div className="space-y-6">
       {/* Top Welcome Header */}
@@ -657,6 +683,67 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
               )}
             </div>
           </div>
+
+          {/* Weekly Goals section */}
+          <div className="space-y-3 pt-3 border-t border-white/[0.06]">
+            <h4 className="text-xs font-semibold text-slate-400 uppercase font-mono tracking-wider">
+              Weekly Goals
+            </h4>
+            
+            <form onSubmit={handleAddWeeklyGoal} className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Add weekly goal (e.g. Finish React Native course)..."
+                value={newGoalText}
+                onChange={e => setNewGoalText(e.target.value)}
+                className="flex-1 bg-white/[0.02] border border-white/[0.06] rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accentPrimary"
+              />
+              <button
+                type="submit"
+                className="bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/[0.06] rounded-lg px-3 text-xs font-semibold transition-colors"
+              >
+                Add
+              </button>
+            </form>
+
+            <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+              {!state.weeklyGoals || state.weeklyGoals.length === 0 ? (
+                <p className="text-[11px] text-slate-600 font-mono italic">No weekly goals set.</p>
+              ) : (
+                state.weeklyGoals.map(goal => (
+                  <div
+                    key={goal.id}
+                    className="flex justify-between items-center bg-white/[0.01] hover:bg-white/[0.02] border border-white/[0.04] p-2 rounded-md transition-all group"
+                  >
+                    <div
+                      onClick={() => toggleWeeklyGoal(goal.id)}
+                      className="flex items-center gap-2 cursor-pointer flex-1"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={goal.isCompleted}
+                        onChange={() => {}}
+                        className="accent-accentPrimary rounded cursor-pointer"
+                      />
+                      <span
+                        className={`text-xs ${
+                          goal.isCompleted ? "line-through text-slate-600" : "text-slate-300"
+                        }`}
+                      >
+                        {goal.text}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => deleteWeeklyGoal(goal.id)}
+                      className="text-slate-600 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2Icon className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </GlassCard>
 
         {/* Right Column: Heatmap & Alerts */}
@@ -768,6 +855,35 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
                   ? "Keep check on copying snippets directly. Force yourself to type out solution lines manually and explain the time/space complexities out loud."
                   : "You are maintaining high code ownership. Solving problems independently compiles muscle memory for coding rounds."}
               </p>
+            </div>
+          </GlassCard>
+
+          {/* AI Trend Chart */}
+          <GlassCard className="space-y-4">
+            <div className="flex items-center gap-2 border-b border-white/[0.06] pb-3">
+              <TrendingUp className="w-4 h-4 text-slate-400" />
+              <h3 className="text-sm font-bold text-white">AI Dependency Trend (7 Days)</h3>
+            </div>
+            <div className="h-32 flex items-end gap-2 px-2 pt-2">
+              {aiTrendData.map((data, i) => {
+                const heightPercentage = (data.queries / maxQueries) * 100;
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-2 group relative">
+                    <div className="absolute -top-7 opacity-0 group-hover:opacity-100 bg-black/80 text-white text-[9px] px-2 py-1 rounded transition-opacity font-mono whitespace-nowrap z-10 pointer-events-none">
+                      {data.queries} queries
+                    </div>
+                    <div className="w-full bg-white/[0.02] rounded-sm overflow-hidden flex flex-col justify-end h-24 relative">
+                      <div
+                        className="w-full bg-accentPrimary/40 transition-all group-hover:bg-accentPrimary/60"
+                        style={{ height: `${heightPercentage}%` }}
+                      />
+                    </div>
+                    <span className="text-[9px] text-slate-500 font-mono">
+                      {data.date.substring(5).replace("-", "/")}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </GlassCard>
         </div>

@@ -60,6 +60,18 @@ export interface CustomTask {
   isCompleted: boolean;
 }
 
+export interface WeeklyGoal {
+  id: string;
+  text: string;
+  isCompleted: boolean;
+}
+
+export interface WeeklyGoal {
+  id: string;
+  text: string;
+  isCompleted: boolean;
+}
+
 export interface DailyHabitState {
   solveDsa: boolean;
   reviseOld: boolean;
@@ -100,6 +112,7 @@ export interface ChatSession {
   messages: ChatMessage[];
   createdAt: string;
   isPinned?: boolean;
+  systemPrompt?: string;
 }
 
 export interface UserProfile {

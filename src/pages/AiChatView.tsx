@@ -15,7 +15,12 @@ import {
   Briefcase,
   Terminal,
   Copy,
-  AlertTriangle
+  AlertTriangle,
+  RefreshCw,
+  Settings,
+  GitBranch,
+  Pin,
+  Edit2
 } from "lucide-react";
 
 
@@ -29,14 +34,17 @@ export const AiChatView: React.FC = () => {
     deleteSession,
     togglePinSession,
     renameSession,
-    confirmAction
+    confirmAction,
+    updateSessionSystemPrompt,
+    branchSession,
+    removeLastAssistantMessage
   } = useAppState();
   const [chatInput, setChatInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
   const [chatStatus, setChatStatus] = useState("");
   const [streamingResponse, setStreamingResponse] = useState("");
-  const [sidebarTab, setSidebarTab] = useState<"templates" | "history">("templates");
+  const [sidebarTab, setSidebarTab] = useState<"templates" | "history" | "settings">("templates");
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editTitleInput, setEditTitleInput] = useState("");
 
@@ -90,32 +98,47 @@ export const AiChatView: React.FC = () => {
     }
   };
 
-  const handleSendMessage = async (inputVal: string) => {
-    if (!inputVal.trim() || isLoading) return;
-
-    const apiKey = state.settings.nvidiaApiKey;
-    if (!apiKey) {
-      setChatError("API Key is missing. Please configure it in Settings to talk with the technical mentor.");
+  const handleSendMessage = async (inputVal: string, isRegenerate: boolean = false) => {
+    if (!inputVal.trim() && !isRegenerate) return;
+    if (isLoading) return;
+    if (!state.settings.nvidiaApiKey) {
+      setChatError("NVIDIA API Key is missing. Please configure it in settings.");
       return;
     }
 
-    setChatInput("");
-    setChatError(null);
-    setStreamingResponse("");
-    addChatMessage("user", inputVal);
     setIsLoading(true);
-    setChatStatus("Initializing request...");
+    setChatError(null);
+    setChatStatus("Initializing context...");
 
+    if (!isRegenerate) {
+      addChatMessage("user", inputVal);
+      setChatInput("");
+    }
+    
+    // Auto-create session if this is the first message and there is no active session
+    if (!activeSession) {
+       createNewSession();
+    }
+    
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
     try {
-      const apiMessages = [
-        { role: "system", content: SYSTEM_PROMPT },
-        ...currentMessages.map(m => ({ role: m.role, content: m.content })),
-        { role: "user", content: inputVal }
-      ];
+      const messagesToSend = [...currentMessages];
+      if (isRegenerate) {
+        messagesToSend.pop(); // Remove the last assistant response
+      }
 
+      const apiMessages = [
+        { role: "system", content: activeSession?.systemPrompt || SYSTEM_PROMPT },
+        ...messagesToSend.map(m => ({ role: m.role, content: m.content })),
+      ];
+      
+      if (!isRegenerate) {
+        apiMessages.push({ role: "user", content: inputVal });
+      }
+
+      const apiKey = state.settings.nvidiaApiKey;
       let response;
       try {
         setChatStatus("Connecting to local Vite dev proxy (/api-nvidia)...");
@@ -266,6 +289,15 @@ export const AiChatView: React.FC = () => {
     }
   };
 
+  const handleRegenerate = () => {
+    if (isLoading || currentMessages.length < 2) return;
+    const lastMessage = currentMessages[currentMessages.length - 1];
+    if (lastMessage.role !== "assistant") return;
+    
+    removeLastAssistantMessage();
+    handleSendMessage("", true);
+  };
+
   const handleClearHistory = () => {
     confirmAction({
       title: "Clear Chat History",
@@ -350,6 +382,16 @@ export const AiChatView: React.FC = () => {
                 </span>
               )}
             </button>
+            <button
+              onClick={() => setSidebarTab("settings")}
+              className={`flex-1 py-1.5 px-3 rounded-lg transition-all cursor-pointer text-center flex items-center justify-center gap-1.5 ${
+                sidebarTab === "settings"
+                  ? "bg-accentPrimary text-white shadow-md"
+                  : "text-slate-500 hover:text-slate-300"
+              }`}
+            >
+              <Settings className="w-3 h-3" />
+            </button>
           </div>
 
           <div className="flex-1 overflow-y-auto pr-1">
@@ -374,7 +416,7 @@ export const AiChatView: React.FC = () => {
                   );
                 })}
               </div>
-            ) : (
+            ) : sidebarTab === "history" ? (
               <div className="space-y-2">
                 <button
                   onClick={() => createNewSession()}
@@ -390,16 +432,12 @@ export const AiChatView: React.FC = () => {
                     return (
                       <div
                         key={session.id}
-                        onClick={() => {
-                          if (!isEditing) {
-                            setActiveSession(session.id);
-                          }
-                        }}
-                        className={`group border p-3 rounded-xl transition-all flex flex-col gap-1.5 relative ${
+                        className={`p-3 rounded-xl border transition-all cursor-pointer relative group ${
                           active
-                            ? "bg-accentPrimary/5 border-accentPrimary/20 text-white"
-                            : "bg-white/[0.01] hover:bg-white/[0.02] border-white/[0.04] text-slate-300 hover:text-white"
-                        } ${!isEditing ? "cursor-pointer" : ""}`}
+                            ? "bg-accentPrimary/10 border-accentPrimary/30"
+                            : "bg-white/[0.01] border-white/[0.04] hover:bg-white/[0.03] hover:border-white/[0.08]"
+                        }`}
+                        onClick={() => setActiveSession(session.id)}
                       >
                         <div className="flex items-center justify-between gap-2">
                           {isEditing ? (
@@ -443,7 +481,17 @@ export const AiChatView: React.FC = () => {
                                 title={session.isPinned ? "Unpin chat" : "Pin chat"}
                                 className="p-1 rounded hover:bg-white/5 text-slate-500 hover:text-amber-400 transition-colors"
                               >
-                                📌
+                                <Pin className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  branchSession(session.id);
+                                }}
+                                title="Fork session"
+                                className="p-1 rounded hover:bg-white/5 text-slate-500 hover:text-white transition-colors"
+                              >
+                                <GitBranch className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={(e) => {
@@ -454,7 +502,7 @@ export const AiChatView: React.FC = () => {
                                 title="Rename chat"
                                 className="p-1 rounded hover:bg-white/5 text-slate-500 hover:text-white transition-colors"
                               >
-                                ✏️
+                                <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={(e) => {
@@ -471,7 +519,7 @@ export const AiChatView: React.FC = () => {
                                 title="Delete chat"
                                 className="p-1 rounded hover:bg-white/5 text-slate-500 hover:text-rose-400 transition-colors"
                               >
-                                🗑️
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           )}
@@ -486,7 +534,35 @@ export const AiChatView: React.FC = () => {
                   })}
                 </div>
               </div>
-            )}
+            ) : sidebarTab === "settings" ? (
+              <div className="space-y-4">
+                <div className="bg-white/[0.01] border border-white/[0.04] p-4 rounded-xl space-y-3">
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-1.5">
+                      <Terminal className="w-3.5 h-3.5 text-accentPrimary" />
+                      Session System Prompt
+                    </label>
+                    <p className="text-[10px] text-slate-500 leading-normal mb-3">
+                      Override the default personality and instructions for the current chat session.
+                    </p>
+                    <textarea
+                      value={activeSession?.systemPrompt || ""}
+                      onChange={(e) => {
+                        if (activeSession) {
+                          updateSessionSystemPrompt(activeSession.id, e.target.value);
+                        }
+                      }}
+                      disabled={!activeSession}
+                      placeholder={SYSTEM_PROMPT}
+                      className="w-full h-40 bg-black/40 border border-white/[0.06] rounded-lg p-3 text-[11px] text-slate-300 font-mono resize-y focus:outline-none focus:border-accentPrimary transition-colors disabled:opacity-50"
+                    />
+                  </div>
+                  {!activeSession && (
+                    <p className="text-[10px] text-amber-500 italic">Start a chat session first to customize its system prompt.</p>
+                  )}
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -614,6 +690,18 @@ export const AiChatView: React.FC = () => {
                     {isUser && (
                       <div className="w-7 h-7 rounded-lg bg-accentPrimary/10 border border-accentPrimary/20 flex items-center justify-center text-accentPrimary shrink-0 mt-0.5 shadow-sm select-none">
                         <User className="w-4 h-4" />
+                      </div>
+                    )}
+                      
+                    {!isUser && msg.id === currentMessages[currentMessages.length - 1].id && (
+                      <div className="absolute -bottom-6 left-12 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={handleRegenerate}
+                          disabled={isLoading}
+                          className="flex items-center gap-1.5 px-2 py-1 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.06] hover:border-white/[0.1] rounded-lg text-[9px] text-slate-400 hover:text-white transition-all disabled:opacity-50"
+                        >
+                          <RefreshCw className="w-3 h-3" /> Regenerate
+                        </button>
                       </div>
                     )}
                   </div>

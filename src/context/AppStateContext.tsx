@@ -23,7 +23,8 @@ import type {
   HistoryItem,
   MockInterviewReport,
   ActiveInterviewSession,
-  InterviewPhase
+  InterviewPhase,
+  WeeklyGoal
 } from "../types/AppTypes";
 
 // Re-export all types so existing consumers (import { X } from '../context/AppStateContext')
@@ -42,7 +43,8 @@ export type {
   HistoryItem,
   MockInterviewReport,
   ActiveInterviewSession,
-  InterviewPhase
+  InterviewPhase,
+  WeeklyGoal
 };
 
 // All domain interfaces are now in src/types/AppTypes.ts (Arch Debt #13).
@@ -61,6 +63,7 @@ interface AppState {
   aiLogs: AiLog[];
   dailyHabits: DailyHabitState;
   customTasks: CustomTask[];
+  weeklyGoals?: WeeklyGoal[];
   habitHistory: HistoryItem[];
   notes: Note[];
   settings: AppSettings;
@@ -112,6 +115,9 @@ interface AppContextType {
   addCustomTask: (name: string) => void;
   toggleCustomTask: (id: string) => void;
   deleteCustomTask: (id: string) => void;
+  addWeeklyGoal: (text: string) => void;
+  toggleWeeklyGoal: (id: string) => void;
+  deleteWeeklyGoal: (id: string) => void;
   addProject: (project: Omit<Project, "id">) => void;
   updateProject: (project: Project) => void;
   deleteProject: (id: string) => void;
@@ -122,6 +128,9 @@ interface AppContextType {
   deleteSession: (sessionId: string) => void;
   togglePinSession: (sessionId: string) => void;
   renameSession: (sessionId: string, title: string) => void;
+  updateSessionSystemPrompt: (sessionId: string, prompt: string) => void;
+  branchSession: (sessionId: string) => void;
+  removeLastAssistantMessage: () => void;
   addNote: (note: Omit<Note, "id" | "updatedAt">) => void;
   updateNote: (note: Note) => void;
   deleteNote: (id: string) => void;
@@ -177,6 +186,7 @@ interface SerializedProgress {
   aiLogs: AiLog[];
   dailyHabits: DailyHabitState;
   customTasks: CustomTask[];
+  weeklyGoals?: WeeklyGoal[];
   habitHistory: HistoryItem[];
   notes: Note[];
   settings: AppSettings;
@@ -1468,11 +1478,37 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       return { ...prev, customTasks, xp: Math.max(0, prev.xp + xpDiff) };
     });
   };
-
   const deleteCustomTask = (id: string) => {
     updateState(prev => {
       const customTasks = prev.customTasks.filter(task => task.id !== id);
       return { ...prev, customTasks };
+    });
+  };
+
+  const addWeeklyGoal = (text: string) => {
+    updateState(prev => {
+      const newGoal: WeeklyGoal = {
+        id: Math.random().toString(36).substring(7),
+        text,
+        isCompleted: false
+      };
+      return { ...prev, weeklyGoals: [...(prev.weeklyGoals || []), newGoal] };
+    });
+  };
+
+  const toggleWeeklyGoal = (id: string) => {
+    updateState(prev => {
+      const weeklyGoals = (prev.weeklyGoals || []).map(goal =>
+        goal.id === id ? { ...goal, isCompleted: !goal.isCompleted } : goal
+      );
+      return { ...prev, weeklyGoals };
+    });
+  };
+
+  const deleteWeeklyGoal = (id: string) => {
+    updateState(prev => {
+      const weeklyGoals = (prev.weeklyGoals || []).filter(goal => goal.id !== id);
+      return { ...prev, weeklyGoals };
     });
   };
 
@@ -1632,6 +1668,59 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         ...prev,
         chatSessions
       };
+    });
+  };
+
+  const updateSessionSystemPrompt = (sessionId: string, prompt: string) => {
+    updateState(prev => {
+      const chatSessions = (prev.chatSessions || []).map(s => {
+        if (s.id !== sessionId) return s;
+        return { ...s, systemPrompt: prompt };
+      });
+      return { ...prev, chatSessions };
+    });
+  };
+
+  const branchSession = (sessionId: string) => {
+    updateState(prev => {
+      const sessionToBranch = prev.chatSessions?.find(s => s.id === sessionId);
+      if (!sessionToBranch) return prev;
+      
+      const newSession: ChatSession = {
+        ...sessionToBranch,
+        id: Math.random().toString(36).substring(7),
+        title: `${sessionToBranch.title} (Fork)`,
+        createdAt: new Date().toLocaleDateString()
+      };
+
+      return {
+        ...prev,
+        chatSessions: [newSession, ...(prev.chatSessions || [])],
+        currentSessionId: newSession.id
+      };
+    });
+  };
+
+  const removeLastAssistantMessage = () => {
+    updateState(prev => {
+      const sessionId = prev.currentSessionId;
+      if (!sessionId) return prev;
+      
+      const chatSessions = (prev.chatSessions || []).map(s => {
+        if (s.id !== sessionId) return s;
+        if (s.messages.length === 0) return s;
+        
+        const lastMessage = s.messages[s.messages.length - 1];
+        if (lastMessage.role === "assistant") {
+          return {
+            ...s,
+            messages: s.messages.slice(0, -1)
+          };
+        }
+        return s;
+      });
+      
+      return { ...prev, chatSessions };
     });
   };
 
@@ -2185,6 +2274,9 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         addCustomTask,
         toggleCustomTask,
         deleteCustomTask,
+        addWeeklyGoal,
+        toggleWeeklyGoal,
+        deleteWeeklyGoal,
         addProject,
         updateProject,
         deleteProject,
@@ -2195,6 +2287,9 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         deleteSession,
         togglePinSession,
         renameSession,
+        updateSessionSystemPrompt,
+        branchSession,
+        removeLastAssistantMessage,
         addNote,
         updateNote,
         deleteNote,
