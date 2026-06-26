@@ -200,8 +200,19 @@ export const ProjectsView: React.FC = () => {
       {/* Projects Cards List */}
       <div className="space-y-4">
         {filteredProjects.length === 0 ? (
-          <div className="p-12 text-center text-xs text-slate-500 font-mono italic glass-panel rounded-xl">
-            No projects added. Click "Add Project" to get started.
+          <div className="p-12 text-center flex flex-col items-center justify-center glass-panel rounded-xl">
+            <div className="w-12 h-12 rounded-full bg-slate-800/50 flex items-center justify-center mb-3 border border-white/[0.04]">
+              <Search className="w-6 h-6 text-slate-500" />
+            </div>
+            <h3 className="text-slate-300 font-bold mb-1">No Projects Found</h3>
+            <p className="text-xs text-slate-500 italic mb-4">{state.projects.length === 0 ? "No projects added yet." : "No projects match your search."}</p>
+            {state.projects.length === 0 ? (
+              <button onClick={() => setShowAddModal(true)} className="px-4 py-2 bg-accentPrimary hover:bg-accentPrimary/90 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 shadow-md">
+                <Plus className="w-4 h-4" /> Add Project
+              </button>
+            ) : (
+              <button onClick={() => setSearchQuery("")} className="px-4 py-2 bg-white/[0.05] text-slate-300 rounded-lg text-xs font-bold hover:bg-white/[0.1] transition-colors cursor-pointer border border-white/[0.04]">Clear Search</button>
+            )}
           </div>
         ) : (
           filteredProjects.map(project => {

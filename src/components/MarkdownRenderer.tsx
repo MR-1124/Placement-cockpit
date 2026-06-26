@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import DOMPurify from "dompurify";
 import { Clipboard, Check, AlertTriangle } from "lucide-react";
 
 // 1. Mermaid dynamic CDN renderer component
@@ -36,6 +37,7 @@ export const MermaidDiagram: React.FC<MermaidProps> = ({ chart }) => {
             script.src = "https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js";
             script.async = true;
             script.onload = () => {
+              const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || "#8b5cf6";
               (window as any).mermaid.initialize({
                 startOnLoad: false,
                 theme: "dark",
@@ -43,7 +45,7 @@ export const MermaidDiagram: React.FC<MermaidProps> = ({ chart }) => {
                 suppressErrorRendering: true,
                 themeVariables: {
                   background: "#0d0e12",
-                  primaryColor: "#8b5cf6",
+                  primaryColor: accentColor,
                   primaryTextColor: "#f8fafc",
                   lineColor: "#334155",
                 }
@@ -54,6 +56,7 @@ export const MermaidDiagram: React.FC<MermaidProps> = ({ chart }) => {
             document.head.appendChild(script);
           });
         } else {
+          const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || "#8b5cf6";
           (window as any).mermaid.initialize({
             startOnLoad: false,
             theme: "dark",
@@ -61,7 +64,7 @@ export const MermaidDiagram: React.FC<MermaidProps> = ({ chart }) => {
             suppressErrorRendering: true,
             themeVariables: {
               background: "#0d0e12",
-              primaryColor: "#8b5cf6",
+              primaryColor: accentColor,
               primaryTextColor: "#f8fafc",
               lineColor: "#334155",
             }
@@ -174,7 +177,7 @@ export const MermaidDiagram: React.FC<MermaidProps> = ({ chart }) => {
           className={`p-4 flex justify-center overflow-x-auto shadow-inner select-none transition-all duration-300 ${
             isExpanded ? "max-h-none" : "max-h-[250px] overflow-hidden"
           }`}
-          dangerouslySetInnerHTML={{ __html: svg }} 
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(svg) }} 
         />
         
         {/* Collapsed Overlay Gradient & Button */}
@@ -463,7 +466,7 @@ export const MarkdownRenderer: React.FC<RendererProps> = ({ content }) => {
                     <td 
                       key={cIdx} 
                       className="px-4 py-2.5 border-r border-white/[0.04] text-slate-300 leading-relaxed font-sans"
-                      dangerouslySetInnerHTML={{ __html: formattedHtml }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formattedHtml) }}
                     />
                   );
                 })}
@@ -502,7 +505,7 @@ export const MarkdownRenderer: React.FC<RendererProps> = ({ content }) => {
               <div
                 key={idx}
                 className="prose prose-invert max-w-none space-y-1 my-1 select-text"
-                dangerouslySetInnerHTML={{ __html: formatText(block.content) }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatText(block.content)) }}
               />
             );
         }

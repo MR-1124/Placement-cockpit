@@ -55,6 +55,7 @@ const SCHEMA_VERSION = 1;
 
 interface AppState {
   version: number;
+  isLoadingUser: boolean;
   user: UserProfile | null;
   completedWeeks: string[];
   dsaTopics: DsaTopic[];
@@ -461,6 +462,7 @@ const getYesterdayString = () => {
 
 const getInitialState = (curriculum: any): AppState => ({
   version: SCHEMA_VERSION,
+  isLoadingUser: true,
   user: null,
   completedWeeks: [],
   dsaTopics: curriculum.DEFAULT_DSA_TOPICS,
@@ -538,11 +540,23 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         
         // --- Schema Versioning Migration Logic ---
         // If parsed.version < SCHEMA_VERSION, apply migrations here in the future
-        if (!parsed.version) {
-          parsed.version = SCHEMA_VERSION;
-        }
-        
-        // Dynamic day check for habits reset & streak retention
+          if (!parsed.version) {
+            parsed.version = SCHEMA_VERSION;
+          }
+
+          if (parsed.settings?.nvidiaApiKey) {
+            try {
+              if (parsed.settings.nvidiaApiKey.startsWith("nvapi-")) {
+                // If it starts with nvapi-, it was stored in plaintext, leave as is, will be encoded on next save
+              } else {
+                parsed.settings.nvidiaApiKey = atob(parsed.settings.nvidiaApiKey);
+              }
+            } catch (e) {
+              // Ignore decoding errors, might be plaintext
+            }
+          }
+          
+          // Dynamic day check for habits reset & streak retention
         const today = getTodayString();
         const yesterday = getYesterdayString();
         let updatedState = { ...parsed };
@@ -792,7 +806,15 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const stateToSave = {
+      ...state,
+      chatSessions: state.chatSessions ? state.chatSessions.slice(-50) : [],
+      settings: {
+        ...state.settings,
+        nvidiaApiKey: state.settings.nvidiaApiKey ? btoa(state.settings.nvidiaApiKey) : ""
+      }
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
     // Apply theme variable to document root
     const root = document.documentElement;
     let colorValue = "#8b5cf6"; // violet
@@ -872,31 +894,22 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
               localStorage.setItem(`profile_${firebaseUser.uid}`, JSON.stringify(userProfile));
               localStorage.setItem("last_logged_in_user", JSON.stringify(userProfile));
-
-              setState(prev => ({
-                ...prev,
-                ...deserialized,
-                user: userProfile
-              }));
-            } else {
-              localStorage.setItem(`profile_${firebaseUser.uid}`, JSON.stringify(userProfile));
-              localStorage.setItem("last_logged_in_user", JSON.stringify(userProfile));
-              setState(prev => ({ ...prev, user: userProfile }));
+              setState(prev => ({ ...prev, user: userProfile, isLoadingUser: false }));
             }
           } catch (err) {
             console.error("Error loading user data from Firestore:", err);
             localStorage.setItem(`profile_${firebaseUser.uid}`, JSON.stringify(userProfile));
             localStorage.setItem("last_logged_in_user", JSON.stringify(userProfile));
-            setState(prev => ({ ...prev, user: userProfile }));
+            setState(prev => ({ ...prev, user: userProfile, isLoadingUser: false }));
           }
         } else {
           localStorage.setItem(`profile_${firebaseUser.uid}`, JSON.stringify(userProfile));
           localStorage.setItem("last_logged_in_user", JSON.stringify(userProfile));
-          setState(prev => ({ ...prev, user: userProfile }));
+          setState(prev => ({ ...prev, user: userProfile, isLoadingUser: false }));
         }
       } else {
         localStorage.removeItem("last_logged_in_user");
-        setState(prev => ({ ...prev, user: null }));
+        setState(prev => ({ ...prev, user: null, isLoadingUser: false }));
       }
     });
 
@@ -2125,12 +2138,12 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     updateState(prev => {
       // Arch Debt #16 fix: fall back to user-profile resume when no upload in this session.
       // This means users only need to upload once; subsequent interviews pick it up automatically.
-      const effectiveResumeText = resumeText || prev.user?.resumeText || "";
-      const effectiveResumeFileName = resumeFileName || prev.user?.resumeFileName || "";
+      const effectiveResumeText = resumeText !== undefined ? resumeText : (prev.user?.resumeText || "");
+      const effectiveResumeFileName = resumeFileName !== undefined ? resumeFileName : (prev.user?.resumeFileName || "");
 
       // If a new resume was uploaded this session, persist it to the user profile.
-      const updatedUser = resumeText && prev.user
-        ? { ...prev.user, resumeText, resumeFileName: resumeFileName || prev.user.resumeFileName }
+      const updatedUser = prev.user
+        ? { ...prev.user, resumeText: effectiveResumeText, resumeFileName: effectiveResumeFileName }
         : prev.user;
 
       return {

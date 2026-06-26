@@ -226,6 +226,7 @@ export const InterviewSimulatorView: React.FC = () => {
   const [isSessionPaused, setIsSessionPaused] = useState(false);
   const [isGoalExpanded, setIsGoalExpanded] = useState(true);
   const [copyCodeSuccess, setCopyCodeSuccess] = useState(false);
+  const [activeMobileTab, setActiveMobileTab] = useState<"chat" | "editor">("chat");
 
   const EVALUATION_MESSAGES = [
     "Analyzing logical code soundness...",
@@ -957,15 +958,16 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
       <div className="space-y-6">
         {/* Visual Progress Stepper */}
         <div className="bg-darkCard/50 border border-white/[0.04] p-4 rounded-xl backdrop-blur-md flex flex-wrap justify-between items-center gap-4">
-          {["intro", "dsa", "core", "puzzles", "hr"].map((phase, idx) => {
+          {["intro", "dsa", "core", "puzzles", "hr", "evaluating"].map((phase, idx) => {
             const phaseLabels: Record<string, string> = {
               intro: "1. Intro & Resume",
               dsa: "2. DSA Coding",
               core: "3. Core Theory",
               puzzles: "4. Logic Puzzles",
-              hr: "5. HR Behavioral"
+              hr: "5. HR Behavioral",
+              evaluating: "6. Evaluating"
             };
-            const phaseNames = ["intro", "dsa", "core", "puzzles", "hr"];
+            const phaseNames = ["intro", "dsa", "core", "puzzles", "hr", "evaluating"];
             const currentIdx = phaseNames.indexOf(activeSession.currentPhase);
             const isActive = activeSession.currentPhase === phase;
             const isCompleted = phaseNames.indexOf(phase) < currentIdx;
@@ -978,7 +980,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
                 <span className={`text-[11px] font-medium font-mono transition-all ${isCompleted ? "text-emerald-400/80" : isActive ? "text-white font-bold" : "text-slate-500"}`}>
                   {phaseLabels[phase]}
                 </span>
-                {idx < 4 && (
+                {idx < 5 && (
                   <ChevronRight className="w-3.5 h-3.5 text-slate-700 hidden md:block" />
                 )}
               </div>
@@ -1013,6 +1015,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
               onClick={() => setIsSessionPaused(!isSessionPaused)}
               className={`p-1.5 rounded-lg border transition-colors cursor-pointer flex items-center justify-center ${isSessionPaused ? 'bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20' : 'bg-white/[0.02] hover:bg-white/[0.06] border-white/[0.08] text-slate-400 hover:text-white'}`}
               title={isSessionPaused ? "Resume Session" : "Pause Session"}
+              aria-label={isSessionPaused ? "Resume Session" : "Pause Session"}
             >
               {isSessionPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
             </button>
@@ -1047,13 +1050,41 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
           </div>
         ) : (
           /* Split Screen Panel */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-            {/* Left side: Dialogue & Chat Panel (5 Columns) */}
-            <div className={`${isEditorMaximized ? "hidden" : "lg:col-span-5"} flex flex-col h-[650px] bg-darkCard/80 border border-white/[0.06] rounded-2xl overflow-hidden backdrop-blur-md`}>
-              <div className="px-4 py-3 border-b border-white/[0.06] bg-white/[0.01] flex items-center justify-between shrink-0">
+          <>
+            {/* Mobile Tab Switcher */}
+            <div className="lg:hidden flex bg-black/40 p-1 rounded-xl border border-white/[0.08] mb-4">
+              <button
+                onClick={() => setActiveMobileTab("chat")}
+                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors ${
+                  activeMobileTab === "chat" ? "bg-accentPrimary text-white shadow" : "text-slate-400 hover:text-white"
+                }`}
+              >
+                Dialogue Panel
+              </button>
+              <button
+                onClick={() => setActiveMobileTab("editor")}
+                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors ${
+                  activeMobileTab === "editor" ? "bg-accentPrimary text-white shadow" : "text-slate-400 hover:text-white"
+                }`}
+              >
+                Workspace
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+              {/* Left side: Dialogue & Chat Panel (5 Columns) */}
+              <div className={`${isEditorMaximized ? "hidden" : "lg:col-span-5"} ${activeMobileTab === "chat" ? "flex" : "hidden"} lg:flex flex-col h-[650px] bg-darkCard/80 border border-white/[0.06] rounded-2xl overflow-hidden backdrop-blur-md`}>
+                <div className="px-4 py-3 border-b border-white/[0.06] bg-white/[0.01] flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2">
                   <UserCheck className="w-4 h-4 text-accentPrimary" />
-                  <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">Interviewer Panel</span>
+                  <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                    {activeSession.currentPhase === "intro" ? "HR Panel" :
+                     activeSession.currentPhase === "dsa" ? "Code Reviewer Panel" :
+                     activeSession.currentPhase === "core" ? "Core CS Panel" :
+                     activeSession.currentPhase === "puzzles" ? "Logic Panel" :
+                     activeSession.currentPhase === "evaluating" ? "Evaluator Panel" :
+                     "Interviewer Panel"}
+                  </span>
                 </div>
                 <span className="text-[10px] font-mono bg-white/[0.04] px-2 py-0.5 rounded text-slate-400">
                   {activeSession.interviewerPersonality}
@@ -1147,6 +1178,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
                     onClick={() => handleSendChatMessage()}
                     disabled={isAiResponding || !chatInput.trim() || isSessionPaused}
                     className="w-8 h-8 rounded-lg bg-accentPrimary hover:bg-accentPrimary/90 disabled:bg-white/[0.02] text-white disabled:text-slate-600 flex items-center justify-center shrink-0 transition-colors cursor-pointer mb-0.5"
+                    aria-label="Send Message"
                   >
                     <Send className="w-3.5 h-3.5" />
                   </button>
@@ -1155,7 +1187,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
             </div>
 
             {/* Right side: Phase Specific Workspace Panel (7 Columns) */}
-            <div className={`${isEditorMaximized ? "lg:col-span-12" : "lg:col-span-7"} flex flex-col h-[650px] bg-darkCard/80 border border-white/[0.06] rounded-2xl overflow-hidden backdrop-blur-md`}>
+            <div className={`${isEditorMaximized ? "lg:col-span-12" : "lg:col-span-7"} ${activeMobileTab === "editor" ? "flex" : "hidden"} lg:flex flex-col h-[650px] bg-darkCard/80 border border-white/[0.06] rounded-2xl overflow-hidden backdrop-blur-md`}>
               {activeSession.currentPhase === "dsa" ? (
                 <>
                   <div className="px-4 py-3 border-b border-white/[0.06] bg-white/[0.01] flex items-center justify-between shrink-0">
@@ -1183,6 +1215,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
                         onClick={() => setIsEditorMaximized(!isEditorMaximized)}
                         className="p-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.08] text-slate-400 hover:text-white transition-colors cursor-pointer"
                         title={isEditorMaximized ? "Minimize Workspace" : "Maximize Workspace"}
+                        aria-label={isEditorMaximized ? "Minimize Workspace" : "Maximize Workspace"}
                       >
                         {isEditorMaximized ? (
                           <Minimize2 className="w-3.5 h-3.5" />
@@ -1246,6 +1279,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
                         onClick={handleCopyCode}
                         className="px-2.5 py-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/[0.12] text-slate-300 text-xs transition-all flex items-center gap-1.5 cursor-pointer"
                         title="Copy Code"
+                        aria-label="Copy Code"
                       >
                         {copyCodeSuccess ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                       </button>
@@ -1255,6 +1289,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
                         disabled={isSessionPaused}
                         className="px-2.5 py-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/[0.12] text-slate-300 hover:text-rose-400 text-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                         title="Reset to Boilerplate"
+                        aria-label="Reset to Boilerplate"
                       >
                         <RotateCcw className="w-4 h-4" />
                       </button>
@@ -1404,7 +1439,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
                 </div>
               )}
             </div>
-          </div>
+          </>
         )}
       </div>
     );

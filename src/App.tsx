@@ -429,6 +429,14 @@ const AppContent: React.FC = () => {
     }
   };
 
+  if (state.isLoadingUser) {
+    return (
+      <div className="min-h-screen bg-darkBg flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-accentPrimary animate-spin" />
+      </div>
+    );
+  }
+
   if (state.user === null || activeTab === "landing") {
     return <LandingView onEnterDashboard={() => setActiveTab("dashboard")} />;
   }
@@ -457,6 +465,7 @@ const AppContent: React.FC = () => {
               onClick={() => setActiveTab("profile")}
               className="w-7 h-7 rounded-full border border-white/[0.08] overflow-hidden hover:border-accentPrimary transition-all cursor-pointer relative group"
               title="View Profile"
+              aria-label="View Profile"
             >
               <img src={state.user.avatar} alt="User avatar" className="w-full h-full object-cover" />
             </button>
@@ -539,6 +548,7 @@ const AppContent: React.FC = () => {
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="text-slate-400 hover:text-white transition-colors"
+            aria-label={mobileMenuOpen ? "Close Menu" : "Open Menu"}
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -628,7 +638,7 @@ const AppContent: React.FC = () => {
       <button
         onClick={() => setIsChatOpen(!isChatOpen)}
         className="fixed bottom-20 lg:bottom-8 right-6 lg:right-8 w-12 h-12 rounded-full bg-accentPrimary hover:bg-accentPrimary/90 text-white flex items-center justify-center shadow-[0_4px_20px_rgba(var(--accent-rgb),0.3)] hover:shadow-[0_4px_25px_rgba(var(--accent-rgb),0.5)] active:scale-95 transition-all z-40 group"
-        aria-label="Open placement assistant"
+        aria-label={isChatOpen ? "Close placement assistant" : "Open placement assistant"}
       >
         {isChatOpen ? (
           <X className="w-5 h-5 transition-transform duration-300 rotate-90" />
@@ -692,6 +702,7 @@ const AppContent: React.FC = () => {
                       onClick={handleClearHistory}
                       title="Clear chat history"
                       className="p-2 text-slate-500 hover:text-rose-400 hover:bg-white/[0.02] rounded-lg transition-colors cursor-pointer"
+                      aria-label="Clear chat history"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -700,12 +711,14 @@ const AppContent: React.FC = () => {
                     onClick={() => setIsWideChat(!isWideChat)}
                     title={isWideChat ? "Collapse view" : "Expand to wide view"}
                     className="p-2 text-slate-500 hover:text-white hover:bg-white/[0.02] rounded-lg transition-colors cursor-pointer"
+                    aria-label={isWideChat ? "Collapse view" : "Expand to wide view"}
                   >
                     {isWideChat ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                   </button>
                   <button
                     onClick={() => setIsChatOpen(false)}
                     className="p-2 text-slate-500 hover:text-white hover:bg-white/[0.02] rounded-lg transition-colors cursor-pointer"
+                    aria-label="Close Chat"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -851,6 +864,7 @@ const AppContent: React.FC = () => {
                     type="submit"
                     disabled={isLoading || !chatInput.trim() || !state.settings.nvidiaApiKey}
                     className="w-8 h-8 rounded-lg bg-accentPrimary hover:bg-accentPrimary/90 disabled:bg-white/[0.02] text-white disabled:text-slate-600 border border-white/[0.04] disabled:border-transparent flex items-center justify-center shrink-0 transition-colors"
+                    aria-label="Send Message"
                   >
                     {isLoading ? (
                       <Loader2 className="w-4 h-4 animate-spin" />

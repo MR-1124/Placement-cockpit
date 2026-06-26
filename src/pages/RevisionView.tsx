@@ -227,9 +227,12 @@ export const RevisionView: React.FC = () => {
 
             <div className="space-y-3">
               {dueToday.length === 0 ? (
-                <div className="py-8 text-center text-xs text-slate-500 font-mono flex flex-col items-center gap-2">
-                  <Inbox className="w-8 h-8 text-slate-700" />
-                  <span>Revision inbox clean. All schedules up to date!</span>
+                <div className="py-12 text-center flex flex-col items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center mb-3 border border-emerald-500/20">
+                    <CalendarClock className="w-6 h-6 text-emerald-400" />
+                  </div>
+                  <h3 className="text-slate-300 font-bold mb-1">All Caught Up!</h3>
+                  <p className="text-xs text-slate-500 italic">Revision inbox clean. All schedules up to date.</p>
                 </div>
               ) : (
                 dueToday.map(({ problem, topic }) => (
@@ -297,9 +300,13 @@ export const RevisionView: React.FC = () => {
 
             <div className="space-y-3">
               {weakSpots.length === 0 ? (
-                <p className="py-6 text-center text-xs text-slate-600 font-mono italic">
-                  No flagged mistakes. Tweak Leetcode checkboxes to bookmark items here.
-                </p>
+                <div className="py-12 text-center flex flex-col items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-slate-800/50 flex items-center justify-center mb-3">
+                    <AlertTriangle className="w-6 h-6 text-slate-500" />
+                  </div>
+                  <h3 className="text-slate-300 font-bold mb-1">No Flagged Mistakes</h3>
+                  <p className="text-xs text-slate-500 italic max-w-xs">Tweak Leetcode checkboxes to bookmark items here for extra review.</p>
+                </div>
               ) : (
                 weakSpots.map(({ problem, topic }) => (
                   <div
@@ -349,9 +356,13 @@ export const RevisionView: React.FC = () => {
 
             <div className="space-y-3 max-h-[280px] overflow-y-auto pr-1">
               {upcoming.length === 0 ? (
-                <p className="text-xs text-slate-600 font-mono italic text-center py-6">
-                  No upcoming items scheduled in queue.
-                </p>
+                <div className="py-12 text-center flex flex-col items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-slate-800/50 flex items-center justify-center mb-3 border border-white/[0.04]">
+                    <History className="w-6 h-6 text-slate-500" />
+                  </div>
+                  <h3 className="text-slate-300 font-bold mb-1">Queue Empty</h3>
+                  <p className="text-xs text-slate-500 italic max-w-xs">No upcoming items scheduled in queue.</p>
+                </div>
               ) : (
                 upcoming.map(({ problem, topic }) => (
                   <div

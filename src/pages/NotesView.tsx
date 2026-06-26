@@ -461,8 +461,13 @@ export const NotesView: React.FC = () => {
           {/* Notes Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredNotes.length === 0 ? (
-              <div className="col-span-2 p-12 text-center text-xs text-slate-500 font-mono italic glass-panel rounded-xl">
-                No notes found matching the active filters.
+              <div className="col-span-2 p-12 text-center flex flex-col items-center justify-center glass-panel rounded-xl">
+                <div className="w-12 h-12 rounded-full bg-slate-800/50 flex items-center justify-center mb-3 border border-white/[0.04]">
+                  <Search className="w-6 h-6 text-slate-500" />
+                </div>
+                <h3 className="text-slate-300 font-bold mb-1">No Notes Found</h3>
+                <p className="text-xs text-slate-500 italic mb-4">No notes match the active filters.</p>
+                <button onClick={() => { setSearchQuery(""); setSelectedCategory("All"); setSelectedTag("All"); }} className="px-4 py-2 bg-white/[0.05] text-slate-300 rounded-lg text-xs font-bold hover:bg-white/[0.1] transition-colors cursor-pointer border border-white/[0.04]">Clear Filters</button>
               </div>
             ) : (
               filteredNotes.map(note => (

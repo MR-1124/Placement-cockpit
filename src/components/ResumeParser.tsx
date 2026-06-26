@@ -1,32 +1,14 @@
 import React, { useState } from "react";
 import { Loader2, FileJson, ClipboardList, CheckCircle } from "lucide-react";
+import * as pdfjsLib from "pdfjs-dist";
 
-let pdfJsLoadPromise: Promise<any> | null = null;
-
-const loadPdfJs = (): Promise<any> => {
-  if ((window as any).pdfjsLib) return Promise.resolve((window as any).pdfjsLib);
-  if (pdfJsLoadPromise) return pdfJsLoadPromise;
-
-  pdfJsLoadPromise = new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js";
-    script.async = true;
-    script.onload = () => {
-      const pdfjsLib = (window as any).pdfjsLib;
-      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js";
-      resolve(pdfjsLib);
-    };
-    script.onerror = () => {
-      pdfJsLoadPromise = null;
-      reject(new Error("Failed to load PDF.js from CDN"));
-    };
-    document.body.appendChild(script);
-  });
-  return pdfJsLoadPromise;
-};
+// Provide the worker via URL for Vite
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url
+).toString();
 
 const extractTextFromPdf = async (arrayBuffer: ArrayBuffer): Promise<string> => {
-  const pdfjsLib = await loadPdfJs();
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
   let text = "";
   for (let i = 1; i <= pdf.numPages; i++) {

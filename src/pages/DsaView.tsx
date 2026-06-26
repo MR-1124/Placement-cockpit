@@ -51,6 +51,7 @@ export const DsaView: React.FC = () => {
   } | null>(null);
 
   const [previewNotes, setPreviewNotes] = useState(false);
+  const [timerDuration, setTimerDuration] = useState(2700);
   const [timerSeconds, setTimerSeconds] = useState(2700);
   const [timerRunning, setTimerRunning] = useState(false);
 
@@ -270,8 +271,13 @@ export const DsaView: React.FC = () => {
               {isExpanded && (
                 <div className="border-t border-white/[0.06] overflow-x-auto">
                   {topic.problems.length === 0 ? (
-                    <div className="p-6 text-center text-xs text-slate-600 font-mono italic">
-                      No problems match the current filter search.
+                    <div className="p-8 text-center flex flex-col items-center justify-center">
+                      <div className="w-12 h-12 rounded-full bg-slate-800/50 flex items-center justify-center mb-3">
+                        <Search className="w-6 h-6 text-slate-500" />
+                      </div>
+                      <h3 className="text-slate-300 font-bold mb-1">No Problems Found</h3>
+                      <p className="text-xs text-slate-500 italic mb-4">No problems match the current filter search.</p>
+                      <button onClick={() => { setSearchQuery(""); setDifficultyFilter("All"); setShowAllLevels(true); }} className="px-4 py-2 bg-white/[0.05] text-slate-300 rounded-lg text-xs font-bold hover:bg-white/[0.1] transition-colors cursor-pointer">Clear Filters</button>
                     </div>
                   ) : (
                     <table className="w-full text-left border-collapse min-w-[700px]">
@@ -424,7 +430,7 @@ export const DsaView: React.FC = () => {
                               <td className="py-3 px-3 text-center">
                                 <button
                                   onClick={() => {
-                                    setTimerSeconds(2700);
+                                    setTimerSeconds(timerDuration);
                                     setTimerRunning(false);
                                     setPreviewNotes(false);
                                     setActiveEditProblem({
@@ -499,7 +505,22 @@ export const DsaView: React.FC = () => {
                   {formatTime(timerSeconds)}
                 </span>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
+                <select
+                  disabled={timerRunning}
+                  value={timerDuration}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setTimerDuration(val);
+                    setTimerSeconds(val);
+                  }}
+                  className="bg-white/[0.02] border border-white/[0.06] text-slate-400 rounded-lg px-2 py-1.5 text-xs cursor-pointer focus:outline-none focus:border-accentPrimary disabled:opacity-50 font-semibold h-[28px]"
+                >
+                  <option value={900} className="bg-darkBg">15 Min</option>
+                  <option value={1800} className="bg-darkBg">30 Min</option>
+                  <option value={2700} className="bg-darkBg">45 Min</option>
+                  <option value={3600} className="bg-darkBg">60 Min</option>
+                </select>
                 <button
                   onClick={() => setTimerRunning(!timerRunning)}
                   className={`px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${
@@ -513,7 +534,7 @@ export const DsaView: React.FC = () => {
                 <button
                   onClick={() => {
                     setTimerRunning(false);
-                    setTimerSeconds(2700);
+                    setTimerSeconds(timerDuration);
                   }}
                   className="bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.06] text-slate-400 px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer"
                 >
