@@ -19,7 +19,7 @@ import {
   ShieldAlert,
   X
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+
 
 interface LandingViewProps {
   onEnterDashboard: () => void;
@@ -243,13 +243,9 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
           {features.map((feat, idx) => {
             const Icon = feat.icon;
             return (
-              <motion.div
+              <div
                 key={idx}
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.3, delay: idx * 0.05 }}
-                className="glass-panel border border-white/[0.04] hover:border-white/[0.1] rounded-2xl p-6 space-y-4 hover:-translate-y-1 transition-all duration-300 group hover:shadow-xl"
+                className="bg-[#101014] border border-white/5 p-6 rounded-2xl hover:border-violet-500/30 transition-all group animate-slide-up"
               >
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 ${feat.color}`}>
                   <Icon className="w-5 h-5" />
@@ -262,7 +258,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
                     {feat.desc}
                   </p>
                 </div>
-              </motion.div>
+              </div>
             );
           })}
         </div>
@@ -325,86 +321,79 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
       </section>
 
       {/* Integrated Login Modal */}
-      <AnimatePresence>
-        {showLoginModal && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-[9999] select-none">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-md bg-darkCard/95 border border-white/[0.08] shadow-2xl relative rounded-2xl overflow-hidden glass-panel p-8 space-y-6"
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-[9999] select-none">
+          <div className="bg-[#0f0f11] border border-white/10 p-8 rounded-3xl w-full max-w-md relative shadow-2xl animate-slide-up">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowLoginModal(false)}
+              className="absolute right-4 top-4 p-1.5 rounded-lg hover:bg-white/[0.04] text-slate-500 hover:text-slate-200 transition-colors cursor-pointer"
             >
-              {/* Close Button */}
+              <X className="w-4.5 h-4.5" />
+            </button>
+
+            <div className="flex flex-col items-center">
+              {/* Logo Icon */}
+              <div className="w-14 h-14 rounded-2xl bg-accentPrimary/10 border border-accentPrimary/20 flex items-center justify-center text-accentPrimary shadow-inner mb-4 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-tr from-accentPrimary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <LogIn className="w-6 h-6 text-accentPrimary" />
+              </div>
+
+              <div className="text-center space-y-1.5">
+                <h3 className="text-lg font-bold text-white tracking-tight">Access Placement Cockpit</h3>
+                <p className="text-[11px] text-slate-450 max-w-[280px] leading-relaxed mx-auto">
+                  Configure your placement credentials, track algorithms, and run mock interviews.
+                </p>
+              </div>
+            </div>
+
+            {/* Login Actions */}
+            <div className="space-y-3.5">
               <button
-                onClick={() => setShowLoginModal(false)}
-                className="absolute right-4 top-4 p-1.5 rounded-lg hover:bg-white/[0.04] text-slate-500 hover:text-slate-200 transition-colors cursor-pointer"
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+                className="w-full h-11 bg-white hover:bg-slate-100 text-slate-900 border border-slate-200 font-bold rounded-xl flex items-center justify-center gap-3 active:scale-98 transition-all cursor-pointer shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-xs"
               >
-                <X className="w-4.5 h-4.5" />
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M23.745 12.27c0-.77-.07-1.54-.2-2.27H12v4.51h6.6c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.58-5.18 3.58-8.82z" />
+                  <path fill="#34A853" d="M12 24c3.24 0 5.97-1.08 7.96-2.91l-3.86-3c-1.08.72-2.45 1.16-4.1 1.16-3.15 0-5.81-2.13-6.76-5.01H1.27v3.1a12 12 0 0 0 10.73 6.66z" />
+                  <path fill="#FBBC05" d="M5.24 14.24a7.15 7.15 0 0 1 0-2.48V8.66H1.27a12 12 0 0 0 0 6.68l3.97-3.1z" />
+                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.27 8.66l3.97 3.1c.95-2.88 3.61-5.01 6.76-5.01z" />
+                </svg>
+                <span>{loading ? "Authenticating..." : "Sign in with Google"}</span>
               </button>
 
-              <div className="flex flex-col items-center">
-                {/* Logo Icon */}
-                <div className="w-14 h-14 rounded-2xl bg-accentPrimary/10 border border-accentPrimary/20 flex items-center justify-center text-accentPrimary shadow-inner mb-4 relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-accentPrimary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <LogIn className="w-6 h-6 text-accentPrimary" />
-                </div>
+              <button
+                onClick={handleGuestSignIn}
+                disabled={loading}
+                className="w-full h-11 bg-white/[0.02] hover:bg-white/[0.04] text-slate-350 hover:text-white border border-white/[0.06] font-semibold rounded-xl flex items-center justify-center gap-2.5 active:scale-98 transition-all cursor-pointer text-xs disabled:opacity-50"
+              >
+                <LogIn className="w-4 h-4 text-slate-500" />
+                <span>Continue in Developer Guest Mode</span>
+              </button>
 
-                <div className="text-center space-y-1.5">
-                  <h3 className="text-lg font-bold text-white tracking-tight">Access Placement Cockpit</h3>
-                  <p className="text-[11px] text-slate-450 max-w-[280px] leading-relaxed mx-auto">
-                    Configure your placement credentials, track algorithms, and run mock interviews.
+              {error && (
+                <div className="p-3 rounded-lg bg-rose-500/5 border border-rose-500/10 text-[9px] font-mono text-rose-400 flex items-start gap-2 leading-relaxed">
+                  <ShieldAlert className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              {!hasFirebaseKeys && (
+                <div className="bg-amber-500/5 border border-amber-500/10 rounded-xl p-3.5 space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <span className="text-[9px] font-bold text-amber-500 uppercase tracking-wide">Firebase Keys Missing</span>
+                  </div>
+                  <p className="text-[9px] text-slate-400 leading-normal">
+                    Keys not configured. Check <code>.env.local</code>. Developer Guest Mode is fully operational above.
                   </p>
                 </div>
-              </div>
-
-              {/* Login Actions */}
-              <div className="space-y-3.5">
-                <button
-                  onClick={handleGoogleSignIn}
-                  disabled={loading}
-                  className="w-full h-11 bg-white hover:bg-slate-100 text-slate-900 border border-slate-200 font-bold rounded-xl flex items-center justify-center gap-3 active:scale-98 transition-all cursor-pointer shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-xs"
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M23.745 12.27c0-.77-.07-1.54-.2-2.27H12v4.51h6.6c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.58-5.18 3.58-8.82z" />
-                    <path fill="#34A853" d="M12 24c3.24 0 5.97-1.08 7.96-2.91l-3.86-3c-1.08.72-2.45 1.16-4.1 1.16-3.15 0-5.81-2.13-6.76-5.01H1.27v3.1a12 12 0 0 0 10.73 6.66z" />
-                    <path fill="#FBBC05" d="M5.24 14.24a7.15 7.15 0 0 1 0-2.48V8.66H1.27a12 12 0 0 0 0 6.68l3.97-3.1z" />
-                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.27 8.66l3.97 3.1c.95-2.88 3.61-5.01 6.76-5.01z" />
-                  </svg>
-                  <span>{loading ? "Authenticating..." : "Sign in with Google"}</span>
-                </button>
-
-                <button
-                  onClick={handleGuestSignIn}
-                  disabled={loading}
-                  className="w-full h-11 bg-white/[0.02] hover:bg-white/[0.04] text-slate-350 hover:text-white border border-white/[0.06] font-semibold rounded-xl flex items-center justify-center gap-2.5 active:scale-98 transition-all cursor-pointer text-xs disabled:opacity-50"
-                >
-                  <LogIn className="w-4 h-4 text-slate-500" />
-                  <span>Continue in Developer Guest Mode</span>
-                </button>
-
-                {error && (
-                  <div className="p-3 rounded-lg bg-rose-500/5 border border-rose-500/10 text-[9px] font-mono text-rose-400 flex items-start gap-2 leading-relaxed">
-                    <ShieldAlert className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
-                    <span>{error}</span>
-                  </div>
-                )}
-
-                {!hasFirebaseKeys && (
-                  <div className="bg-amber-500/5 border border-amber-500/10 rounded-xl p-3.5 space-y-2">
-                    <div className="flex items-center gap-1.5">
-                      <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                      <span className="text-[9px] font-bold text-amber-500 uppercase tracking-wide">Firebase Keys Missing</span>
-                    </div>
-                    <p className="text-[9px] text-slate-400 leading-normal">
-                      Keys not configured. Check <code>.env.local</code>. Developer Guest Mode is fully operational above.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
+              )}
+            </div>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 };

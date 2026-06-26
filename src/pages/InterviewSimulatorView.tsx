@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAppState } from "../context/AppStateContext";
-import type { MockInterviewReport } from "../types/AppTypes";
+import type { MockInterviewReport, InterviewPhase } from "../types/AppTypes";
 import { MarkdownRenderer } from "../components/MarkdownRenderer";
 import { InterviewScorecard } from "../components/InterviewScorecard";
 import { InterviewSetupPanel, InterviewHistoryPanel } from "../components/InterviewSetupComponents";
@@ -41,7 +41,7 @@ const cleanResponseTags = (text: string) => {
     .trim();
 };
 
-const robustJsonParse = (text: string): any => {
+const robustJsonParse = (text: string): unknown => {
   let jsonStr = text.trim();
   if (jsonStr.includes("```")) {
     const matches = jsonStr.match(/```(?:json)?([\s\S]*?)```/);
@@ -96,7 +96,7 @@ const robustJsonParse = (text: string): any => {
       return [];
     };
 
-    const questionsFeedback: any[] = [];
+    const questionsFeedback: Array<{ question: string; response: string; rating: number; feedback: string }> = [];
     const qfRegex = /\{\s*"question"\s*:\s*"([^"]*)"\s*,\s*"response"\s*:\s*"([^"]*)"\s*,\s*"rating"\s*:\s*(\d+)\s*,\s*"feedback"\s*:\s*"([^"]*)"\s*\}/gi;
     let qfMatch;
     while ((qfMatch = qfRegex.exec(jsonStr)) !== null) {
@@ -227,6 +227,13 @@ export const InterviewSimulatorView: React.FC = () => {
   const [isGoalExpanded, setIsGoalExpanded] = useState(true);
   const [copyCodeSuccess, setCopyCodeSuccess] = useState(false);
   const [activeMobileTab, setActiveMobileTab] = useState<"chat" | "editor">("chat");
+  const [showPreBrief, setShowPreBrief] = useState(false);
+
+  useEffect(() => {
+    if (activeSession && activeSession.timeLeft === 2700 && activeSession.chatHistory.length === 0) {
+      setShowPreBrief(true);
+    }
+  }, [activeSession !== null]);
 
   const EVALUATION_MESSAGES = [
     "Analyzing logical code soundness...",
@@ -244,16 +251,16 @@ export const InterviewSimulatorView: React.FC = () => {
         setEvalMsgIndex(prev => (prev + 1) % EVALUATION_MESSAGES.length);
       }, 5000); // Change message every 5 seconds
     } else {
-      setEvalMsgIndex(0);
+      setTimeout(() => setEvalMsgIndex(0), 0);
     }
     return () => clearInterval(interval);
   }, [isEvaluating, activeSession?.currentPhase, EVALUATION_MESSAGES.length]);
   
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const timerRef = useRef<any>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Keep refs containing absolute latest values to prevent stale closure bugs
-  const chatHistoryRef = useRef<any[]>([]);
+  const chatHistoryRef = useRef<Array<{ id: string; role: "user" | "assistant" | "system"; content: string; timestamp: string }>>([]);
   const codeRef = useRef("");
   const langRef = useRef("cpp");
   const phaseRef = useRef<string>("intro");
@@ -263,8 +270,8 @@ export const InterviewSimulatorView: React.FC = () => {
   const isPausedRef = useRef(false);
 
   useEffect(() => {
-    isPausedRef.current = isSessionPaused;
-  }, [isSessionPaused]);
+    isPausedRef.current = isSessionPaused || showPreBrief;
+  }, [isSessionPaused, showPreBrief]);
 
   useEffect(() => {
     if (activeSession) {
@@ -279,15 +286,17 @@ export const InterviewSimulatorView: React.FC = () => {
   // Sync state values if activeSession is updated or restored
   useEffect(() => {
     if (activeSession) {
-      setInputCode(activeSession.code);
-      setSelectedLang(activeSession.language);
+      setTimeout(() => {
+        setInputCode(activeSession.code);
+        setSelectedLang(activeSession.language);
+      }, 0);
     }
   }, [activeSession?.topic]); // Run once when session changes/loads
 
   // Reset editor maximization when phase transitions away from DSA coding
   useEffect(() => {
     if (activeSession && activeSession.currentPhase !== "dsa") {
-      setIsEditorMaximized(false);
+      setTimeout(() => setIsEditorMaximized(false), 0);
     }
   }, [activeSession?.currentPhase]);
 
@@ -297,61 +306,7 @@ export const InterviewSimulatorView: React.FC = () => {
   // because triggerEvaluationFlow() itself sets currentPhase="evaluating", which
   // re-fired this effect, starting a second evaluation that caused permanent "stuck" state.
 
-  // 1. Time-delta reload persistence logic
-  useEffect(() => {
-    if (activeSession && activeSession.timeLeft > 0 && activeSession.currentPhase !== "evaluating") {
-      // Calculate delta on first mount if time was saved
-      const saved = localStorage.getItem("placement_cockpit_state");
-      let correctedTime = activeSession.timeLeft;
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          const activeSess = parsed.activeInterviewSession;
-          if (activeSess && activeSess.lastSavedTime) {
-            const elapsed = Math.floor((Date.now() - activeSess.lastSavedTime) / 1000);
-            correctedTime = Math.max(0, activeSess.timeLeft - elapsed);
-          }
-        } catch (e) {
-          console.error("Failed to recover time delta", e);
-        }
-      }
 
-      // Interval countdown tick
-      let secondsLeft = correctedTime;
-      timerRef.current = setInterval(() => {
-        if (!isPausedRef.current) {
-          secondsLeft = Math.max(0, secondsLeft - 1);
-
-          if (secondsLeft === 0) {
-            // Bug-fix #2: clear timer BEFORE setting phase and calling evaluation
-            // so the timer never fires again and cannot re-trigger handleTimeOutSubmission
-            clearInterval(timerRef.current);
-            timerRef.current = null;
-            updateInterviewSession(
-              0,
-              codeRef.current,
-              langRef.current,
-              chatHistoryRef.current,
-              "evaluating"
-            );
-            handleTimeOutSubmission();
-          } else {
-            updateInterviewSession(
-              secondsLeft,
-              codeRef.current,
-              langRef.current,
-              chatHistoryRef.current,
-              phaseRef.current as any
-            );
-          }
-        }
-      }, 1000);
-    }
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [activeSession === null, activeSession?.currentPhase]);
 
   // Sync editor contents to context state on changes
   const handleCodeChange = (val: string) => {
@@ -363,7 +318,7 @@ export const InterviewSimulatorView: React.FC = () => {
         val,
         langRef.current,
         chatHistoryRef.current,
-        phaseRef.current as any
+        phaseRef.current as InterviewPhase
       );
     }
   };
@@ -407,7 +362,7 @@ export const InterviewSimulatorView: React.FC = () => {
         newCode,
         lang,
         chatHistoryRef.current,
-        phaseRef.current as any
+        phaseRef.current as InterviewPhase
       );
     }
   };
@@ -616,7 +571,9 @@ Rule: Do not output code solutions. Guide them using conceptual feedback. Keep r
                 accumulatedResponse += content;
                 setStreamingDelta(cleanResponseTags(accumulatedResponse));
               }
-            } catch (e) {}
+            } catch (err) {
+              console.warn("Stream JSON parse error", err);
+            }
           }
         }
       }
@@ -625,7 +582,7 @@ Rule: Do not output code solutions. Guide them using conceptual feedback. Keep r
       let nextPhase = activeSession.currentPhase;
       const phaseMatch = accumulatedResponse.match(/\[PHASE_TRANSITION:\s*(intro|dsa|core|puzzles|hr|evaluating)\]/i);
       if (phaseMatch) {
-        nextPhase = phaseMatch[1].toLowerCase() as any;
+        nextPhase = phaseMatch[1].toLowerCase() as InterviewPhase;
       }
 
       // Parse sub-phase status
@@ -656,9 +613,9 @@ Rule: Do not output code solutions. Guide them using conceptual feedback. Keep r
         nextPhase,
         nextSubStatus
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      addInterviewChatMessage("assistant", `Failed to get a response from the interviewer. Error details: ${err.message}`);
+      addInterviewChatMessage("assistant", `Failed to get a response from the interviewer. Error details: ${(err as Error).message}`);
     } finally {
       setIsAiResponding(false);
       setAiStatusText("");
@@ -697,13 +654,13 @@ Rule: Do not output code solutions. Guide them using conceptual feedback. Keep r
     await getInterviewerResponse(chatHistory);
   };
 
-  const handleTimeOutSubmission = () => {
+  function handleTimeOutSubmission() {
     // Bug-fix #2: timer already stopped before this is called; just trigger eval
     triggerEvaluationFlow();
-  };
+  }
 
   // Evaluator pipeline with NVIDIA NIM
-  const triggerEvaluationFlow = async () => {
+  async function triggerEvaluationFlow() {
     // Bug-fix #1/#2: isEvaluatingRef is a synchronous guard (unlike isEvaluating state
     // which has async update lag). Set it immediately to block any concurrent call.
     if (isEvaluatingRef.current) return;
@@ -804,7 +761,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
       const data = await response.json();
       const content = data.choices?.[0]?.message?.content || "";
 
-      const scores = robustJsonParse(content);
+      const scores: any = robustJsonParse(content);
 
       const report: MockInterviewReport = {
         id: `report-${Date.now()}`,
@@ -837,11 +794,11 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
 
       setEvaluationReport(report);
       endInterviewSession(true, report);
-    } catch (err: any) {
+    } catch (err: unknown) {
       clearTimeout(timeoutId);
       console.error("Evaluation failed", err);
 
-      if (err.name === "AbortError" || err.message?.includes("timeout") || err.message?.includes("Abort")) {
+      if ((err as Error).name === "AbortError" || (err as Error).message?.includes("timeout") || (err as Error).message?.includes("Abort")) {
         alert("The AI evaluation timed out after 45 seconds. The API might be heavily loaded. Please click 'End Interview' to try again.");
         // Revert phase to allow retry
         updateInterviewSession(
@@ -849,7 +806,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
           currentCode,
           currentLang,
           currentHistory,
-          phaseRef.current as any
+          phaseRef.current as InterviewPhase
         );
         return;
       }
@@ -936,7 +893,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
             defaultCode,
             langRef.current,
             chatHistoryRef.current,
-            activeSession.currentPhase as any
+            activeSession.currentPhase as InterviewPhase
           );
         }
       }
@@ -950,9 +907,132 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
+  // 1. Time-delta reload persistence logic
+  useEffect(() => {
+    if (activeSession && activeSession.timeLeft > 0 && activeSession.currentPhase !== "evaluating") {
+      // Calculate delta on first mount if time was saved
+      const saved = localStorage.getItem("placement_cockpit_state");
+      let correctedTime = activeSession.timeLeft;
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          const activeSess = parsed.activeInterviewSession;
+          if (activeSess && activeSess.lastSavedTime) {
+            const elapsed = Math.floor((Date.now() - activeSess.lastSavedTime) / 1000);
+            correctedTime = Math.max(0, activeSess.timeLeft - elapsed);
+          }
+        } catch (e) {
+          console.error("Failed to recover time delta", e);
+        }
+      }
+
+      // Interval countdown tick
+      let secondsLeft = correctedTime;
+      timerRef.current = setInterval(() => {
+        if (!isPausedRef.current) {
+          secondsLeft = Math.max(0, secondsLeft - 1);
+
+          if (secondsLeft === 0) {
+            // Bug-fix #2: clear timer BEFORE setting phase and calling evaluation
+            // so the timer never fires again and cannot re-trigger handleTimeOutSubmission
+            if (timerRef.current) {
+              clearInterval(timerRef.current);
+              timerRef.current = null;
+            }
+            updateInterviewSession(
+              0,
+              codeRef.current,
+              langRef.current,
+              chatHistoryRef.current,
+              "evaluating"
+            );
+            handleTimeOutSubmission();
+          } else {
+            updateInterviewSession(
+              secondsLeft,
+              codeRef.current,
+              langRef.current,
+              chatHistoryRef.current,
+              phaseRef.current as InterviewPhase
+            );
+          }
+        }
+      }, 1000);
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSession === null, activeSession?.currentPhase]);
+
   // Render View Selector
 
   if (activeSession) {
+    if (showPreBrief) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[600px] p-6 animate-fade-in">
+          <div className="w-full max-w-2xl bg-darkCard border border-white/[0.08] p-8 rounded-2xl shadow-2xl glass-panel relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accentPrimary/50 via-purple-500/50 to-accentPrimary/50"></div>
+            
+            <div className="text-center space-y-4 mb-8">
+              <div className="w-16 h-16 rounded-full bg-accentPrimary/10 border border-accentPrimary/30 flex items-center justify-center mx-auto shadow-lg shadow-accentPrimary/5 mb-6">
+                <Speech className="w-8 h-8 text-accentPrimary animate-pulse" />
+              </div>
+              <h1 className="text-3xl font-bold font-mono text-white tracking-tight">Interview Pre-Brief</h1>
+              <p className="text-sm text-slate-400 max-w-lg mx-auto leading-relaxed">
+                Review your focus areas and target role before stepping into the simulator.
+              </p>
+            </div>
+
+            <div className="space-y-6 bg-black/20 p-6 rounded-xl border border-white/[0.04]">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <span className="text-[10px] uppercase font-mono text-slate-500 font-bold">Topic Focus</span>
+                  <div className="text-sm font-semibold text-white">{activeSession.topic}</div>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] uppercase font-mono text-slate-500 font-bold">Target Difficulty</span>
+                  <div className="text-sm font-semibold text-accentPrimary">{activeSession.difficulty}</div>
+                </div>
+                <div className="space-y-1 col-span-2">
+                  <span className="text-[10px] uppercase font-mono text-slate-500 font-bold">Interviewer Persona</span>
+                  <div className="text-sm font-semibold text-white">{activeSession.interviewerPersonality}</div>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-4 border-t border-white/[0.04]">
+                <span className="text-[10px] uppercase font-mono text-slate-500 font-bold">Interview Structure</span>
+                <ul className="text-xs text-slate-300 space-y-2 font-mono">
+                  <li className="flex gap-2 items-start"><CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5"/> <span><strong>Phase 1:</strong> Introduction & Resume Review</span></li>
+                  <li className="flex gap-2 items-start"><CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5"/> <span><strong>Phase 2:</strong> Data Structures & Algorithms Coding Challenge</span></li>
+                  <li className="flex gap-2 items-start"><CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5"/> <span><strong>Phase 3:</strong> Core CS Theory & Architecture</span></li>
+                  <li className="flex gap-2 items-start"><CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5"/> <span><strong>Phase 4:</strong> Logic Puzzles & System Verification</span></li>
+                  <li className="flex gap-2 items-start"><CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5"/> <span><strong>Phase 5:</strong> Behavioral & HR Questions</span></li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-white/[0.04] flex justify-end gap-4">
+              <button
+                onClick={handleExitInterview}
+                className="px-6 py-2.5 rounded-xl border border-white/[0.08] hover:bg-white/[0.04] text-slate-300 text-xs font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setShowPreBrief(false)}
+                className="px-6 py-2.5 rounded-xl bg-accentPrimary hover:bg-accentPrimary/90 text-white text-xs font-bold font-mono transition-all shadow-lg shadow-accentPrimary/20 flex items-center gap-2 cursor-pointer"
+              >
+                <span>Enter Simulator</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     // Phase 2: SPLIT SCREEN WORKSPACE
     return (
       <div className="space-y-6">
@@ -1035,7 +1115,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
         </div>
 
         {/* Loading Spinner for Evaluation */}
-        {activeSession.currentPhase === "evaluating" || isEvaluating ? (
+        {(activeSession.currentPhase as string) === "evaluating" || isEvaluating ? (
           <div className="flex flex-col items-center justify-center min-h-[500px] text-center space-y-6">
             <div className="relative w-16 h-16">
               <Loader2 className="w-16 h-16 animate-spin text-accentPrimary" />
@@ -1082,7 +1162,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
                      activeSession.currentPhase === "dsa" ? "Code Reviewer Panel" :
                      activeSession.currentPhase === "core" ? "Core CS Panel" :
                      activeSession.currentPhase === "puzzles" ? "Logic Panel" :
-                     activeSession.currentPhase === "evaluating" ? "Evaluator Panel" :
+                     (activeSession.currentPhase as string) === "evaluating" ? "Evaluator Panel" :
                      "Interviewer Panel"}
                   </span>
                 </div>
@@ -1162,6 +1242,52 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
                         <span className="text-slate-600 italic">No pitch template saved. Set in config panel.</span>
                       )}
                     </div>
+                  </div>
+                )}
+                {/* Prompt Suggestions (Fix 87) */}
+                {activeSession.currentPhase !== "evaluating" && !isAiResponding && !isSessionPaused && (
+                  <div className="flex flex-wrap gap-2 pb-2">
+                    {activeSession.currentPhase === "intro" && [
+                      "Here is my quick introduction...",
+                      "Can you review my resume highlights?"
+                    ].map(s => (
+                      <button key={s} onClick={() => setChatInput(s)} className="text-[10px] font-mono px-3 py-1.5 rounded-full bg-white/[0.02] hover:bg-accentPrimary/10 border border-white/[0.08] hover:border-accentPrimary/30 text-slate-400 hover:text-accentPrimary transition-all cursor-pointer shadow-sm">
+                        {s}
+                      </button>
+                    ))}
+                    {activeSession.currentPhase === "dsa" && [
+                      "Can I have a hint?", 
+                      "Is my time complexity optimal?",
+                      "Should I write the code now?"
+                    ].map(s => (
+                      <button key={s} onClick={() => setChatInput(s)} className="text-[10px] font-mono px-3 py-1.5 rounded-full bg-white/[0.02] hover:bg-accentPrimary/10 border border-white/[0.08] hover:border-accentPrimary/30 text-slate-400 hover:text-accentPrimary transition-all cursor-pointer shadow-sm">
+                        {s}
+                      </button>
+                    ))}
+                    {activeSession.currentPhase === "core" && [
+                      "Can you clarify the question?", 
+                      "I'm not exactly sure, but I think..."
+                    ].map(s => (
+                      <button key={s} onClick={() => setChatInput(s)} className="text-[10px] font-mono px-3 py-1.5 rounded-full bg-white/[0.02] hover:bg-accentPrimary/10 border border-white/[0.08] hover:border-accentPrimary/30 text-slate-400 hover:text-accentPrimary transition-all cursor-pointer shadow-sm">
+                        {s}
+                      </button>
+                    ))}
+                    {activeSession.currentPhase === "puzzles" && [
+                      "Wait, let me think step-by-step.", 
+                      "Does the edge case matter here?"
+                    ].map(s => (
+                      <button key={s} onClick={() => setChatInput(s)} className="text-[10px] font-mono px-3 py-1.5 rounded-full bg-white/[0.02] hover:bg-accentPrimary/10 border border-white/[0.08] hover:border-accentPrimary/30 text-slate-400 hover:text-accentPrimary transition-all cursor-pointer shadow-sm">
+                        {s}
+                      </button>
+                    ))}
+                    {activeSession.currentPhase === "hr" && [
+                      "Can I take a moment to format my STAR response?", 
+                      "I have faced this before, specifically when..."
+                    ].map(s => (
+                      <button key={s} onClick={() => setChatInput(s)} className="text-[10px] font-mono px-3 py-1.5 rounded-full bg-white/[0.02] hover:bg-accentPrimary/10 border border-white/[0.08] hover:border-accentPrimary/30 text-slate-400 hover:text-accentPrimary transition-all cursor-pointer shadow-sm">
+                        {s}
+                      </button>
+                    ))}
                   </div>
                 )}
                 <div className="flex gap-2 items-end">
@@ -1439,6 +1565,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
                 </div>
               )}
             </div>
+          </div>
           </>
         )}
       </div>
@@ -1477,9 +1604,39 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
 
         {/* History Scorecards (Right side, 1 Col) */}
         <div className="space-y-6">
+          {state.mockInterviews && state.mockInterviews.length >= 2 && (
+            <div className="bg-darkCard border border-white/[0.04] p-5 rounded-xl shadow-lg relative overflow-hidden glass-panel">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">Performance Trend</h3>
+              </div>
+              <div className="flex items-end gap-2 h-32 pt-6">
+                {[...state.mockInterviews].reverse().slice(-10).map((report) => {
+                  const score = report.scorecard.overallScore;
+                  const height = `${Math.max(10, score * 10)}%`;
+                  const colorClass = score >= 8 ? 'bg-emerald-500' : score >= 5 ? 'bg-amber-500' : 'bg-rose-500';
+                  return (
+                    <div key={report.id} className="flex-1 flex flex-col items-center gap-2 group relative h-full justify-end">
+                      <div className="w-full flex justify-center h-full items-end">
+                        <div 
+                          className={`w-full max-w-[24px] rounded-t-sm opacity-60 group-hover:opacity-100 transition-all ${colorClass}`}
+                          style={{ height }}
+                        />
+                      </div>
+                      <span className="text-[9px] font-mono text-slate-500 group-hover:text-white transition-colors">{score}</span>
+                      <div className="absolute -top-10 bg-darkCard border border-white/[0.1] shadow-2xl p-2 rounded-lg text-[10px] text-white opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-20 transition-opacity flex flex-col gap-1">
+                        <span className="font-bold">{report.topic}</span>
+                        <span className="text-slate-400 font-mono">{report.difficulty}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <InterviewHistoryPanel onViewReport={setEvaluationReport} />
         </div>
       </div>
     </div>
   );
 };
+

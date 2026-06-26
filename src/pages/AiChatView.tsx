@@ -48,7 +48,7 @@ export const AiChatView: React.FC = () => {
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editTitleInput, setEditTitleInput] = useState("");
 
-  const activeSession = state.chatSessions?.find(s => s.id === state.currentSessionId);
+  const activeSession = state.chatSessions?.[state.currentSessionId || "default-session"];
   const currentMessages = activeSession?.messages || [];
   
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -376,9 +376,9 @@ export const AiChatView: React.FC = () => {
               }`}
             >
               History
-              {state.chatSessions && state.chatSessions.length > 0 && (
+              {state.chatSessions && Object.keys(state.chatSessions).length > 0 && (
                 <span className="bg-white/10 text-[9px] px-1.5 py-0.2 rounded-full text-slate-300">
-                  {state.chatSessions.length}
+                  {Object.keys(state.chatSessions).length}
                 </span>
               )}
             </button>
@@ -425,7 +425,7 @@ export const AiChatView: React.FC = () => {
                   + New Chat
                 </button>
                 <div className="space-y-2 max-h-[350px] overflow-y-auto pr-1">
-                  {([...(state.chatSessions || [])].sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))).map((session) => {
+                  {(Object.values(state.chatSessions || {}).sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))).map((session) => {
                     const active = state.currentSessionId === session.id;
                     const isEditing = editingSessionId === session.id;
                     
@@ -799,3 +799,4 @@ export const AiChatView: React.FC = () => {
     </div>
   );
 };
+

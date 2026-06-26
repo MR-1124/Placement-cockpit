@@ -3,8 +3,6 @@ import confetti from "canvas-confetti";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db, hasFirebaseKeys } from "../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { motion, AnimatePresence } from "framer-motion";
-import { AlertTriangle, AlertCircle, Info } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import type { DsaTopic, DevCategory, UserPlan, Plan, Badge } from "../data/curriculum";
 
@@ -24,7 +22,8 @@ import type {
   MockInterviewReport,
   ActiveInterviewSession,
   InterviewPhase,
-  WeeklyGoal
+  WeeklyGoal,
+  DailyChallenge
 } from "../types/AppTypes";
 
 // Re-export all types so existing consumers (import { X } from '../context/AppStateContext')
@@ -44,7 +43,8 @@ export type {
   MockInterviewReport,
   ActiveInterviewSession,
   InterviewPhase,
-  WeeklyGoal
+  WeeklyGoal,
+  DailyChallenge
 };
 
 // All domain interfaces are now in src/types/AppTypes.ts (Arch Debt #13).
@@ -72,8 +72,9 @@ interface AppState {
   lastActiveDate: string;
   unlockedBadges: string[];
   xp: number;
+  dailyChallenge?: DailyChallenge;
 
-  chatSessions?: ChatSession[];
+  chatSessions?: Record<string, ChatSession>;
   currentSessionId?: string;
   userPlans?: UserPlan[];
   primaryPlanId?: string;
@@ -150,6 +151,8 @@ interface AppContextType {
   addInterviewChatMessage: (role: "user" | "assistant", content: string) => void;
   endInterviewSession: (completed: boolean, report?: MockInterviewReport) => void;
   deleteMockInterviewReport: (id: string) => void;
+  completeDailyChallenge: () => void;
+  refreshDailyChallenge: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -195,7 +198,7 @@ interface SerializedProgress {
   lastActiveDate: string;
   unlockedBadges: string[];
   xp: number;
-  chatSessions?: ChatSession[];
+  chatSessions?: Record<string, ChatSession>;
   currentSessionId?: string;
   profile?: {
     name: string;
@@ -285,7 +288,7 @@ const serializeState = (state: AppState): SerializedProgress => {
     lastActiveDate: state.lastActiveDate,
     unlockedBadges: state.unlockedBadges || [],
     xp: state.xp || 0,
-    chatSessions: state.chatSessions || [],
+    chatSessions: state.chatSessions || {},
     currentSessionId: state.currentSessionId || "default-session",
     userPlans: state.userPlans || [],
     primaryPlanId: state.primaryPlanId || "16-week-mastery",
@@ -354,6 +357,7 @@ const deserializeState = (serialized: Partial<SerializedProgress>, curriculum: a
   });
 
   return {
+    isLoadingUser: false,
     version: serialized.version || SCHEMA_VERSION,
     user: serialized.user || null,
     completedWeeks: serialized.completedWeeks || [],
@@ -396,15 +400,15 @@ const deserializeState = (serialized: Partial<SerializedProgress>, curriculum: a
     lastActiveDate: serialized.lastActiveDate || getTodayString(),
     unlockedBadges: serialized.unlockedBadges || [],
     xp: serialized.xp || 0,
-    chatSessions: serialized.chatSessions || [
-      {
+    chatSessions: serialized.chatSessions || {
+      "default-session": {
         id: "default-session",
         title: "Placement Chat Room",
         messages: [],
         createdAt: new Date().toLocaleDateString(),
         isPinned: false
       }
-    ],
+    },
     currentSessionId: serialized.currentSessionId || "default-session",
     userPlans: serialized.userPlans || [],
     primaryPlanId: serialized.primaryPlanId || "16-week-mastery",
@@ -505,15 +509,15 @@ const getInitialState = (curriculum: any): AppState => ({
   unlockedBadges: [],
   xp: 0,
 
-  chatSessions: [
-    {
+  chatSessions: {
+    "default-session": {
       id: "default-session",
       title: "Placement Chat Room",
       messages: [],
       createdAt: new Date().toLocaleDateString(),
       isPinned: false
     }
-  ],
+  },
   currentSessionId: "default-session",
   userPlans: [
     {
@@ -607,16 +611,16 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         
 
 
-        if (updatedState.chatSessions === undefined || updatedState.chatSessions.length === 0) {
-          updatedState.chatSessions = [
-            {
+        if (updatedState.chatSessions === undefined || Object.keys(updatedState.chatSessions || {}).length === 0) {
+          updatedState.chatSessions = {
+            "default-session": {
               id: "default-session",
               title: "Placement Chat Room",
               messages: (updatedState as any).chatMessages || [],
               createdAt: new Date().toLocaleDateString(),
               isPinned: false
             }
-          ];
+          };
           updatedState.currentSessionId = "default-session";
         }
 
@@ -808,7 +812,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
   useEffect(() => {
     const stateToSave = {
       ...state,
-      chatSessions: state.chatSessions ? state.chatSessions.slice(-50) : [],
+      chatSessions: state.chatSessions || {},
       settings: {
         ...state.settings,
         nvidiaApiKey: state.settings.nvidiaApiKey ? btoa(state.settings.nvidiaApiKey) : ""
@@ -894,7 +898,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
               localStorage.setItem(`profile_${firebaseUser.uid}`, JSON.stringify(userProfile));
               localStorage.setItem("last_logged_in_user", JSON.stringify(userProfile));
-              setState(prev => ({ ...prev, user: userProfile, isLoadingUser: false }));
+              setState(prev => ({ ...prev, ...deserialized, user: userProfile, isLoadingUser: false }));
             }
           } catch (err) {
             console.error("Error loading user data from Firestore:", err);
@@ -1559,35 +1563,18 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         content,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       };
-      
       const activeId = prev.currentSessionId || "default-session";
-      let chatSessions = prev.chatSessions || [];
-      if (chatSessions.length === 0) {
-        chatSessions = [{
-          id: "default-session",
-          title: "Placement Chat Room",
-          messages: [],
-          createdAt: new Date().toLocaleDateString(),
-          isPinned: false
-        }];
-      }
-
-      const updatedSessions = chatSessions.map(session => {
-        if (session.id !== activeId) return session;
-        let title = session.title;
-        if (session.messages.length === 0 && role === "user") {
-          title = content.length > 30 ? content.slice(0, 30) + "..." : content;
-        }
-        return {
-          ...session,
-          title,
-          messages: [...session.messages, newMsg]
-        };
-      });
-
+      const chatSessions: Record<string, ChatSession> = prev.chatSessions || {};
+      const activeSession = chatSessions[activeId] || {
+        id: activeId, title: "Placement Chat Room", messages: [],
+        createdAt: new Date().toLocaleDateString(), isPinned: false
+      };
+      const title = activeSession.messages.length === 0 && role === "user"
+        ? (content.length > 30 ? content.slice(0, 30) + "..." : content)
+        : activeSession.title;
       return {
         ...prev,
-        chatSessions: updatedSessions
+        chatSessions: { ...chatSessions, [activeId]: { ...activeSession, title, messages: [...activeSession.messages, newMsg] } }
       };
     });
   };
@@ -1595,14 +1582,10 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
   const clearChatHistory = () => {
     updateState(prev => {
       const activeId = prev.currentSessionId || "default-session";
-      const chatSessions = (prev.chatSessions || []).map(s => {
-        if (s.id !== activeId) return s;
-        return { ...s, messages: [] };
-      });
-      return {
-        ...prev,
-        chatSessions
-      };
+      const chatSessions = prev.chatSessions || {};
+      const s = chatSessions[activeId];
+      if (!s) return prev;
+      return { ...prev, chatSessions: { ...chatSessions, [activeId]: { ...s, messages: [] } } };
     });
   };
 
@@ -1615,10 +1598,9 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         createdAt: new Date().toLocaleDateString(),
         isPinned: false
       };
-      const chatSessions = [...(prev.chatSessions || []), newSession];
       return {
         ...prev,
-        chatSessions,
+        chatSessions: { ...(prev.chatSessions || {}), [newSession.id]: newSession },
         currentSessionId: newSession.id
       };
     });
@@ -1635,10 +1617,11 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
   const deleteSession = (sessionId: string) => {
     updateState(prev => {
-      let chatSessions = (prev.chatSessions || []).filter(s => s.id !== sessionId);
+      const chatSessions: Record<string, ChatSession> = { ...(prev.chatSessions || {}) };
+      delete chatSessions[sessionId];
       let currentSessionId = prev.currentSessionId;
       
-      if (chatSessions.length === 0) {
+      if (Object.keys(chatSessions).length === 0) {
         const defaultSession: ChatSession = {
           id: "default-session",
           title: "Placement Chat Room",
@@ -1646,10 +1629,10 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
           createdAt: new Date().toLocaleDateString(),
           isPinned: false
         };
-        chatSessions = [defaultSession];
+        chatSessions["default-session"] = defaultSession;
         currentSessionId = "default-session";
       } else if (currentSessionId === sessionId) {
-        currentSessionId = chatSessions[0].id;
+        currentSessionId = Object.keys(chatSessions)[0];
       }
       
       return {
@@ -1662,43 +1645,34 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
   const togglePinSession = (sessionId: string) => {
     updateState(prev => {
-      const chatSessions = (prev.chatSessions || []).map(s => {
-        if (s.id !== sessionId) return s;
-        return { ...s, isPinned: !s.isPinned };
-      });
-      return {
-        ...prev,
-        chatSessions
-      };
+      const chatSessions = prev.chatSessions || {};
+      const s = chatSessions[sessionId];
+      if (!s) return prev;
+      return { ...prev, chatSessions: { ...chatSessions, [sessionId]: { ...s, isPinned: !s.isPinned } } };
     });
   };
 
   const renameSession = (sessionId: string, title: string) => {
     updateState(prev => {
-      const chatSessions = (prev.chatSessions || []).map(s => {
-        if (s.id !== sessionId) return s;
-        return { ...s, title };
-      });
-      return {
-        ...prev,
-        chatSessions
-      };
+      const chatSessions = prev.chatSessions || {};
+      const s = chatSessions[sessionId];
+      if (!s) return prev;
+      return { ...prev, chatSessions: { ...chatSessions, [sessionId]: { ...s, title } } };
     });
   };
 
-  const updateSessionSystemPrompt = (sessionId: string, prompt: string) => {
+  const updateSessionSystemPrompt = (sessionId: string, systemPrompt: string) => {
     updateState(prev => {
-      const chatSessions = (prev.chatSessions || []).map(s => {
-        if (s.id !== sessionId) return s;
-        return { ...s, systemPrompt: prompt };
-      });
-      return { ...prev, chatSessions };
+      const chatSessions = prev.chatSessions || {};
+      const s = chatSessions[sessionId];
+      if (!s) return prev;
+      return { ...prev, chatSessions: { ...chatSessions, [sessionId]: { ...s, systemPrompt } } };
     });
   };
 
   const branchSession = (sessionId: string) => {
     updateState(prev => {
-      const sessionToBranch = prev.chatSessions?.find(s => s.id === sessionId);
+      const sessionToBranch = (prev.chatSessions || {})[sessionId];
       if (!sessionToBranch) return prev;
       
       const newSession: ChatSession = {
@@ -1710,7 +1684,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
       return {
         ...prev,
-        chatSessions: [newSession, ...(prev.chatSessions || [])],
+        chatSessions: { ...(prev.chatSessions || {}), [newSession.id]: newSession },
         currentSessionId: newSession.id
       };
     });
@@ -1721,21 +1695,14 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       const sessionId = prev.currentSessionId;
       if (!sessionId) return prev;
       
-      const chatSessions = (prev.chatSessions || []).map(s => {
-        if (s.id !== sessionId) return s;
-        if (s.messages.length === 0) return s;
-        
-        const lastMessage = s.messages[s.messages.length - 1];
-        if (lastMessage.role === "assistant") {
-          return {
-            ...s,
-            messages: s.messages.slice(0, -1)
-          };
-        }
-        return s;
-      });
-      
-      return { ...prev, chatSessions };
+      const chatSessions = prev.chatSessions || {};
+      const s = chatSessions[sessionId];
+      if (!s || s.messages.length === 0) return prev;
+      const lastMessage = s.messages[s.messages.length - 1];
+      if (lastMessage.role === "assistant") {
+        return { ...prev, chatSessions: { ...chatSessions, [sessionId]: { ...s, messages: s.messages.slice(0, -1) } } };
+      }
+      return prev;
     });
   };
 
@@ -2257,6 +2224,52 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     });
   };
 
+  // ── Fix 88: Daily Challenge ────────────────────────────────────────────────
+  const getTodayStr = () => new Date().toISOString().split("T")[0];
+
+  const generateDailyChallenge = (prev: AppState): DailyChallenge | undefined => {
+    const unsolvedProblems: Array<{
+      problemId: string; topicId: string; problemName: string; topicName: string; difficulty: string;
+    }> = [];
+    (prev.dsaTopics || []).forEach((topic: any) => {
+      topic.problems.forEach((prob: any) => {
+        if (!prob.isCompleted) {
+          unsolvedProblems.push({
+            problemId: prob.id, topicId: topic.id, problemName: prob.name,
+            topicName: topic.name, difficulty: prob.difficulty || "Medium"
+          });
+        }
+      });
+    });
+    if (unsolvedProblems.length === 0) return undefined;
+    const today = getTodayStr();
+    const seed = today.split("").reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0);
+    const picked = unsolvedProblems[seed % unsolvedProblems.length];
+    return { date: today, problemId: picked.problemId, topicId: picked.topicId,
+      problemName: picked.problemName, topicName: picked.topicName,
+      difficulty: picked.difficulty, isCompleted: false, xpBonus: 100 };
+  };
+
+  const completeDailyChallenge = () => {
+    updateState(prev => {
+      if (!prev.dailyChallenge || prev.dailyChallenge.isCompleted) return prev;
+      return {
+        ...prev,
+        dailyChallenge: { ...prev.dailyChallenge, isCompleted: true },
+        xp: (prev.xp || 0) + prev.dailyChallenge.xpBonus
+      };
+    });
+  };
+
+  const refreshDailyChallenge = () => {
+    updateState(prev => {
+      const today = getTodayStr();
+      if (prev.dailyChallenge?.date === today && !prev.dailyChallenge?.isCompleted) return prev;
+      return { ...prev, dailyChallenge: generateDailyChallenge(prev) };
+    });
+  };
+
+
   return (
     <AppContext.Provider
       value={{
@@ -2322,20 +2335,15 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         updateInterviewSession,
         addInterviewChatMessage,
         endInterviewSession,
-        deleteMockInterviewReport
+        deleteMockInterviewReport,
+        completeDailyChallenge,
+        refreshDailyChallenge
       }}
     >
       {children}
-      <AnimatePresence>
         {confirmState.isOpen && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] select-none">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              className="w-full max-w-md bg-darkCard/95 border border-white/[0.08] shadow-2xl relative rounded-2xl overflow-hidden glass-panel"
-            >
+            <div className="w-full max-w-md bg-darkCard/95 border border-white/[0.08] shadow-2xl relative rounded-2xl overflow-hidden glass-panel animate-slide-up">
               {/* Glow border depending on severity */}
               <div 
                 className={`h-1.5 w-full ${
@@ -2359,11 +2367,11 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
                     }`}
                   >
                     {confirmState.severity === "danger" ? (
-                      <AlertCircle className="w-6 h-6" />
+                      <span className="w-6 h-6" />
                     ) : confirmState.severity === "warning" ? (
-                      <AlertTriangle className="w-6 h-6" />
+                      <span className="w-6 h-6" />
                     ) : (
-                      <Info className="w-6 h-6" />
+                      <span className="w-6 h-6" />
                     )}
                   </div>
                   
@@ -2401,10 +2409,9 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </div>
           </div>
         )}
-      </AnimatePresence>
     </AppContext.Provider>
   );
 };

@@ -66,10 +66,15 @@ export interface WeeklyGoal {
   isCompleted: boolean;
 }
 
-export interface WeeklyGoal {
-  id: string;
-  text: string;
+export interface DailyChallenge {
+  date: string; // YYYY-MM-DD — regenerates daily
+  problemId: string;
+  topicId: string;
+  problemName: string;
+  topicName: string;
+  difficulty: string;
   isCompleted: boolean;
+  xpBonus: number; // 2× normal XP
 }
 
 export interface DailyHabitState {

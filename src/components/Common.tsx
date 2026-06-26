@@ -1,5 +1,4 @@
 import React from "react";
-import { motion } from "framer-motion";
 
 interface GlassCardProps {
   children: React.ReactNode;
@@ -11,21 +10,17 @@ interface GlassCardProps {
 export const GlassCard: React.FC<GlassCardProps> = ({
   children,
   className = "",
-  glow = false,
   onClick
 }) => {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-      onClick={onClick}
-      className={`glass-panel glass-panel-hover rounded-xl p-6 ${glow ? "glow-active" : ""} ${
-        onClick ? "cursor-pointer" : ""
-      } ${className}`}
-    >
+    <div
+        onClick={onClick}
+        className={`glass-panel border border-white/[0.04] rounded-2xl relative overflow-hidden transition-all duration-300 animate-slide-up ${
+          onClick ? "cursor-pointer hover:border-white/[0.12] hover:shadow-xl hover:-translate-y-1" : ""
+        } ${className}`}
+      >
       {children}
-    </motion.div>
+    </div>
   );
 };
 
@@ -35,6 +30,7 @@ interface ProgressRingProps {
   strokeWidth?: number;
   label?: string;
   subLabel?: string;
+  colorClass?: string;
 }
 
 export const ProgressRing: React.FC<ProgressRingProps> = ({
@@ -42,7 +38,8 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
   size = 120,
   strokeWidth = 8,
   label = "",
-  subLabel = ""
+  subLabel = "",
+  colorClass = "text-accentPrimary"
 }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
@@ -61,18 +58,20 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
           fill="transparent"
         />
         {/* Progress circle */}
-        <motion.circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          className="stroke-accentPrimary"
-          strokeWidth={strokeWidth}
-          fill="transparent"
-          strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 0.8, ease: "easeInOut" }}
-        />
+        <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            className={`stroke-current ${colorClass}`}
+            strokeWidth={strokeWidth}
+            fill="transparent"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            style={{
+              strokeDashoffset: offset,
+              transition: "stroke-dashoffset 0.5s ease-out"
+            }}
+          />
       </svg>
       {/* Center text */}
       <div className="absolute flex flex-col items-center justify-center text-center">
@@ -111,13 +110,12 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
         className="w-full bg-white/[0.04] rounded-full overflow-hidden border border-white/[0.02]"
         style={{ height }}
       >
-        <motion.div
-          className={`h-full rounded-full ${colorClass}`}
-          initial={{ width: 0 }}
-          animate={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-        />
+        <div
+            className={`h-full rounded-full ${colorClass}`}
+            style={{ width: `${Math.min(100, Math.max(0, percentage))}%`, transition: "width 0.5s ease-out" }}
+          />
       </div>
     </div>
   );
 };
+

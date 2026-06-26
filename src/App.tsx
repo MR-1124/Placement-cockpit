@@ -17,7 +17,7 @@ import { LandingView } from "./pages/LandingView";
 import { InterviewSimulatorView } from "./pages/InterviewSimulatorView";
 import { MarkdownRenderer } from "./components/MarkdownRenderer";
 import { FocusMode } from "./components/FocusMode";
-import { motion, AnimatePresence } from "framer-motion";
+
 import {
   LayoutDashboard,
   Map,
@@ -46,7 +46,6 @@ import {
 
 
 import { SYSTEM_PROMPT } from "./lib/prompts";
-import { ALL_PLANS } from "./data/curriculum";
 
 const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>(() => {
@@ -69,6 +68,7 @@ const AppContent: React.FC = () => {
     level,
     xpProgress,
     levelTitle,
+    curriculum,
     addChatMessage,
     clearChatHistory,
     confirmAction
@@ -78,7 +78,7 @@ const AppContent: React.FC = () => {
   const [isWideChat, setIsWideChat] = useState(false);
   const [chatInput, setChatInput] = useState("");
 
-  const activeSession = state.chatSessions?.find(s => s.id === state.currentSessionId);
+  const activeSession = state.chatSessions?.[state.currentSessionId || "default-session"];
   const currentMessages = activeSession?.messages || [];
   // Focus Mode state (restored from localStorage if active and not expired)
   const [focusSession, setFocusSession] = useState<{
@@ -369,7 +369,7 @@ const AppContent: React.FC = () => {
   };
 
   const primaryPlanId = state.primaryPlanId || "16-week-mastery";
-  const primaryPlan = ALL_PLANS.find((p: any) => p.id === primaryPlanId) || ALL_PLANS[0];
+  const primaryPlan = curriculum.ALL_PLANS.find((p: any) => p.id === primaryPlanId) || curriculum.ALL_PLANS[0];
 
   const navigationItems = [
     { id: "dashboard", name: "Dashboard", icon: LayoutDashboard },
@@ -556,39 +556,33 @@ const AppContent: React.FC = () => {
       </header>
 
       {/* Mobile Navigation Drawer Dropdown */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
-            className="lg:hidden fixed top-14 left-0 right-0 bg-darkCard/95 border-b border-white/[0.08] backdrop-blur-lg px-4 py-6 grid grid-cols-2 gap-3 z-20 shadow-2xl select-none"
-          >
-            {navigationItems.map(item => {
-              const Icon = item.icon;
-              const active = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveTab(item.id);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`flex items-center gap-2.5 p-3 rounded-lg border text-xs font-semibold ${
-                    active
-                      ? "bg-accentPrimary/5 border-accentPrimary/20 text-white"
-                      : "bg-white/[0.005] border-white/[0.04] text-slate-500"
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{item.name}</span>
-                </button>
-              );
-            })}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {mobileMenuOpen && (
+        <div
+          className="lg:hidden absolute top-16 left-0 right-0 bg-darkCard/95 border-b border-white/[0.08] p-4 grid grid-cols-2 gap-3 z-40 backdrop-blur-md animate-slide-up"
+        >
+          {navigationItems.map(item => {
+            const Icon = item.icon;
+            const active = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setMobileMenuOpen(false);
+                }}
+                className={`flex items-center gap-2.5 p-3 rounded-lg border text-xs font-semibold ${
+                  active
+                    ? "bg-accentPrimary/5 border-accentPrimary/20 text-white"
+                    : "bg-white/[0.005] border-white/[0.04] text-slate-500"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{item.name}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Mobile Bottom Navigation Bar (For Critical Dashboard elements) */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-14 bg-darkCard/80 border-t border-white/[0.06] backdrop-blur-md flex justify-around items-center px-2 z-20 select-none">
@@ -621,17 +615,9 @@ const AppContent: React.FC = () => {
 
       {/* Main Contents Area */}
       <main className="flex-1 w-full min-h-screen pt-20 pb-24 px-4 sm:px-6 md:px-8 lg:pt-8 lg:pb-8 lg:px-12 z-10 overflow-y-auto max-w-7xl mx-auto">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.25 }}
-          >
-            {renderView()}
-          </motion.div>
-        </AnimatePresence>
+        <div key={activeTab} className="animate-fade-in">
+          {renderView()}
+        </div>
       </main>
 
       {/* Floating Chat Bubble */}
@@ -658,243 +644,233 @@ const AppContent: React.FC = () => {
       </button>
 
       {/* Slide-out Chat Drawer */}
-      <AnimatePresence>
-        {isChatOpen && (
-          <>
-            {/* Backdrop Overlay for Mobile */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.4 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsChatOpen(false)}
-              className="lg:hidden fixed inset-0 bg-black z-40"
-            />
-            
-            <motion.div
-              initial={{ x: "100%", opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: "100%", opacity: 0 }}
-              transition={{ type: "spring", damping: 25, stiffness: 220 }}
-              className={`fixed top-0 right-0 bottom-0 w-full ${
-                isWideChat ? "sm:w-[800px]" : "sm:w-[450px]"
-              } bg-darkCard/95 border-l border-white/[0.08] backdrop-blur-xl z-50 flex flex-col shadow-2xl h-screen overflow-hidden text-slate-200 transition-all duration-300`}
-            >
-              {/* Drawer Header */}
-              <div className="h-16 px-4 border-b border-white/[0.06] flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-accentPrimary/10 border border-accentPrimary/20 flex items-center justify-center text-accentPrimary">
-                    <Bot className="w-4 h-4" />
+      {isChatOpen && (
+        <>
+          {/* Backdrop Overlay for Mobile */}
+          <div
+            className="lg:hidden fixed inset-0 bg-black/40 z-40 animate-fade-in"
+            onClick={() => setIsChatOpen(false)}
+          />
+          
+          <div
+            className={`fixed top-16 lg:top-0 right-0 bottom-16 lg:bottom-0 ${
+              isWideChat ? "w-full lg:w-[600px]" : "w-full lg:w-[400px]"
+            } bg-darkCard/95 backdrop-blur-xl border-l border-white/[0.08] z-50 flex flex-col shadow-2xl transition-all duration-300 animate-fade-in`}
+          >
+            {/* Drawer Header */}
+            <div className="h-16 px-4 border-b border-white/[0.06] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-accentPrimary/10 border border-accentPrimary/20 flex items-center justify-center text-accentPrimary">
+                  <Bot className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">AI Placement Mentor</h3>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className={`w-1.5 h-1.5 rounded-full ${state.settings.nvidiaApiKey ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
+                    <span className="text-[9px] font-mono text-slate-500 uppercase">
+                      {state.settings.nvidiaApiKey ? (state.settings.nvidiaModelName.split("/").pop() || "NVIDIA NIM") : "OFFLINE"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {currentMessages.length > 0 && (
+                  <button
+                    onClick={handleClearHistory}
+                    title="Clear chat history"
+                    className="p-2 text-slate-500 hover:text-rose-400 hover:bg-white/[0.02] rounded-lg transition-colors cursor-pointer"
+                    aria-label="Clear chat history"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+                <button
+                  onClick={() => setIsWideChat(!isWideChat)}
+                  title={isWideChat ? "Collapse view" : "Expand to wide view"}
+                  className="p-2 text-slate-500 hover:text-white hover:bg-white/[0.02] rounded-lg transition-colors cursor-pointer"
+                  aria-label={isWideChat ? "Collapse view" : "Expand to wide view"}
+                >
+                  {isWideChat ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                </button>
+                <button
+                  onClick={() => setIsChatOpen(false)}
+                  className="p-2 text-slate-500 hover:text-white hover:bg-white/[0.02] rounded-lg transition-colors cursor-pointer"
+                  aria-label="Close Chat"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Chat Message Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 select-text">
+              {currentMessages.length === 0 && !streamingResponse ? (
+                <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-4">
+                  <div className="w-12 h-12 rounded-full bg-accentPrimary/5 border border-accentPrimary/20 flex items-center justify-center text-accentPrimary shadow-inner">
+                    <Bot className="w-6 h-6 animate-pulse" />
                   </div>
                   <div>
-                    <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">AI Placement Mentor</h3>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className={`w-1.5 h-1.5 rounded-full ${state.settings.nvidiaApiKey ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
-                      <span className="text-[9px] font-mono text-slate-500 uppercase">
-                        {state.settings.nvidiaApiKey ? (state.settings.nvidiaModelName.split("/").pop() || "NVIDIA NIM") : "OFFLINE"}
-                      </span>
-                    </div>
+                    <h4 className="text-sm font-bold text-white">Placement AI Mentor</h4>
+                    <p className="text-[11px] text-slate-500 mt-1 max-w-[280px] leading-relaxed">
+                      Powered by NVIDIA NIM. Ask me about DSA patterns, system design, mock interviews using the STAR format, and how to stop vibe-coding.
+                    </p>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  {currentMessages.length > 0 && (
-                    <button
-                      onClick={handleClearHistory}
-                      title="Clear chat history"
-                      className="p-2 text-slate-500 hover:text-rose-400 hover:bg-white/[0.02] rounded-lg transition-colors cursor-pointer"
-                      aria-label="Clear chat history"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setIsWideChat(!isWideChat)}
-                    title={isWideChat ? "Collapse view" : "Expand to wide view"}
-                    className="p-2 text-slate-500 hover:text-white hover:bg-white/[0.02] rounded-lg transition-colors cursor-pointer"
-                    aria-label={isWideChat ? "Collapse view" : "Expand to wide view"}
-                  >
-                    {isWideChat ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                  </button>
-                  <button
-                    onClick={() => setIsChatOpen(false)}
-                    className="p-2 text-slate-500 hover:text-white hover:bg-white/[0.02] rounded-lg transition-colors cursor-pointer"
-                    aria-label="Close Chat"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Chat Message Area */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 select-text">
-                {currentMessages.length === 0 && !streamingResponse ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-4">
-                    <div className="w-12 h-12 rounded-full bg-accentPrimary/5 border border-accentPrimary/20 flex items-center justify-center text-accentPrimary shadow-inner">
-                      <Bot className="w-6 h-6 animate-pulse" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-white">Placement AI Mentor</h4>
-                      <p className="text-[11px] text-slate-500 mt-1 max-w-[280px] leading-relaxed">
-                        Powered by NVIDIA NIM. Ask me about DSA patterns, system design, mock interviews using the STAR format, and how to stop vibe-coding.
+                  {!state.settings.nvidiaApiKey && (
+                    <div className="bg-amber-500/5 border border-amber-500/10 rounded-lg p-3 mt-4 text-left max-w-xs">
+                      <span className="text-[10px] font-bold text-amber-500 block mb-1">API Key Needed</span>
+                      <p className="text-[9px] text-slate-400 leading-normal">
+                        You must supply an NVIDIA API Key in Settings to enable the AI Placement Mentor.
                       </p>
-                    </div>
-
-                    {!state.settings.nvidiaApiKey && (
-                      <div className="bg-amber-500/5 border border-amber-500/10 rounded-lg p-3 mt-4 text-left max-w-xs">
-                        <span className="text-[10px] font-bold text-amber-500 block mb-1">API Key Needed</span>
-                        <p className="text-[9px] text-slate-400 leading-normal">
-                          You must supply an NVIDIA API Key in Settings to enable the AI Placement Mentor.
-                        </p>
-                        <button
-                          onClick={() => {
-                            setActiveTab("settings");
-                            setIsChatOpen(false);
-                          }}
-                          className="mt-2.5 w-full bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-white border border-amber-500/20 text-[9px] font-bold py-1.5 px-2 rounded-lg transition-colors"
-                        >
-                          Configure Cockpit Settings
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    {currentMessages.map((msg) => {
-                      const isUser = msg.role === "user";
-                      return (
-                        <div
-                          key={msg.id}
-                          className={`flex ${isUser ? "justify-end" : "justify-start"} items-start gap-2.5`}
-                        >
-                          {!isUser && (
-                            <div className="w-6 h-6 rounded-md bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-accentPrimary shrink-0 mt-0.5 shadow-sm">
-                              <Bot className="w-3.5 h-3.5" />
-                            </div>
-                          )}
-                          <div
-                            className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-xs leading-relaxed select-text shadow-sm ${
-                              isUser
-                                ? "bg-accentPrimary/10 border border-accentPrimary/20 rounded-tr-none text-slate-200"
-                                : "bg-white/[0.01] border border-white/[0.04] rounded-tl-none text-slate-300"
-                            }`}
-                          >
-                            {isUser ? (
-                              <div className="whitespace-pre-wrap">{msg.content}</div>
-                            ) : (
-                              <MarkdownRenderer content={msg.content} />
-                            )}
-                            <span className="block text-[8px] text-slate-600 font-mono text-right mt-1 tracking-tight">
-                              {msg.timestamp}
-                            </span>
-                          </div>
-                          {isUser && (
-                            <div className="w-6 h-6 rounded-md bg-accentPrimary/10 border border-accentPrimary/20 flex items-center justify-center text-accentPrimary shrink-0 mt-0.5 shadow-sm">
-                              <User className="w-3.5 h-3.5" />
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                    {streamingResponse && (
-                      <div className="flex justify-start items-start gap-2.5">
-                        <div className="w-6 h-6 rounded-md bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-accentPrimary shrink-0 mt-0.5 shadow-sm">
-                          <Bot className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="max-w-[85%] rounded-2xl px-3.5 py-2 text-xs leading-relaxed select-text shadow-sm bg-white/[0.01] border border-white/[0.04] rounded-tl-none text-slate-300">
-                          <MarkdownRenderer content={streamingResponse} />
-                          <span className="block text-[8px] text-slate-600 font-mono text-right mt-1 tracking-tight animate-pulse">
-                            Live generating...
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-
-                 {isLoading && (
-                  <div className="flex justify-start items-start gap-2.5">
-                    <div className="w-6 h-6 rounded-md bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-accentPrimary shrink-0 mt-0.5 animate-pulse">
-                      <Bot className="w-3.5 h-3.5" />
-                    </div>
-                    <div className="bg-white/[0.01] border border-white/[0.04] rounded-2xl rounded-tl-none px-3.5 py-3 text-xs text-slate-400 flex flex-col gap-2">
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-accentPrimary" />
-                        <span className="font-mono text-[10px] tracking-wide text-slate-300">
-                          {chatStatus || "Mentor is thinking..."}
-                        </span>
-                      </div>
                       <button
-                        type="button"
-                        onClick={handleAbortRequest}
-                        className="self-start text-[9px] font-mono font-bold bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 px-2 py-0.5 rounded transition-all active:scale-95 cursor-pointer"
+                        onClick={() => {
+                          setActiveTab("settings");
+                          setIsChatOpen(false);
+                        }}
+                        className="mt-2.5 w-full bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-white border border-amber-500/20 text-[9px] font-bold py-1.5 px-2 rounded-lg transition-colors"
                       >
-                        Cancel Response
+                        Configure Cockpit Settings
                       </button>
                     </div>
-                  </div>
-                )}
-
-                {chatError && (
-                  <div className="p-3 bg-rose-500/5 border border-rose-500/10 text-rose-400 rounded-xl text-[10px] font-mono leading-relaxed">
-                    <strong>Error:</strong> {chatError}
-                  </div>
-                )}
-
-                <div ref={chatEndRef} />
-              </div>
-
-              {/* Chat Input form */}
-              <div className="p-4 border-t border-white/[0.06] bg-black/20 shrink-0">
-                <form onSubmit={handleSendMessage} className="flex gap-2 items-end">
-                  <textarea
-                    ref={chatTextAreaRef}
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    disabled={isLoading || !state.settings.nvidiaApiKey}
-                    placeholder={
-                      state.settings.nvidiaApiKey
-                        ? "Ask about DSA, projects, STAR method... (Shift+Enter for new line)"
-                        : "Configure API Key in settings to chat"
-                    }
-                    rows={1}
-                    className="flex-1 min-w-0 bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-xs text-white placeholder-slate-600 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed transition-colors resize-none overflow-y-auto max-h-[120px] leading-relaxed"
-                  />
-                  <button
-                    type="submit"
-                    disabled={isLoading || !chatInput.trim() || !state.settings.nvidiaApiKey}
-                    className="w-8 h-8 rounded-lg bg-accentPrimary hover:bg-accentPrimary/90 disabled:bg-white/[0.02] text-white disabled:text-slate-600 border border-white/[0.04] disabled:border-transparent flex items-center justify-center shrink-0 transition-colors"
-                    aria-label="Send Message"
-                  >
-                    {isLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Send className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                </form>
-                <div className="text-[9px] text-slate-500 mt-1.5 ml-1 select-none">
-                  Shift + Enter for new line, Enter to send
+                  )}
                 </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+              ) : (
+                <>
+                  {currentMessages.map((msg) => {
+                    const isUser = msg.role === "user";
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`flex ${isUser ? "justify-end" : "justify-start"} items-start gap-2.5`}
+                      >
+                        {!isUser && (
+                          <div className="w-6 h-6 rounded-md bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-accentPrimary shrink-0 mt-0.5 shadow-sm">
+                            <Bot className="w-3.5 h-3.5" />
+                          </div>
+                        )}
+                        <div
+                          className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-xs leading-relaxed select-text shadow-sm ${
+                            isUser
+                              ? "bg-accentPrimary/10 border border-accentPrimary/20 rounded-tr-none text-slate-200"
+                              : "bg-white/[0.01] border border-white/[0.04] rounded-tl-none text-slate-300"
+                          }`}
+                        >
+                          {isUser ? (
+                            <div className="whitespace-pre-wrap">{msg.content}</div>
+                          ) : (
+                            <MarkdownRenderer content={msg.content} />
+                          )}
+                          <span className="block text-[8px] text-slate-600 font-mono text-right mt-1 tracking-tight">
+                            {msg.timestamp}
+                          </span>
+                        </div>
+                        {isUser && (
+                          <div className="w-6 h-6 rounded-md bg-accentPrimary/10 border border-accentPrimary/20 flex items-center justify-center text-accentPrimary shrink-0 mt-0.5 shadow-sm">
+                            <User className="w-3.5 h-3.5" />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {streamingResponse && (
+                    <div className="flex justify-start items-start gap-2.5">
+                      <div className="w-6 h-6 rounded-md bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-accentPrimary shrink-0 mt-0.5 shadow-sm">
+                        <Bot className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="max-w-[85%] rounded-2xl px-3.5 py-2 text-xs leading-relaxed select-text shadow-sm bg-white/[0.01] border border-white/[0.04] rounded-tl-none text-slate-300">
+                        <MarkdownRenderer content={streamingResponse} />
+                        <span className="block text-[8px] text-slate-600 font-mono text-right mt-1 tracking-tight animate-pulse">
+                          Live generating...
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
 
-      <AnimatePresence>
-        {focusSession.isOpen && (
-          <FocusMode
-            isOpen={focusSession.isOpen}
-            onClose={() => setFocusSession({ isOpen: false, active: null })}
-            onStartSession={(config) => setFocusSession({ isOpen: true, active: config })}
-            activeSession={focusSession.active}
-            onEndSession={() => {
-              setFocusSession({ isOpen: false, active: null });
-            }}
-          />
-        )}
-      </AnimatePresence>
+               {isLoading && (
+                <div className="flex justify-start items-start gap-2.5">
+                  <div className="w-6 h-6 rounded-md bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-accentPrimary shrink-0 mt-0.5 animate-pulse">
+                    <Bot className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="bg-white/[0.01] border border-white/[0.04] rounded-2xl rounded-tl-none px-3.5 py-3 text-xs text-slate-400 flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-accentPrimary" />
+                      <span className="font-mono text-[10px] tracking-wide text-slate-300">
+                        {chatStatus || "Mentor is thinking..."}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAbortRequest}
+                      className="self-start text-[9px] font-mono font-bold bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 px-2 py-0.5 rounded transition-all active:scale-95 cursor-pointer"
+                    >
+                      Cancel Response
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {chatError && (
+                <div className="p-3 bg-rose-500/5 border border-rose-500/10 text-rose-400 rounded-xl text-[10px] font-mono leading-relaxed">
+                  <strong>Error:</strong> {chatError}
+                </div>
+              )}
+
+              <div ref={chatEndRef} />
+            </div>
+
+            {/* Chat Input form */}
+            <div className="p-4 border-t border-white/[0.06] bg-black/20 shrink-0">
+              <form onSubmit={handleSendMessage} className="flex gap-2 items-end">
+                <textarea
+                  ref={chatTextAreaRef}
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  disabled={isLoading || !state.settings.nvidiaApiKey}
+                  placeholder={
+                    state.settings.nvidiaApiKey
+                      ? "Ask about DSA, projects, STAR method... (Shift+Enter for new line)"
+                      : "Configure API Key in settings to chat"
+                  }
+                  rows={1}
+                  className="flex-1 min-w-0 bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-xs text-white placeholder-slate-600 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed transition-colors resize-none overflow-y-auto max-h-[120px] leading-relaxed"
+                />
+                <button
+                  type="submit"
+                  disabled={isLoading || !chatInput.trim() || !state.settings.nvidiaApiKey}
+                  className="w-8 h-8 rounded-lg bg-accentPrimary hover:bg-accentPrimary/90 disabled:bg-white/[0.02] text-white disabled:text-slate-600 border border-white/[0.04] disabled:border-transparent flex items-center justify-center shrink-0 transition-colors"
+                  aria-label="Send Message"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </form>
+              <div className="text-[9px] text-slate-500 mt-1.5 ml-1 select-none">
+                Shift + Enter for new line, Enter to send
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {focusSession.isOpen && (
+        <FocusMode
+          isOpen={focusSession.isOpen}
+          onClose={() => setFocusSession({ isOpen: false, active: null })}
+          onStartSession={(config) => setFocusSession({ isOpen: true, active: config })}
+          activeSession={focusSession.active}
+          onEndSession={() => {
+            setFocusSession({ isOpen: false, active: null });
+            setActiveTab("dashboard");
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -908,3 +884,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

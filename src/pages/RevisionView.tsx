@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { MarkdownRenderer } from "../components/MarkdownRenderer";
 import { useAppState } from "../context/AppStateContext";
 import { GlassCard } from "../components/Common";
-import { motion } from "framer-motion";
 import {
   CalendarClock,
   AlertTriangle,
@@ -10,8 +9,7 @@ import {
   ArrowRight,
   ExternalLink,
   Sparkles,
-  Inbox
-} from "lucide-react";
+  } from "lucide-react";
 import type { DsaProblem, DsaTopic } from "../data/curriculum";
 
 export const RevisionView: React.FC = () => {
@@ -150,11 +148,9 @@ export const RevisionView: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-white/[0.01] border border-white/[0.06] rounded-lg p-5 space-y-4"
-                >
+                <div
+                    className="animate-slide-up bg-white/[0.01] border border-white/[0.06] rounded-lg p-5 space-y-4"
+                  >
                   <div>
                     <span className="text-[10px] font-mono text-slate-500 uppercase block">Problem Solution</span>
                     <div className="flex items-center gap-2 mt-1">
@@ -201,7 +197,7 @@ export const RevisionView: React.FC = () => {
                       Revised (Pass)
                     </button>
                   </div>
-                </motion.div>
+                </div>
               )}
             </div>
           </GlassCard>
@@ -425,3 +421,5 @@ export const RevisionView: React.FC = () => {
     </div>
   );
 };
+
+
