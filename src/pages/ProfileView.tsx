@@ -5,7 +5,7 @@ import { auth } from "../firebase";
 import {
   User,
   Mail,
-  FileText,
+  
   Building2,
   X,
   Plus,
@@ -43,7 +43,7 @@ export const ProfileView: React.FC = () => {
   const [cohort, setCohort] = useState(user?.cohort || "");
   const [linkedinUrl, setLinkedinUrl] = useState(user?.linkedinUrl || "");
   const [githubUrl, setGithubUrl] = useState(user?.githubUrl || "");
-  const [resumeLink, setResumeLink] = useState(user?.resumeLink || "");
+  const resumeLink = user?.resumeLink || "";
   const [resumeText, setResumeText] = useState(user?.resumeText || "");
   const [resumeFileName, setResumeFileName] = useState(user?.resumeFileName || "");
   const [targetCompanies, setTargetCompanies] = useState<string[]>(user?.targetCompanies || []);

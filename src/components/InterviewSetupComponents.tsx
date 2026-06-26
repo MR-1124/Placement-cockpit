@@ -4,9 +4,7 @@ import { useAppState } from "../context/AppStateContext";
 import {
   Play,
   Trash2,
-  Loader2,
   FileJson,
-  CheckCircle,
   ClipboardList
 } from "lucide-react";
 import { getScoreColor } from "./InterviewScorecard";
