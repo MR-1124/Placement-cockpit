@@ -18,6 +18,7 @@ import {
   Layers,
   Bot
 } from "lucide-react";
+import { ResumeParser } from "../components/ResumeParser";
 
 export const ProfileView: React.FC = () => {
   const {
@@ -43,6 +44,8 @@ export const ProfileView: React.FC = () => {
   const [linkedinUrl, setLinkedinUrl] = useState(user?.linkedinUrl || "");
   const [githubUrl, setGithubUrl] = useState(user?.githubUrl || "");
   const [resumeLink, setResumeLink] = useState(user?.resumeLink || "");
+  const [resumeText, setResumeText] = useState(user?.resumeText || "");
+  const [resumeFileName, setResumeFileName] = useState(user?.resumeFileName || "");
   const [targetCompanies, setTargetCompanies] = useState<string[]>(user?.targetCompanies || []);
   const [newCompany, setNewCompany] = useState("");
   
@@ -84,6 +87,8 @@ export const ProfileView: React.FC = () => {
         linkedinUrl,
         githubUrl,
         resumeLink,
+        resumeText,
+        resumeFileName,
         targetCompanies
       });
       setIsSaving(false);
@@ -296,19 +301,16 @@ export const ProfileView: React.FC = () => {
                 </div>
               </div>
 
-              {/* Resume Link */}
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono">
-                  Google Drive Resume Shareable Link
-                </label>
-                <div className="relative">
-                  <FileText className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-650" />
-                  <input
-                    type="url"
-                    placeholder="https://drive.google.com/file/d/xxxx/view"
-                    value={resumeLink}
-                    onChange={e => setResumeLink(e.target.value)}
-                    className="w-full bg-white/[0.01] border border-white/[0.06] rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accentPrimary font-mono"
+              {/* Resume Text Uploader */}
+              <div className="md:col-span-2 pt-2">
+                <div className="border border-white/[0.06] rounded-xl bg-white/[0.01] p-5">
+                  <ResumeParser
+                    resumeText={resumeText}
+                    setResumeText={setResumeText}
+                    resumeFileName={resumeFileName}
+                    setResumeFileName={setResumeFileName}
+                    title="Resume File Upload"
+                    description="Upload your resume to synchronize with the AI Interview Simulator. We extract text from your PDF."
                   />
                 </div>
               </div>

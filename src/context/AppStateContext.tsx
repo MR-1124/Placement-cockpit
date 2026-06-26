@@ -388,7 +388,8 @@ const deserializeState = (serialized: Partial<SerializedProgress>, curriculum: a
         badges: true
       },
       nvidiaApiKey: serialized.settings?.nvidiaApiKey ?? "",
-      nvidiaModelName: serialized.settings?.nvidiaModelName ?? "meta/llama-3.1-70b-instruct"
+      nvidiaModelName: serialized.settings?.nvidiaModelName ?? "meta/llama-3.1-70b-instruct",
+      nvidiaInterviewerModelName: serialized.settings?.nvidiaInterviewerModelName
     },
     streak: serialized.streak || 0,
     lastActiveDate: serialized.lastActiveDate || getTodayString(),
@@ -494,7 +495,8 @@ const getInitialState = (curriculum: any): AppState => ({
       badges: true
     },
     nvidiaApiKey: "",
-    nvidiaModelName: "meta/llama-3.1-70b-instruct"
+    nvidiaModelName: "meta/llama-3.1-70b-instruct",
+    nvidiaInterviewerModelName: undefined
   },
   streak: 0,
   lastActiveDate: "",

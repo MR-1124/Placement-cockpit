@@ -18,6 +18,18 @@ import {
 export const ProjectsView: React.FC = () => {
   const { state, addProject, updateProject, deleteProject } = useAppState();
 
+  const getReadinessScore = (p: Project) => {
+    let score = 0;
+    if (p.checklists.readme) score += 15;
+    if (p.checklists.deployment) score += 15;
+    if (p.checklists.interviewReady) score += 20;
+    if (p.interviewNotes.situation?.trim().length > 10) score += 12.5;
+    if (p.interviewNotes.task?.trim().length > 10) score += 12.5;
+    if (p.interviewNotes.action?.trim().length > 10) score += 12.5;
+    if (p.interviewNotes.result?.trim().length > 10) score += 12.5;
+    return Math.round(score);
+  };
+
   const GithubStats = ({ url }: { url: string }) => {
     const [stats, setStats] = useState<{ stars: number; forks: number; issues: number } | null>(null);
     const [loading, setLoading] = useState(true);
@@ -319,9 +331,18 @@ export const ProjectsView: React.FC = () => {
 
                       {/* Launch readiness checkpoints */}
                       <div className="space-y-3 sm:col-span-2">
-                        <label className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block">
-                          Checklist Targets
-                        </label>
+                        <div className="flex justify-between items-center">
+                          <label className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block">
+                            Checklist & Readiness Targets
+                          </label>
+                          <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${
+                            getReadinessScore(project) >= 80 ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
+                            getReadinessScore(project) >= 50 ? "bg-amber-500/10 text-amber-400 border-amber-500/20" :
+                            "bg-white/[0.05] text-slate-400 border-white/[0.1]"
+                          }`}>
+                            Score: {getReadinessScore(project)}%
+                          </span>
+                        </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                           {[
                             { key: "readme", label: "Clean README.md" },

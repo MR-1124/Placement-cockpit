@@ -18,7 +18,7 @@ interface FocusSessionConfig {
   goal: string;
   duration: number; // in minutes
   linkedDsaQuestion?: { topicId: string; problemId: string; name: string; difficulty: string };
-  linkedProjectTask?: { projectId: string; taskKey: string; name: string };
+  linkedCustomTask?: { id: string; name: string };
   restoredTime?: number;
   isPaused?: boolean;
 }
@@ -38,14 +38,14 @@ export const FocusMode: React.FC<FocusModeProps> = ({
   activeSession,
   onEndSession
 }) => {
-  const { state, confirmAction, toggleDsaProblem, updateProject } = useAppState();
+  const { state, confirmAction, toggleDsaProblem, toggleCustomTask } = useAppState();
 
   // Configurator form states
   const [goal, setGoal] = useState("");
   const [duration, setDuration] = useState(25);
   const [dsaSearch, setDsaSearch] = useState("");
   const [selectedDsa, setSelectedDsa] = useState<FocusSessionConfig["linkedDsaQuestion"] | undefined>(undefined);
-  const [selectedProjectTask, setSelectedProjectTask] = useState<FocusSessionConfig["linkedProjectTask"] | undefined>(undefined);
+  const [selectedCustomTask, setSelectedCustomTask] = useState<FocusSessionConfig["linkedCustomTask"] | undefined>(undefined);
   const [hasStarted, setHasStarted] = useState(false);
 
   // Countdown timer states
@@ -154,31 +154,8 @@ export const FocusMode: React.FC<FocusModeProps> = ({
     q.name.toLowerCase().includes(dsaSearch.toLowerCase())
   );
 
-  // Retrieve incomplete project tasks
-  const projectTasks: { projectId: string; taskKey: string; name: string }[] = [];
-  state.projects.forEach(proj => {
-    if (!proj.checklists.readme) {
-      projectTasks.push({
-        projectId: proj.id,
-        taskKey: "readme",
-        name: `${proj.name}: Write Clean README.md`
-      });
-    }
-    if (!proj.checklists.deployment) {
-      projectTasks.push({
-        projectId: proj.id,
-        taskKey: "deployment",
-        name: `${proj.name}: Deploy to Production`
-      });
-    }
-    if (!proj.checklists.interviewReady) {
-      projectTasks.push({
-        projectId: proj.id,
-        taskKey: "interviewReady",
-        name: `${proj.name}: Prepare Interview Stories`
-      });
-    }
-  });
+  // Retrieve incomplete custom tasks
+  const customTasks = state.customTasks.filter(t => !t.isCompleted);
 
   // Calculate difficulty styles
   const getDiffStyles = (diff: string) => {
@@ -199,27 +176,23 @@ export const FocusMode: React.FC<FocusModeProps> = ({
       );
       if (matchingDsa) {
         setSelectedDsa(matchingDsa);
-        setSelectedProjectTask(undefined);
+        setSelectedCustomTask(undefined);
         return;
       }
 
-      // Check if it matches any project task description
-      const matchingTask = projectTasks.find(t => {
-        const taskLabel = t.name.split(":").pop()?.trim().toLowerCase() || "";
-        return taskLabel === trimmedVal || 
-               trimmedVal.includes(taskLabel) || 
-               taskLabel.includes(trimmedVal) ||
-               t.name.toLowerCase().includes(trimmedVal);
+      // Check if it matches any custom task description
+      const matchingTask = customTasks.find(t => {
+        return t.name.toLowerCase().includes(trimmedVal);
       });
       if (matchingTask) {
-        setSelectedProjectTask(matchingTask);
+        setSelectedCustomTask(matchingTask);
         setSelectedDsa(undefined);
         return;
       }
     }
     // Deselect if no match or short query
     setSelectedDsa(undefined);
-    setSelectedProjectTask(undefined);
+    setSelectedCustomTask(undefined);
   };
 
   const handleInitialize = () => {
@@ -227,7 +200,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
       goal: goal.trim() || "General Study Session",
       duration,
       linkedDsaQuestion: selectedDsa,
-      linkedProjectTask: selectedProjectTask
+      linkedCustomTask: selectedCustomTask
     });
   };
 
@@ -253,19 +226,9 @@ export const FocusMode: React.FC<FocusModeProps> = ({
       toggleDsaProblem(activeSession.linkedDsaQuestion.topicId, activeSession.linkedDsaQuestion.problemId);
     }
 
-    // 2. If Project task linked, complete it
-    if (activeSession.linkedProjectTask) {
-      const proj = state.projects.find(p => p.id === activeSession.linkedProjectTask!.projectId);
-      if (proj) {
-        const updated = {
-          ...proj,
-          checklists: {
-            ...proj.checklists,
-            [activeSession.linkedProjectTask!.taskKey]: true
-          }
-        };
-        updateProject(updated);
-      }
+    // 2. If Custom task linked, complete it
+    if (activeSession.linkedCustomTask) {
+      toggleCustomTask(activeSession.linkedCustomTask.id);
     }
 
     onEndSession(true);
@@ -365,10 +328,11 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                         onClick={() => {
                           if (active) {
                             setSelectedDsa(undefined);
+                            setSelectedCustomTask(undefined);
                             setGoal("");
                           } else {
                             setSelectedDsa(q);
-                            setSelectedProjectTask(undefined);
+                            setSelectedCustomTask(undefined);
                             setGoal(`Solving: ${q.name}`);
                           }
                         }}
@@ -389,31 +353,31 @@ export const FocusMode: React.FC<FocusModeProps> = ({
               </div>
             </div>
 
-            {/* Right: Select Project Task */}
+            {/* Right: Select Custom Task */}
             <div className="space-y-2">
               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono">
-                SELECT A PROJECT TASK
+                SELECT A CUSTOM TASK
               </div>
 
               <div className="h-[212px] overflow-y-auto border border-white/[0.06] rounded-xl bg-black/20 p-2 space-y-1">
-                {projectTasks.length === 0 ? (
+                {customTasks.length === 0 ? (
                   <div className="h-full flex flex-col justify-center items-center text-center p-4">
                     <p className="text-[11px] text-slate-600 font-mono italic">
-                      No active project tasks. Add some on the Kanban board!
+                      No active custom tasks. Add some on the Dashboard!
                     </p>
                   </div>
                 ) : (
-                  projectTasks.map(t => {
-                    const active = selectedProjectTask?.projectId === t.projectId && selectedProjectTask?.taskKey === t.taskKey;
+                  customTasks.map(t => {
+                    const active = selectedCustomTask?.id === t.id;
                     return (
                       <div
-                        key={`${t.projectId}-${t.taskKey}`}
+                        key={t.id}
                         onClick={() => {
                           if (active) {
-                            setSelectedProjectTask(undefined);
+                            setSelectedCustomTask(undefined);
                             setGoal("");
                           } else {
-                            setSelectedProjectTask(t);
+                            setSelectedCustomTask(t);
                             setSelectedDsa(undefined);
                             setGoal(t.name);
                           }
@@ -547,7 +511,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
             </div>
 
             {/* Active task tags display */}
-            {(activeSession.linkedDsaQuestion || activeSession.linkedProjectTask) && (
+            {(activeSession.linkedDsaQuestion || activeSession.linkedCustomTask) && (
               <div className="flex flex-wrap items-center justify-center gap-2 pt-2 select-none">
                 {activeSession.linkedDsaQuestion && (
                   <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-violet-500/20 bg-violet-500/5 text-[9px] font-bold font-mono text-violet-400">
@@ -555,10 +519,10 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                     <span>DSA: {activeSession.linkedDsaQuestion.name}</span>
                   </div>
                 )}
-                {activeSession.linkedProjectTask && (
+                {activeSession.linkedCustomTask && (
                   <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-[9px] font-bold font-mono text-emerald-400">
                     <Briefcase className="w-3.5 h-3.5" />
-                    <span>TASK: {activeSession.linkedProjectTask.name.split(":").pop()?.trim()}</span>
+                    <span>TASK: {activeSession.linkedCustomTask.name}</span>
                   </div>
                 )}
               </div>

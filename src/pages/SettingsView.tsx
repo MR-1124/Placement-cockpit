@@ -8,7 +8,10 @@ import {
   RefreshCw,
   Trash2,
   AlertOctagon,
-  Bot
+  Bot,
+  CheckCircle,
+  XCircle,
+  Loader2
 } from "lucide-react";
 
 export const SettingsView: React.FC = () => {
@@ -34,6 +37,57 @@ export const SettingsView: React.FC = () => {
     return "custom";
   });
   const [customModel, setCustomModel] = useState(state.settings.nvidiaModelName || "meta/llama-3.1-70b-instruct");
+  
+  const [interviewerModelType, setInterviewerModelType] = useState(() => {
+    const model = state.settings.nvidiaInterviewerModelName || "default";
+    if (model === "default") return "default";
+    if ([
+      "meta/llama-3.1-70b-instruct",
+      "meta/llama-3.1-405b-instruct",
+      "nvidia/llama-3.1-nemotron-70b-instruct",
+      "mistralai/mixtral-8x22b-instruct-v0.1",
+      "deepseek-ai/deepseek-r1",
+      "nvidia/nemotron-3-nano-30b-a3b",
+      "gpt-oss-120b"
+    ].includes(model)) {
+      return model;
+    }
+    return "custom";
+  });
+  const [customInterviewerModel, setCustomInterviewerModel] = useState(
+    state.settings.nvidiaInterviewerModelName !== "default" 
+      ? (state.settings.nvidiaInterviewerModelName || "meta/llama-3.1-70b-instruct") 
+      : "meta/llama-3.1-70b-instruct"
+  );
+  const [testStatus, setTestStatus] = useState<"idle" | "testing" | "success" | "error">("idle");
+  const [testMessage, setTestMessage] = useState("");
+
+  const handleTestConnection = async () => {
+    if (!state.settings.nvidiaApiKey) {
+      setTestStatus("error");
+      setTestMessage("API Key is empty.");
+      return;
+    }
+    setTestStatus("testing");
+    setTestMessage("");
+    try {
+      const res = await fetch("https://integrate.api.nvidia.com/v1/models", {
+        headers: {
+          "Authorization": `Bearer ${state.settings.nvidiaApiKey}`
+        }
+      });
+      if (res.ok) {
+        setTestStatus("success");
+        setTestMessage("Connection successful!");
+      } else {
+        setTestStatus("error");
+        setTestMessage(`Connection failed: ${res.status} ${res.statusText}`);
+      }
+    } catch (err: any) {
+      setTestStatus("error");
+      setTestMessage(`Error: ${err.message}`);
+    }
+  };
 
   const colors: { id: "violet" | "emerald" | "amber" | "rose" | "blue"; name: string; class: string }[] = [
     { id: "violet", name: "Cyber Violet", class: "bg-violet-500" },
@@ -167,58 +221,130 @@ export const SettingsView: React.FC = () => {
                     {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                
+                <div className="flex items-center gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleTestConnection}
+                    disabled={testStatus === "testing"}
+                    className="px-3 py-1.5 rounded-lg font-bold border transition-all text-[10px] uppercase font-mono bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05] text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {testStatus === "testing" ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                    Test Connection
+                  </button>
+                  {testStatus !== "idle" && (
+                    <span className={`text-[10px] font-mono flex items-center gap-1 ${testStatus === "success" ? "text-emerald-400" : "text-rose-400"}`}>
+                      {testStatus === "success" ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                      {testMessage}
+                    </span>
+                  )}
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[10px] uppercase font-mono text-slate-500 block mb-1">Select Model</label>
-                  <select
-                    value={modelType}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setModelType(val);
-                      if (val !== "custom") {
-                        updateSettings({ nvidiaModelName: val });
-                      } else {
-                        updateSettings({ nvidiaModelName: customModel });
-                      }
-                    }}
-                    className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-xs text-white focus:outline-none transition-colors appearance-none cursor-pointer"
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
-                      backgroundPosition: 'right 0.75rem center',
-                      backgroundSize: '1em',
-                      backgroundRepeat: 'no-repeat'
-                    }}
-                  >
-                    <option value="meta/llama-3.1-70b-instruct" className="bg-darkCard">Llama 3.1 70B (Recommended)</option>
-                    <option value="deepseek-ai/deepseek-r1" className="bg-darkCard">DeepSeek R1 (Reasoning)</option>
-                    <option value="meta/llama-3.1-405b-instruct" className="bg-darkCard">Llama 3.1 405B</option>
-                    <option value="nvidia/llama-3.1-nemotron-70b-instruct" className="bg-darkCard">Nemotron 70B</option>
-                    <option value="nvidia/nemotron-3-nano-30b-a3b" className="bg-darkCard">Nemotron-3 Nano 30B</option>
-                    <option value="gpt-oss-120b" className="bg-darkCard">GPT OSS 120B</option>
-                    <option value="mistralai/mixtral-8x22b-instruct-v0.1" className="bg-darkCard">Mixtral 8x22B</option>
-                    <option value="custom" className="bg-darkCard">Custom Model...</option>
-                  </select>
-                </div>
-                
-                {modelType === "custom" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[10px] uppercase font-mono text-slate-500 block mb-1">Custom Model Identifier</label>
-                    <input
-                      type="text"
-                      value={customModel}
+                    <label className="text-[10px] uppercase font-mono text-slate-500 block mb-1">Global/Mentor Model</label>
+                    <select
+                      value={modelType}
                       onChange={(e) => {
                         const val = e.target.value;
-                        setCustomModel(val);
-                        updateSettings({ nvidiaModelName: val });
+                        setModelType(val);
+                        if (val !== "custom") {
+                          updateSettings({ nvidiaModelName: val });
+                        } else {
+                          updateSettings({ nvidiaModelName: customModel });
+                        }
                       }}
-                      placeholder="e.g. meta/llama-3.1-70b-instruct"
-                      className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-xs font-mono text-white placeholder-slate-600 focus:outline-none transition-colors"
-                    />
+                      className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-xs text-white focus:outline-none transition-colors appearance-none cursor-pointer"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                        backgroundPosition: 'right 0.75rem center',
+                        backgroundSize: '1em',
+                        backgroundRepeat: 'no-repeat'
+                      }}
+                    >
+                      <option value="meta/llama-3.1-70b-instruct" className="bg-darkCard">Llama 3.1 70B (Recommended)</option>
+                      <option value="deepseek-ai/deepseek-r1" className="bg-darkCard">DeepSeek R1 (Reasoning)</option>
+                      <option value="meta/llama-3.1-405b-instruct" className="bg-darkCard">Llama 3.1 405B</option>
+                      <option value="nvidia/llama-3.1-nemotron-70b-instruct" className="bg-darkCard">Nemotron 70B</option>
+                      <option value="nvidia/nemotron-3-nano-30b-a3b" className="bg-darkCard">Nemotron-3 Nano 30B</option>
+                      <option value="gpt-oss-120b" className="bg-darkCard">GPT OSS 120B</option>
+                      <option value="mistralai/mixtral-8x22b-instruct-v0.1" className="bg-darkCard">Mixtral 8x22B</option>
+                      <option value="custom" className="bg-darkCard">Custom Model...</option>
+                    </select>
                   </div>
-                )}
-              </div>
+                  
+                  {modelType === "custom" && (
+                    <div>
+                      <label className="text-[10px] uppercase font-mono text-slate-500 block mb-1">Custom Model Identifier</label>
+                      <input
+                        type="text"
+                        value={customModel}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setCustomModel(val);
+                          updateSettings({ nvidiaModelName: val });
+                        }}
+                        placeholder="e.g. meta/llama-3.1-70b-instruct"
+                        className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-xs font-mono text-white placeholder-slate-600 focus:outline-none transition-colors"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] uppercase font-mono text-slate-500 block mb-1">Interviewer Model Override</label>
+                    <select
+                      value={interviewerModelType}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setInterviewerModelType(val);
+                        if (val === "default") {
+                          updateSettings({ nvidiaInterviewerModelName: undefined });
+                        } else if (val !== "custom") {
+                          updateSettings({ nvidiaInterviewerModelName: val });
+                        } else {
+                          updateSettings({ nvidiaInterviewerModelName: customInterviewerModel });
+                        }
+                      }}
+                      className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-xs text-white focus:outline-none transition-colors appearance-none cursor-pointer"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                        backgroundPosition: 'right 0.75rem center',
+                        backgroundSize: '1em',
+                        backgroundRepeat: 'no-repeat'
+                      }}
+                    >
+                      <option value="default" className="bg-darkCard">Same as Global/Mentor Model</option>
+                      <option value="meta/llama-3.1-70b-instruct" className="bg-darkCard">Llama 3.1 70B</option>
+                      <option value="deepseek-ai/deepseek-r1" className="bg-darkCard">DeepSeek R1 (Reasoning)</option>
+                      <option value="meta/llama-3.1-405b-instruct" className="bg-darkCard">Llama 3.1 405B</option>
+                      <option value="nvidia/llama-3.1-nemotron-70b-instruct" className="bg-darkCard">Nemotron 70B</option>
+                      <option value="nvidia/nemotron-3-nano-30b-a3b" className="bg-darkCard">Nemotron-3 Nano 30B</option>
+                      <option value="gpt-oss-120b" className="bg-darkCard">GPT OSS 120B</option>
+                      <option value="mistralai/mixtral-8x22b-instruct-v0.1" className="bg-darkCard">Mixtral 8x22B</option>
+                      <option value="custom" className="bg-darkCard">Custom Model...</option>
+                    </select>
+                  </div>
+                  
+                  {interviewerModelType === "custom" && (
+                    <div>
+                      <label className="text-[10px] uppercase font-mono text-slate-500 block mb-1">Custom Interviewer Identifier</label>
+                      <input
+                        type="text"
+                        value={customInterviewerModel}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setCustomInterviewerModel(val);
+                          updateSettings({ nvidiaInterviewerModelName: val });
+                        }}
+                        placeholder="e.g. meta/llama-3.1-70b-instruct"
+                        className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-xs font-mono text-white placeholder-slate-600 focus:outline-none transition-colors"
+                      />
+                    </div>
+                  )}
+                </div>
             </div>
           </GlassCard>
 

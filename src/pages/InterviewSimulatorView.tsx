@@ -208,7 +208,7 @@ export const InterviewSimulatorView: React.FC = () => {
   } = useAppState();
 
   const apiKey = state.settings.nvidiaApiKey;
-  const modelName = state.settings.nvidiaModelName || "meta/llama-3.1-70b-instruct";
+  const modelName = state.settings.nvidiaInterviewerModelName || state.settings.nvidiaModelName || "meta/llama-3.1-70b-instruct";
 
 
   // Interactive active states

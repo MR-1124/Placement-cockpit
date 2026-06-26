@@ -97,6 +97,7 @@ export interface AppSettings {
   showSections: Record<string, boolean>;
   nvidiaApiKey: string;
   nvidiaModelName: string;
+  nvidiaInterviewerModelName?: string;
 }
 
 export interface ChatMessage {
