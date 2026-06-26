@@ -10,11 +10,54 @@ import {
   GitBranch,
   Rocket,
   Search,
-  BookOpen
+  BookOpen,
+  Star,
+  AlertCircle
 } from "lucide-react";
 
 export const ProjectsView: React.FC = () => {
   const { state, addProject, updateProject, deleteProject } = useAppState();
+
+  const GithubStats = ({ url }: { url: string }) => {
+    const [stats, setStats] = useState<{ stars: number; forks: number; issues: number } | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    React.useEffect(() => {
+      if (!url) return;
+      // Strip .git if present
+      const cleanUrl = url.replace(/\.git$/, "");
+      const match = cleanUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+      if (!match) {
+        setLoading(false);
+        return;
+      }
+      const [, owner, repo] = match;
+      fetch(`https://api.github.com/repos/${owner}/${repo}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.stargazers_count !== undefined) {
+            setStats({
+              stars: data.stargazers_count,
+              forks: data.forks_count,
+              issues: data.open_issues_count
+            });
+          }
+          setLoading(false);
+        })
+        .catch(() => setLoading(false));
+    }, [url]);
+
+    if (loading) return <span className="text-[10px] text-slate-500 font-mono mt-2 block animate-pulse">Fetching repo stats...</span>;
+    if (!stats) return null;
+
+    return (
+      <div className="flex items-center gap-3 text-[10px] font-mono text-slate-400 mt-2">
+        <span title="Stars" className="flex items-center gap-1"><Star className="w-3 h-3" /> {stats.stars}</span>
+        <span title="Forks" className="flex items-center gap-1"><GitBranch className="w-3 h-3" /> {stats.forks}</span>
+        <span title="Open Issues" className="flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {stats.issues} issues</span>
+      </div>
+    );
+  };
 
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -184,6 +227,7 @@ export const ProjectsView: React.FC = () => {
                         </span>
                       ))}
                     </div>
+                    {project.links.github && <GithubStats url={project.links.github} />}
                   </div>
 
                   <div className="flex items-center gap-5 w-full md:w-auto justify-between md:justify-end">

@@ -397,6 +397,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
 
   const maxQueries = Math.max(1, ...aiTrendData.map(d => d.queries));
 
+  const upcomingRevisions = state.dsaTopics
+    .flatMap(topic => topic.problems.map(p => ({ ...p, topicName: topic.name })))
+    .filter(p => p.nextRevisionDate)
+    .sort((a, b) => new Date(a.nextRevisionDate!).getTime() - new Date(b.nextRevisionDate!).getTime())
+    .slice(0, 5);
+
   return (
     <div className="space-y-6">
       {/* Top Welcome Header */}
@@ -741,6 +747,40 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
                     </button>
                   </div>
                 ))
+              )}
+            </div>
+          </div>
+
+          {/* Next Revision Due section */}
+          <div className="space-y-3 pt-3 border-t border-white/[0.06]">
+            <h4 className="text-xs font-semibold text-slate-400 uppercase font-mono tracking-wider">
+              Next Revision Due
+            </h4>
+            <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+              {upcomingRevisions.length === 0 ? (
+                <p className="text-[11px] text-slate-600 font-mono italic">No upcoming revisions scheduled.</p>
+              ) : (
+                upcomingRevisions.map(p => {
+                  const isOverdue = new Date(p.nextRevisionDate!) < new Date(today);
+                  return (
+                    <div
+                      key={p.id}
+                      className="flex flex-col bg-white/[0.01] hover:bg-white/[0.02] border border-white/[0.04] p-2 rounded-md transition-all group"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="text-xs font-semibold text-slate-200">{p.name}</span>
+                          <span className="text-[9px] text-slate-500 font-mono block mt-0.5">{p.topicName}</span>
+                        </div>
+                        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded border ${
+                          isOverdue ? "bg-rose-500/10 text-rose-400 border-rose-500/20" : "bg-white/[0.05] text-slate-400 border-white/[0.1]"
+                        }`}>
+                          {isOverdue ? "Overdue" : p.nextRevisionDate}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
