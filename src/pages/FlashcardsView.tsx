@@ -159,16 +159,23 @@ Answers should be detailed and use markdown (including \`\`\` language code bloc
       const data = await response.json();
       
       let rawText = data.choices[0].message.content;
-      const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-      if (jsonMatch) rawText = jsonMatch[1];
       
-      const startIdx = rawText.indexOf('[');
-      const endIdx = rawText.lastIndexOf(']');
-      if (startIdx !== -1 && endIdx !== -1) {
-        rawText = rawText.substring(startIdx, endIdx + 1);
+      // Remove <think> blocks first
+      rawText = rawText.replace(/<think>[\s\S]*?<\/think>/g, '');
+      
+      let jsonText = rawText;
+      const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (jsonMatch && jsonMatch[1]) {
+        jsonText = jsonMatch[1];
       }
       
-      const parsed = JSON.parse(rawText);
+      const startIdx = jsonText.indexOf('[');
+      const endIdx = jsonText.lastIndexOf(']');
+      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+        jsonText = jsonText.substring(startIdx, endIdx + 1);
+      }
+      
+      const parsed = JSON.parse(jsonText);
       if (!Array.isArray(parsed)) throw new Error("Invalid output format");
 
       const deckId = `deck-ai-${Date.now()}`;
