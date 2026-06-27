@@ -747,7 +747,22 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         const initialState = getInitialState(curriculum);
         const newState = {
           ...initialState,
+          isLoadingUser: false,
           user: state.user,
+          userPlans: [
+            {
+              planId: "16-week-mastery",
+              active: true,
+              primary: true,
+              startedAt: new Date().toISOString(),
+              paused: false,
+              completedWeeks: [],
+              customProgress: {}
+            }
+          ],
+          primaryPlanId: "16-week-mastery",
+          mockInterviews: [],
+          activeInterviewSession: null,
           settings: {
             ...initialState.settings,
             nvidiaApiKey: state.settings.nvidiaApiKey,
@@ -923,6 +938,10 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
               localStorage.setItem(`profile_${firebaseUser.uid}`, JSON.stringify(userProfile));
               localStorage.setItem("last_logged_in_user", JSON.stringify(userProfile));
               setState(prev => ({ ...prev, ...deserialized, user: userProfile, isLoadingUser: false }));
+            } else {
+              localStorage.setItem(`profile_${firebaseUser.uid}`, JSON.stringify(userProfile));
+              localStorage.setItem("last_logged_in_user", JSON.stringify(userProfile));
+              setState(prev => ({ ...prev, user: userProfile, isLoadingUser: false }));
             }
           } catch (err) {
             console.error("Error loading user data from Firestore:", err);
@@ -946,7 +965,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
   // Debounced state save to Firestore
   useEffect(() => {
-    if (!state.user || !hasFirebaseKeys) return;
+    if (!state.user || !hasFirebaseKeys || state.isLoadingUser) return;
 
     const timer = setTimeout(async () => {
       try {
