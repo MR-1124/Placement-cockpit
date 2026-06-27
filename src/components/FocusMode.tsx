@@ -235,6 +235,7 @@ const toggleCustomTask = useAppState(s => s.toggleCustomTask);
       toggleCustomTask(activeSession.linkedCustomTask.id);
     }
 
+    localStorage.removeItem("active_focus_session");
     onEndSession(true);
   };
 
@@ -246,6 +247,7 @@ const toggleCustomTask = useAppState(s => s.toggleCustomTask);
       cancelText: "Stay Focused",
       severity: "warning",
       onConfirm: () => {
+        localStorage.removeItem("active_focus_session");
         onEndSession(false);
       }
     });
