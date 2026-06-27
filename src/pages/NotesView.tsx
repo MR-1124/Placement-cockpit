@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import React, { useState, useEffect, useRef } from "react";
 import { useAppState } from "../context/AppStateContext";
 import type { Note } from "../context/AppStateContext";
@@ -20,7 +21,12 @@ import {
 
 
 export const NotesView: React.FC = () => {
-  const { state, addNote, updateNote, deleteNote, confirmAction } = useAppState();
+  const state = useAppState(s => s.state);
+const addNote = useAppState(s => s.addNote);
+const updateNote = useAppState(s => s.updateNote);
+const deleteNote = useAppState(s => s.deleteNote);
+const confirmAction = useAppState(s => s.confirmAction);
+
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
@@ -163,7 +169,11 @@ export const NotesView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/[0.06] pb-6">
         <div>
@@ -539,6 +549,6 @@ export const NotesView: React.FC = () => {
 
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };

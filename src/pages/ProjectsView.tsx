@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 import { useAppState } from "../context/AppStateContext";
 import type { Project } from "../context/AppStateContext";
 import { GlassCard, ProgressBar } from "../components/Common";
@@ -166,7 +167,12 @@ export const ProjectsView: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
       {/* Page Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/[0.06] pb-6">
         <div>
@@ -661,6 +667,6 @@ export const ProjectsView: React.FC = () => {
           </GlassCard>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };

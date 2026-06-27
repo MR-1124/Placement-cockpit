@@ -27,7 +27,9 @@ interface LandingViewProps {
 }
 
 export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) => {
-  const { state, loginUser } = useAppState();
+  const state = useAppState(s => s.state);
+const loginUser = useAppState(s => s.loginUser);
+
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

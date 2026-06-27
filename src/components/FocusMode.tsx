@@ -38,7 +38,11 @@ export const FocusMode: React.FC<FocusModeProps> = ({
   activeSession,
   onEndSession
 }) => {
-  const { state, confirmAction, toggleDsaProblem, toggleCustomTask } = useAppState();
+  const state = useAppState(s => s.state);
+const confirmAction = useAppState(s => s.confirmAction);
+const toggleDsaProblem = useAppState(s => s.toggleDsaProblem);
+const toggleCustomTask = useAppState(s => s.toggleCustomTask);
+
 
   // Configurator form states
   const [goal, setGoal] = useState("");

@@ -6,7 +6,8 @@ import { GlassCard } from "../components/Common";
 import { ShieldAlert, LogIn, Lock, Info, Terminal } from "lucide-react";
 
 export const LoginView: React.FC = () => {
-  const { loginUser } = useAppState();
+  const loginUser = useAppState(s => s.loginUser);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

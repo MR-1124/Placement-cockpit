@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 import { useAppState } from "../context/AppStateContext";
 import type { DailyHabitState } from "../context/AppStateContext";
 import { GlassCard, ProgressRing, ProgressBar } from "../components/Common";
@@ -23,25 +24,24 @@ interface DashboardViewProps {
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOpenFocusConfig }) => {
-  const {
-    state,
-    overallCompletion,
-    dsaCompletion,
-    devCompletion,
-    aiDependencyScore,
-    readinessScore,
-    projectCount,
-    toggleHabit,
-    addCustomTask,
-    toggleCustomTask,
-    deleteCustomTask,
-    addWeeklyGoal,
-    toggleWeeklyGoal,
-    deleteWeeklyGoal,
-    level,
-    levelTitle,
-    curriculum
-  } = useAppState();
+  const state = useAppState(s => s.state);
+const overallCompletion = useAppState(s => s.overallCompletion);
+const dsaCompletion = useAppState(s => s.dsaCompletion);
+const devCompletion = useAppState(s => s.devCompletion);
+const aiDependencyScore = useAppState(s => s.aiDependencyScore);
+const readinessScore = useAppState(s => s.readinessScore);
+const projectCount = useAppState(s => s.projectCount);
+const toggleHabit = useAppState(s => s.toggleHabit);
+const addCustomTask = useAppState(s => s.addCustomTask);
+const toggleCustomTask = useAppState(s => s.toggleCustomTask);
+const deleteCustomTask = useAppState(s => s.deleteCustomTask);
+const addWeeklyGoal = useAppState(s => s.addWeeklyGoal);
+const toggleWeeklyGoal = useAppState(s => s.toggleWeeklyGoal);
+const deleteWeeklyGoal = useAppState(s => s.deleteWeeklyGoal);
+const level = useAppState(s => s.level);
+const levelTitle = useAppState(s => s.levelTitle);
+const curriculum = useAppState(s => s.curriculum);
+
 
   const ALL_PLANS = curriculum.ALL_PLANS;
 
@@ -404,7 +404,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
     .slice(0, 5);
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
       {/* Top Welcome Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/[0.06] pb-6">
         <div>
@@ -1051,7 +1056,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
         </div>
       )}
 
-    </div>
+    </motion.div>
   );
 };
 

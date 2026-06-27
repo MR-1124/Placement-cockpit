@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import React, { useState } from "react";
 import { useAppState } from "../context/AppStateContext";
 import { GlassCard, ProgressBar } from "../components/Common";
@@ -18,16 +19,15 @@ import {
 import { MarkdownRenderer } from "../components/MarkdownRenderer";
 
 export const DsaView: React.FC = () => {
-  const {
-    state,
-    toggleDsaProblem,
-    updateDsaNotes,
-    toggleDsaWeak,
-    scheduleRevision,
-    updateDsaMastery,
-    updateDsaComplexity,
-    incrementDsaSubmissions
-  } = useAppState();
+  const state = useAppState(s => s.state);
+const toggleDsaProblem = useAppState(s => s.toggleDsaProblem);
+const updateDsaNotes = useAppState(s => s.updateDsaNotes);
+const toggleDsaWeak = useAppState(s => s.toggleDsaWeak);
+const scheduleRevision = useAppState(s => s.scheduleRevision);
+const updateDsaMastery = useAppState(s => s.updateDsaMastery);
+const updateDsaComplexity = useAppState(s => s.updateDsaComplexity);
+const incrementDsaSubmissions = useAppState(s => s.incrementDsaSubmissions);
+
 
   const [searchQuery, setSearchQuery] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState<string>("All");
@@ -146,7 +146,11 @@ export const DsaView: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/[0.06] pb-6">
           <div>
@@ -670,6 +674,6 @@ export const DsaView: React.FC = () => {
           </GlassCard>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };

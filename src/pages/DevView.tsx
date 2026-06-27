@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import React, { useState } from "react";
 import { useAppState } from "../context/AppStateContext";
 import { GlassCard, ProgressBar } from "../components/Common";
@@ -135,7 +136,9 @@ const SKILL_FAQS: Record<string, { q: string; a: string }[]> = {
 };
 
 export const DevView: React.FC = () => {
-  const { state, updateDevSkill } = useAppState();
+  const state = useAppState(s => s.state);
+const updateDevSkill = useAppState(s => s.updateDevSkill);
+
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>("All");
   const [openFaqIds, setOpenFaqIds] = useState<Record<string, boolean>>({});
 
@@ -163,7 +166,11 @@ export const DevView: React.FC = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/[0.06] pb-6">
         <div>
@@ -297,6 +304,6 @@ export const DevView: React.FC = () => {
           );
         })}
       </div>
-    </div>
+    </motion.div>
   );
 };

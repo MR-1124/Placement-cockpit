@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import React, { useState, useEffect, useRef } from "react";
 import { useAppState } from "../context/AppStateContext";
 import { MarkdownRenderer } from "../components/MarkdownRenderer";
@@ -25,20 +26,19 @@ import {
 
 
 export const AiChatView: React.FC = () => {
-  const {
-    state,
-    addChatMessage,
-    clearChatHistory,
-    createNewSession,
-    setActiveSession,
-    deleteSession,
-    togglePinSession,
-    renameSession,
-    confirmAction,
-    updateSessionSystemPrompt,
-    branchSession,
-    removeLastAssistantMessage
-  } = useAppState();
+  const state = useAppState(s => s.state);
+const addChatMessage = useAppState(s => s.addChatMessage);
+const clearChatHistory = useAppState(s => s.clearChatHistory);
+const createNewSession = useAppState(s => s.createNewSession);
+const setActiveSession = useAppState(s => s.setActiveSession);
+const deleteSession = useAppState(s => s.deleteSession);
+const togglePinSession = useAppState(s => s.togglePinSession);
+const renameSession = useAppState(s => s.renameSession);
+const confirmAction = useAppState(s => s.confirmAction);
+const updateSessionSystemPrompt = useAppState(s => s.updateSessionSystemPrompt);
+const branchSession = useAppState(s => s.branchSession);
+const removeLastAssistantMessage = useAppState(s => s.removeLastAssistantMessage);
+
   const [chatInput, setChatInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
@@ -101,7 +101,7 @@ export const AiChatView: React.FC = () => {
   const handleSendMessage = async (inputVal: string, isRegenerate: boolean = false) => {
     if (!inputVal.trim() && !isRegenerate) return;
     if (isLoading) return;
-    if (!state.settings.nvidiaApiKey) {
+    if (!state.sessionNvidiaKey) {
       setChatError("NVIDIA API Key is missing. Please configure it in settings.");
       return;
     }
@@ -138,7 +138,7 @@ export const AiChatView: React.FC = () => {
         apiMessages.push({ role: "user", content: inputVal });
       }
 
-      const apiKey = state.settings.nvidiaApiKey;
+      const apiKey = state.sessionNvidiaKey;
       let response;
       try {
         setChatStatus("Connecting to local Vite dev proxy (/api-nvidia)...");
@@ -342,7 +342,11 @@ export const AiChatView: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto h-[calc(100vh-140px)] flex flex-col lg:flex-row gap-6 select-none">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6 max-w-7xl mx-auto h-[calc(100vh-140px)] flex flex-col lg:flex-row gap-6 select-none">
       
       {/* Left Column: Quick prompt templates deck / Chat history sessions */}
       <div className="w-full lg:w-80 flex flex-col gap-4 flex-shrink-0 justify-between h-full overflow-hidden">
@@ -588,8 +592,8 @@ export const AiChatView: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-wider text-slate-500">
-            <span className={`w-1.5 h-1.5 rounded-full ${state.settings.nvidiaApiKey ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
-            <span>{state.settings.nvidiaApiKey ? state.settings.nvidiaModelName.split("/").pop() : "Offline mode"}</span>
+            <span className={`w-1.5 h-1.5 rounded-full ${state.sessionNvidiaKey ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
+            <span>{state.sessionNvidiaKey ? state.settings.nvidiaModelName.split("/").pop() : "Offline mode"}</span>
           </div>
         </div>
 
@@ -607,7 +611,7 @@ export const AiChatView: React.FC = () => {
                 </p>
               </div>
 
-              {!state.settings.nvidiaApiKey && (
+              {!state.sessionNvidiaKey && (
                 <div className="bg-amber-500/5 border border-amber-500/10 rounded-xl p-3 text-left w-full">
                   <span className="text-[10px] font-bold text-amber-500 block mb-1">Cockpit Settings Needed</span>
                   <p className="text-[9px] text-slate-400 leading-normal">
@@ -773,9 +777,9 @@ export const AiChatView: React.FC = () => {
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              disabled={isLoading || !state.settings.nvidiaApiKey}
+              disabled={isLoading || !state.sessionNvidiaKey}
               placeholder={
-                state.settings.nvidiaApiKey
+                state.sessionNvidiaKey
                   ? "Enter query (e.g. explain sliding window, review arrays structure)..."
                   : "NVIDIA API token key properties missing in cockpit config settings..."
               }
@@ -784,7 +788,7 @@ export const AiChatView: React.FC = () => {
             />
             <button
               type="submit"
-              disabled={isLoading || !chatInput.trim() || !state.settings.nvidiaApiKey}
+              disabled={isLoading || !chatInput.trim() || !state.sessionNvidiaKey}
               className="w-10 h-10 rounded-xl bg-accentPrimary hover:bg-accentPrimary/90 disabled:bg-white/[0.02] text-white disabled:text-slate-600 border border-white/[0.04] disabled:border-transparent flex items-center justify-center shrink-0 transition-colors cursor-pointer"
             >
               {isLoading ? (
@@ -796,7 +800,7 @@ export const AiChatView: React.FC = () => {
           </form>
         </div>
       </GlassCard>
-    </div>
+    </motion.div>
   );
 };
 

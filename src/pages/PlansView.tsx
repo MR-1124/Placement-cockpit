@@ -17,15 +17,14 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 
 export const PlansView: React.FC = () => {
-  const { 
-    state, 
-    followPlan, 
-    pausePlan, 
-    unfollowPlan, 
-    setPrimaryPlan,
-    curriculum,
-    confirmAction
-  } = useAppState();
+  const state = useAppState(s => s.state);
+const followPlan = useAppState(s => s.followPlan);
+const pausePlan = useAppState(s => s.pausePlan);
+const unfollowPlan = useAppState(s => s.unfollowPlan);
+const setPrimaryPlan = useAppState(s => s.setPrimaryPlan);
+const curriculum = useAppState(s => s.curriculum);
+const confirmAction = useAppState(s => s.confirmAction);
+
 
   const ALL_PLANS = curriculum.ALL_PLANS;
 

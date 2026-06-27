@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import { useAppState } from "../context/AppStateContext";
 import type { MockInterviewReport, InterviewPhase } from "../types/AppTypes";
 import { MarkdownRenderer } from "../components/MarkdownRenderer";
@@ -207,7 +208,7 @@ export const InterviewSimulatorView: React.FC = () => {
     endInterviewSession
   } = useAppState();
 
-  const apiKey = state.settings.nvidiaApiKey;
+  const apiKey = state.sessionNvidiaKey;
   const modelName = state.settings.nvidiaInterviewerModelName || state.settings.nvidiaModelName || "meta/llama-3.1-70b-instruct";
 
 
@@ -1605,7 +1606,12 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
 
   // Phase 1: MOCK SETUP CONFIGURATION
   return (
-    <div className="max-w-4xl mx-auto space-y-8 select-none">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="max-w-4xl mx-auto space-y-8 select-none"
+    >
       {/* Page Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-lg bg-accentPrimary/10 border border-accentPrimary/20 flex items-center justify-center text-accentPrimary">
@@ -1657,7 +1663,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
           <InterviewHistoryPanel onViewReport={setEvaluationReport} />
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

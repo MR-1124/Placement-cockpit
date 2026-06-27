@@ -22,7 +22,9 @@ interface InterviewSetupPanelProps {
 }
 
 export const InterviewSetupPanel: React.FC<InterviewSetupPanelProps> = ({ onLaunch }) => {
-  const { state, updateUserProfile } = useAppState();
+  const state = useAppState(s => s.state);
+const updateUserProfile = useAppState(s => s.updateUserProfile);
+
 
   const [selectedTopic, setSelectedTopic] = useState<string>("Any");
   const [selectedDifficulty, setSelectedDifficulty] = useState<"Easy" | "Medium" | "Hard">("Medium");
@@ -34,7 +36,7 @@ export const InterviewSetupPanel: React.FC<InterviewSetupPanelProps> = ({ onLaun
   const [resumeText, setResumeText] = useState(state.user?.resumeText || "");
   const [resumeFileName, setResumeFileName] = useState(state.user?.resumeFileName || "");
 
-  const apiKey = state.settings.nvidiaApiKey || "";
+  const apiKey = state.sessionNvidiaKey || "";
 
   const handleSaveIntro = () => {
     updateUserProfile({ savedIntro: tempIntro });
@@ -222,7 +224,10 @@ export const InterviewSetupPanel: React.FC<InterviewSetupPanelProps> = ({ onLaun
 };
 
 export const InterviewHistoryPanel: React.FC<{ onViewReport: (report: any) => void }> = ({ onViewReport }) => {
-  const { state, confirmAction, deleteMockInterviewReport } = useAppState();
+  const state = useAppState(s => s.state);
+const confirmAction = useAppState(s => s.confirmAction);
+const deleteMockInterviewReport = useAppState(s => s.deleteMockInterviewReport);
+
 
   return (
     <GlassCard className="p-6 space-y-4">

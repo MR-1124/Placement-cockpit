@@ -16,7 +16,13 @@ import {
 } from "lucide-react";
 
 export const RoadmapView: React.FC = () => {
-  const { state, curriculum, toggleWeek, toggleDsaProblem, updateDevSkill, confirmAction } = useAppState();
+  const state = useAppState(s => s.state);
+const curriculum = useAppState(s => s.curriculum);
+const toggleWeek = useAppState(s => s.toggleWeek);
+const toggleDsaProblem = useAppState(s => s.toggleDsaProblem);
+const updateDevSkill = useAppState(s => s.updateDevSkill);
+const confirmAction = useAppState(s => s.confirmAction);
+
   
   const ALL_PLANS = curriculum.ALL_PLANS;
   const primaryPlanId = state.primaryPlanId || "16-week-mastery";

@@ -14,7 +14,10 @@ import {
 import type { DsaProblem, DsaTopic } from "../data/curriculum";
 
 export const RevisionView: React.FC = () => {
-  const { state, scheduleRevision, toggleDsaWeak } = useAppState();
+  const state = useAppState(s => s.state);
+const scheduleRevision = useAppState(s => s.scheduleRevision);
+const toggleDsaWeak = useAppState(s => s.toggleDsaWeak);
+
 
   const now = new Date();
   const todayStr = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().split("T")[0];

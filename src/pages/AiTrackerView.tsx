@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import React, { useState } from "react";
 import { useAppState } from "../context/AppStateContext";
 import { GlassCard } from "../components/Common";
@@ -8,7 +9,10 @@ import {
 } from "lucide-react";
 
 export const AiTrackerView: React.FC = () => {
-  const { state, aiDependencyScore, addAiLog } = useAppState();
+  const state = useAppState(s => s.state);
+const aiDependencyScore = useAppState(s => s.aiDependencyScore);
+const addAiLog = useAppState(s => s.addAiLog);
+
 
   // Local form state
   const [aiPercentage, setAiPercentage] = useState(30);
@@ -48,7 +52,11 @@ export const AiTrackerView: React.FC = () => {
   const zone = getZoneText(aiDependencyScore);
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/[0.06] pb-6">
         <div>
@@ -339,6 +347,6 @@ export const AiTrackerView: React.FC = () => {
           </GlassCard>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };

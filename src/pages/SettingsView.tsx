@@ -1,26 +1,31 @@
 import React, { useState } from "react";
 import { useAppState } from "../context/AppStateContext";
 import { GlassCard } from "../components/Common";
+import { MasterPasswordModal } from "../components/MasterPasswordModal";
+import { motion } from "framer-motion";
 import {
   Palette,
   Eye,
-  EyeOff,
   RefreshCw,
   Trash2,
   AlertOctagon,
   Bot,
   CheckCircle,
   XCircle,
-  Loader2
+  Loader2,
+  Lock
 } from "lucide-react";
 
 export const SettingsView: React.FC = () => {
-  const { state, updateSettings, resetAllData, seedMockData, confirmAction } = useAppState();
+  const { state, updateSettings, resetAllData, seedMockData, confirmAction, setSessionNvidiaKey } = useAppState();
   const [showSeedToast, setShowSeedToast] = useState(false);
   const [showResetToast, setShowResetToast] = useState(false);
 
   // NVIDIA NIM settings states
-  const [showApiKey, setShowApiKey] = useState(false);
+  const [showApiKey] = useState(false);
+  const [tempApiKey, setTempApiKey] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"encrypt" | "decrypt">("encrypt");
   const [modelType, setModelType] = useState(() => {
     const model = state.settings.nvidiaModelName || "meta/llama-3.1-70b-instruct";
     if ([
@@ -63,17 +68,20 @@ export const SettingsView: React.FC = () => {
   const [testMessage, setTestMessage] = useState("");
 
   const handleTestConnection = async () => {
-    if (!state.settings.nvidiaApiKey) {
+    const keyToTest = state.sessionNvidiaKey;
+    if (!keyToTest) {
       setTestStatus("error");
-      setTestMessage("API Key is empty.");
+      setTestMessage("API Key is empty or not unlocked.");
       return;
     }
+    
     setTestStatus("testing");
-    setTestMessage("");
+    setTestMessage("Pinging NVIDIA integration endpoint...");
+
     try {
       const res = await fetch("https://integrate.api.nvidia.com/v1/models", {
         headers: {
-          "Authorization": `Bearer ${state.settings.nvidiaApiKey}`
+          "Authorization": `Bearer ${keyToTest}`
         }
       });
       if (res.ok) {
@@ -119,7 +127,12 @@ export const SettingsView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="max-w-4xl mx-auto space-y-6"
+    >
       {/* Page Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/[0.06] pb-6">
         <div>
@@ -205,24 +218,53 @@ export const SettingsView: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <label className="text-[10px] uppercase font-mono text-slate-500 block mb-1">NVIDIA API Key</label>
-                <div className="relative">
-                  <input
-                    type={showApiKey ? "text" : "password"}
-                    value={state.settings.nvidiaApiKey || ""}
-                    onChange={(e) => updateSettings({ nvidiaApiKey: e.target.value })}
-                    placeholder="nvapi-..."
-                    className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 pl-3 pr-10 text-xs font-mono text-white placeholder-slate-600 focus:outline-none transition-colors"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowApiKey(!showApiKey)}
-                    className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300"
-                  >
-                    {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
+                {state.settings.nvidiaApiKey ? (
+                  <div className="p-3 bg-white/[0.02] border border-white/[0.06] rounded-lg flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-slate-300 font-mono">
+                      <Lock className="w-4 h-4 text-emerald-400" />
+                      <span>API Key is encrypted and stored.</span>
+                    </div>
+                    <div className="flex gap-2">
+                      {!state.sessionNvidiaKey && (
+                        <button
+                          onClick={() => { setModalMode("decrypt"); setIsModalOpen(true); }}
+                          className="px-3 py-1.5 rounded bg-accentPrimary/20 text-accentPrimary hover:bg-accentPrimary/30 text-xs font-bold transition-colors"
+                        >
+                          Unlock
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          updateSettings({ nvidiaApiKey: "" });
+                          setSessionNvidiaKey("");
+                        }}
+                        className="px-3 py-1.5 rounded bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 text-xs font-bold transition-colors"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <input
+                      type={showApiKey ? "text" : "password"}
+                      value={tempApiKey}
+                      onChange={(e) => setTempApiKey(e.target.value)}
+                      placeholder="nvapi-..."
+                      className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 pl-3 pr-10 text-xs font-mono text-white placeholder-slate-600 focus:outline-none transition-colors"
+                    />
+                    <button
+                      type="button"
+                      disabled={!tempApiKey}
+                      onClick={() => { setModalMode("encrypt"); setIsModalOpen(true); }}
+                      className="px-4 py-2 w-full rounded-lg font-bold border transition-all text-xs bg-accentPrimary hover:bg-accentPrimary/90 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      <Lock className="w-4 h-4" /> Secure & Save API Key
+                    </button>
+                  </div>
+                )}
                 
-                <div className="flex items-center gap-3 pt-2">
+                <div className="flex items-center gap-3 pt-3">
                   <button
                     type="button"
                     onClick={handleTestConnection}
@@ -396,6 +438,23 @@ export const SettingsView: React.FC = () => {
         </div>
 
       </div>
-    </div>
+      
+      <MasterPasswordModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        mode={modalMode}
+        apiKeyInput={tempApiKey}
+        onSuccess={(result) => {
+          if (modalMode === "encrypt") {
+            updateSettings({ nvidiaApiKey: result });
+            setSessionNvidiaKey(tempApiKey);
+            setTempApiKey("");
+          } else {
+            setSessionNvidiaKey(result);
+          }
+          setIsModalOpen(false);
+        }}
+      />
+    </motion.div>
   );
 };

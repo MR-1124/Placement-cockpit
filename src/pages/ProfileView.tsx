@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 import { useAppState } from "../context/AppStateContext";
 import { GlassCard } from "../components/Common";
 import { auth } from "../firebase";
@@ -118,7 +119,12 @@ export const ProfileView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 select-none">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6 select-none"
+    >
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/[0.06] pb-6">
         <div>
@@ -383,6 +389,6 @@ export const ProfileView: React.FC = () => {
           </GlassCard>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };

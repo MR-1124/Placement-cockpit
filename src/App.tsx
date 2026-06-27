@@ -1,20 +1,24 @@
 import React, { useState, useEffect, useRef } from "react";
 import { AppStateProvider, useAppState } from "./context/AppStateContext";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+
+// Lazy load heavy views
+const InterviewSimulatorView = React.lazy(() => import("./pages/InterviewSimulatorView").then(module => ({ default: module.InterviewSimulatorView })));
+const DsaView = React.lazy(() => import("./pages/DsaView").then(module => ({ default: module.DsaView })));
+const DevView = React.lazy(() => import("./pages/DevView").then(module => ({ default: module.DevView })));
+const ProjectsView = React.lazy(() => import("./pages/ProjectsView").then(module => ({ default: module.ProjectsView })));
+const RevisionView = React.lazy(() => import("./pages/RevisionView").then(module => ({ default: module.RevisionView })));
+const NotesView = React.lazy(() => import("./pages/NotesView").then(module => ({ default: module.NotesView })));
+const AiChatView = React.lazy(() => import("./pages/AiChatView").then(module => ({ default: module.AiChatView })));
+const AiTrackerView = React.lazy(() => import("./pages/AiTrackerView").then(module => ({ default: module.AiTrackerView })));
+const BadgesView = React.lazy(() => import("./pages/BadgesView").then(module => ({ default: module.BadgesView })));
+
 import { DashboardView } from "./pages/DashboardView";
 import { RoadmapView } from "./pages/RoadmapView";
-import { DsaView } from "./pages/DsaView";
-import { DevView } from "./pages/DevView";
-import { AiTrackerView } from "./pages/AiTrackerView";
-import { AiChatView } from "./pages/AiChatView";
-import { ProjectsView } from "./pages/ProjectsView";
-import { RevisionView } from "./pages/RevisionView";
-import { NotesView } from "./pages/NotesView";
-import { BadgesView } from "./pages/BadgesView";
 import { SettingsView } from "./pages/SettingsView";
 import { ProfileView } from "./pages/ProfileView";
 import { PlansView } from "./pages/PlansView";
 import { LandingView } from "./pages/LandingView";
-import { InterviewSimulatorView } from "./pages/InterviewSimulatorView";
 import { MarkdownRenderer } from "./components/MarkdownRenderer";
 import { FocusMode } from "./components/FocusMode";
 import { motion, AnimatePresence } from "framer-motion";
@@ -63,17 +67,16 @@ const AppContent: React.FC = () => {
     return lastUser ? "dashboard" : "landing";
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const {
-    state,
-    readinessScore,
-    level,
-    xpProgress,
-    levelTitle,
-    curriculum,
-    addChatMessage,
-    clearChatHistory,
-    confirmAction
-  } = useAppState();
+  const state = useAppState(s => s.state);
+const readinessScore = useAppState(s => s.readinessScore);
+const level = useAppState(s => s.level);
+const xpProgress = useAppState(s => s.xpProgress);
+const levelTitle = useAppState(s => s.levelTitle);
+const curriculum = useAppState(s => s.curriculum);
+const addChatMessage = useAppState(s => s.addChatMessage);
+const clearChatHistory = useAppState(s => s.clearChatHistory);
+const confirmAction = useAppState(s => s.confirmAction);
+
 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isWideChat, setIsWideChat] = useState(false);
@@ -173,7 +176,7 @@ const AppContent: React.FC = () => {
     if (e) e.preventDefault();
     if (!chatInput.trim() || isLoading) return;
 
-    const apiKey = state.settings.nvidiaApiKey;
+    const apiKey = state.sessionNvidiaKey;
     if (!apiKey) {
       setChatError("API Key is missing. Please configure it in Settings.");
       return;
@@ -675,9 +678,9 @@ const AppContent: React.FC = () => {
                 <div>
                   <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">AI Placement Mentor</h3>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${state.settings.nvidiaApiKey ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full ${state.sessionNvidiaKey ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
                     <span className="text-[9px] font-mono text-slate-500 uppercase">
-                      {state.settings.nvidiaApiKey ? (state.settings.nvidiaModelName.split("/").pop() || "NVIDIA NIM") : "OFFLINE"}
+                      {state.sessionNvidiaKey ? (state.settings.nvidiaModelName.split("/").pop() || "NVIDIA NIM") : "OFFLINE"}
                     </span>
                   </div>
                 </div>
@@ -726,7 +729,7 @@ const AppContent: React.FC = () => {
                     </p>
                   </div>
 
-                  {!state.settings.nvidiaApiKey && (
+                  {!state.sessionNvidiaKey && (
                     <div className="bg-amber-500/5 border border-amber-500/10 rounded-lg p-3 mt-4 text-left max-w-xs">
                       <span className="text-[10px] font-bold text-amber-500 block mb-1">API Key Needed</span>
                       <p className="text-[9px] text-slate-400 leading-normal">
@@ -838,9 +841,9 @@ const AppContent: React.FC = () => {
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  disabled={isLoading || !state.settings.nvidiaApiKey}
+                  disabled={isLoading || !state.sessionNvidiaKey}
                   placeholder={
-                    state.settings.nvidiaApiKey
+                    state.sessionNvidiaKey
                       ? "Ask about DSA, projects, STAR method... (Shift+Enter for new line)"
                       : "Configure API Key in settings to chat"
                   }
@@ -849,7 +852,7 @@ const AppContent: React.FC = () => {
                 />
                 <button
                   type="submit"
-                  disabled={isLoading || !chatInput.trim() || !state.settings.nvidiaApiKey}
+                  disabled={isLoading || !chatInput.trim() || !state.sessionNvidiaKey}
                   className="w-8 h-8 rounded-lg bg-accentPrimary hover:bg-accentPrimary/90 disabled:bg-white/[0.02] text-white disabled:text-slate-600 border border-white/[0.04] disabled:border-transparent flex items-center justify-center shrink-0 transition-colors"
                   aria-label="Send Message"
                 >
@@ -888,9 +891,13 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <AppStateProvider>
-      <AppContent />
-    </AppStateProvider>
+    <ErrorBoundary>
+      <AppStateProvider>
+        <React.Suspense fallback={<div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center"><div className="text-white">Loading module...</div></div>}>
+          <AppContent />
+        </React.Suspense>
+      </AppStateProvider>
+    </ErrorBoundary>
   );
 };
 

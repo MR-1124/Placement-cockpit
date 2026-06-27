@@ -74,6 +74,7 @@ interface AppState {
   unlockedBadges: string[];
   xp: number;
   dailyChallenge?: DailyChallenge;
+  sessionNvidiaKey?: string;
 
   chatSessions?: Record<string, ChatSession>;
   currentSessionId?: string;
@@ -83,7 +84,7 @@ interface AppState {
   activeInterviewSession?: ActiveInterviewSession | null;
 }
 
-interface AppContextType {
+export interface AppContextType {
   state: AppState;
   curriculum: {
     DEFAULT_DSA_TOPICS: DsaTopic[];
@@ -154,6 +155,7 @@ interface AppContextType {
   deleteMockInterviewReport: (id: string) => void;
   completeDailyChallenge: () => void;
   refreshDailyChallenge: () => void;
+  setSessionNvidiaKey: (key: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -908,33 +910,48 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
           try {
             const userDocRef = doc(db, "users", firebaseUser.uid);
             const docSnap = await getDoc(userDocRef);
-            if (docSnap.exists()) {
-              const data = docSnap.data();
-              const deserialized = deserializeState(data as SerializedProgress, curriculum);
-
-              if (data.profile) {
-                userProfile = {
-                  ...userProfile,
-                  targetCompanies: data.profile.targetCompanies || userProfile.targetCompanies,
-                  linkedinUrl: data.profile.linkedinUrl || userProfile.linkedinUrl,
-                  githubUrl: data.profile.githubUrl || userProfile.githubUrl,
-                  resumeLink: data.profile.resumeLink || userProfile.resumeLink,
-                  cohort: data.profile.cohort || userProfile.cohort,
-                  name: data.profile.name || userProfile.name,
-                  avatar: data.profile.avatar || userProfile.avatar,
-                  email: data.profile.email || userProfile.email
-                };
+              if (docSnap.exists()) {
+                const data = docSnap.data();
+                const deserialized = deserializeState(data as SerializedProgress, curriculum);
+  
+                if (data.profile) {
+                  userProfile = {
+                    ...userProfile,
+                    targetCompanies: data.profile.targetCompanies || userProfile.targetCompanies,
+                    linkedinUrl: data.profile.linkedinUrl || userProfile.linkedinUrl,
+                    githubUrl: data.profile.githubUrl || userProfile.githubUrl,
+                    resumeLink: data.profile.resumeLink || userProfile.resumeLink,
+                    cohort: data.profile.cohort || userProfile.cohort,
+                    name: data.profile.name || userProfile.name,
+                    avatar: data.profile.avatar || userProfile.avatar,
+                    email: data.profile.email || userProfile.email
+                  };
+                }
+  
+                localStorage.setItem(`profile_${firebaseUser.uid}`, JSON.stringify(userProfile));
+                localStorage.setItem("last_logged_in_user", JSON.stringify(userProfile));
+                setState(prev => ({ ...prev, ...deserialized, user: userProfile, isLoadingUser: false }));
+              } else {
+                localStorage.setItem(`profile_${firebaseUser.uid}`, JSON.stringify(userProfile));
+                localStorage.setItem("last_logged_in_user", JSON.stringify(userProfile));
+                
+                setState(prev => {
+                  if (!prev.user) {
+                    // Guest user migrating to cloud: Keep local data and sync UP.
+                    return { ...prev, user: userProfile, isLoadingUser: false };
+                  } else {
+                    // Wiped cloud account OR switching accounts: Wipe local data to prevent bleeding.
+                    const emptyState = getInitialState(curriculum);
+                    return { 
+                      ...emptyState, 
+                      user: userProfile, 
+                      isLoadingUser: false, 
+                      settings: prev.settings // keep settings like API keys
+                    };
+                  }
+                });
               }
-
-              localStorage.setItem(`profile_${firebaseUser.uid}`, JSON.stringify(userProfile));
-              localStorage.setItem("last_logged_in_user", JSON.stringify(userProfile));
-              setState(prev => ({ ...prev, ...deserialized, user: userProfile, isLoadingUser: false }));
-            } else {
-              localStorage.setItem(`profile_${firebaseUser.uid}`, JSON.stringify(userProfile));
-              localStorage.setItem("last_logged_in_user", JSON.stringify(userProfile));
-              setState(prev => ({ ...prev, user: userProfile, isLoadingUser: false }));
-            }
-          } catch (err) {
+            } catch (err) {
             console.error("Error loading user data from Firestore:", err);
             localStorage.setItem(`profile_${firebaseUser.uid}`, JSON.stringify(userProfile));
             localStorage.setItem("last_logged_in_user", JSON.stringify(userProfile));
@@ -979,7 +996,14 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
   const logoutUser = () => {
     localStorage.removeItem("last_logged_in_user");
-    setState(prev => ({ ...prev, user: null }));
+    // Wipe the device data so the next person/guest gets a clean slate
+    const emptyState = getInitialState(curriculum);
+    setState(prev => ({ 
+      ...emptyState, 
+      isLoadingUser: false,
+      settings: prev.settings // Keep settings like API keys
+    }));
+    localStorage.removeItem(STORAGE_KEY);
   };
 
   const updateUserProfile = (profileUpdate: Partial<UserProfile>) => {
@@ -2295,6 +2319,10 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     });
   };
 
+  const setSessionNvidiaKey = (key: string) => {
+    updateState(prev => ({ ...prev, sessionNvidiaKey: key }));
+  };
+
   const refreshDailyChallenge = () => {
     updateState(prev => {
       const today = getTodayStr();
@@ -2371,7 +2399,8 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         endInterviewSession,
         deleteMockInterviewReport,
         completeDailyChallenge,
-        refreshDailyChallenge
+        refreshDailyChallenge,
+        setSessionNvidiaKey
       }}
     >
       {children}
@@ -2481,10 +2510,14 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   return <AppStateProviderInner curriculum={curriculumData}>{children}</AppStateProviderInner>;
 };
 
-export const useAppState = () => {
+export function useAppState<T = AppContextType>(selector?: (state: AppContextType) => T): T {
   const context = useContext(AppContext);
   if (!context) {
     throw new Error("useAppState must be used within an AppStateProvider");
   }
-  return context;
-};
+  if (selector) {
+    return selector(context);
+  }
+  return context as unknown as T;
+}
+

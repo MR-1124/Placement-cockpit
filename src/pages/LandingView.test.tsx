@@ -35,7 +35,7 @@ describe('LandingView', () => {
     expect(cockpitTexts.length).toBeGreaterThan(0);
     
     // Check if the login CTA is present
-    expect(screen.getAllByText(/Access Cockpit|Initialize Workspace/)).toHaveLength(2);
+    expect(screen.getAllByText(/Access Cockpit|Go to Dashboard/)).toHaveLength(2);
   });
 
   it('shows Go to Dashboard when logged in', () => {
@@ -53,7 +53,7 @@ describe('LandingView', () => {
     expect(mockOnEnterDashboard).toHaveBeenCalled();
   });
 
-  it('opens the login modal when clicking Initialize Workspace', () => {
+  it('opens the login modal when clicking Go to Dashboard', () => {
     (useAppState as any).mockReturnValue({
       state: { user: null },
       loginUser: mockLoginUser
@@ -61,7 +61,7 @@ describe('LandingView', () => {
 
     render(<LandingView onEnterDashboard={mockOnEnterDashboard} />);
     
-    const initBtn = screen.getByText('Initialize Workspace');
+    const initBtn = screen.getAllByText('Go to Dashboard')[0];
     fireEvent.click(initBtn);
     
     // Check if the modal title is there
