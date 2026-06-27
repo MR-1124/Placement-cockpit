@@ -170,6 +170,7 @@ export interface AppContextType {
   enrollCompanyRoadmap: (roadmap: CompanyRoadmap) => void;
   updateRoadmapProgress: (roadmapId: string, milestoneId: string, completed: boolean) => void;
   importFlashcards: (deck: FlashcardDeck, cards: Flashcard[]) => void;
+  saveAtsReport: (report: AtsReport) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -329,7 +330,8 @@ const serializeState = (state: AppState): SerializedProgress => {
       resumeFileName: state.user.resumeFileName || ""
     } : undefined,
     flashcards: state.flashcards || [],
-    activeRoadmaps: state.activeRoadmaps || []
+    activeRoadmaps: state.activeRoadmaps || [],
+    atsReports: state.atsReports || []
   };
 };
 
@@ -437,7 +439,8 @@ const deserializeState = (serialized: Partial<SerializedProgress>, curriculum: a
     mockInterviews: serialized.mockInterviews || [],
     activeInterviewSession: serialized.activeInterviewSession || null,
     flashcards: serialized.flashcards || [],
-    activeRoadmaps: serialized.activeRoadmaps || []
+    activeRoadmaps: serialized.activeRoadmaps || [],
+    atsReports: serialized.atsReports || []
   };
 };
 
@@ -558,7 +561,8 @@ const getInitialState = (curriculum: any): AppState => ({
   mockInterviews: [],
   activeInterviewSession: null,
   flashcards: [],
-  activeRoadmaps: []
+  activeRoadmaps: [],
+  atsReports: []
 });
 
 const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: any }> = ({ children, curriculum }) => {
@@ -2486,13 +2490,13 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         endInterviewSession,
         deleteMockInterviewReport,
         completeDailyChallenge,
-
         refreshDailyChallenge,
         setSessionNvidiaKey,
         updateFlashcardReview,
         enrollCompanyRoadmap,
         updateRoadmapProgress,
-        importFlashcards
+        importFlashcards,
+        saveAtsReport
       }}
 
     >
