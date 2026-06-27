@@ -149,7 +149,7 @@ export const FlashcardsView: React.FC = () => {
           content: `You are an expert software engineering instructor.
 Generate up to 10 high-quality flashcards about the requested topic.
 Output ONLY a JSON object with a single key "flashcards" containing an array of objects with keys "q" (question) and "a" (answer).
-Answers should be detailed and use markdown (including \\`\\`\\` language code blocks \\`\\`\\`) where appropriate for code.
+Answers should be detailed and use markdown (including \`\`\` language code blocks \`\`\`) where appropriate for code.
 Do not output any conversational text.
 Example format:
 {
