@@ -91,6 +91,13 @@ You MUST respond with ONLY a valid JSON object matching this exact structure, wi
       if (jsonMatch && jsonMatch[1]) {
         jsonText = jsonMatch[1];
       }
+      
+      // Clean up any remaining leading/trailing text outside the JSON object
+      const startIdx = jsonText.indexOf('{');
+      const endIdx = jsonText.lastIndexOf('}');
+      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+        jsonText = jsonText.substring(startIdx, endIdx + 1);
+      }
 
       try {
         const parsed: AtsReport = JSON.parse(jsonText);
