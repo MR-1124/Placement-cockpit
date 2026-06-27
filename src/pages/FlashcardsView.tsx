@@ -141,14 +141,22 @@ export const FlashcardsView: React.FC = () => {
       const response = await nvidiaFetch({
         apiKey: state.sessionNvidiaKey,
         modelName: state.settings.nvidiaModelName,
-        temperature: 0.7,
-        maxTokens: 2000,
+        temperature: 0.6,
+        maxTokens: 4000,
         stream: false,
         messages: [{
           role: "system",
-          content: `Generate 10 high-quality flashcards about the requested topic for a software engineering interview. 
-Output ONLY a JSON array of objects with keys "q" (question) and "a" (answer). 
-Answers should be detailed and use markdown (including \`\`\` language code blocks \`\`\`) where appropriate for code.`
+          content: `You are an expert software engineering instructor.
+Generate up to 10 high-quality flashcards about the requested topic.
+Output ONLY a JSON object with a single key "flashcards" containing an array of objects with keys "q" (question) and "a" (answer).
+Answers should be detailed and use markdown (including \\`\\`\\` language code blocks \\`\\`\\`) where appropriate for code.
+Do not output any conversational text.
+Example format:
+{
+  "flashcards": [
+    { "q": "What is X?", "a": "X is..." }
+  ]
+}`
         }, {
           role: "user",
           content: aiTopic
@@ -169,14 +177,15 @@ Answers should be detailed and use markdown (including \`\`\` language code bloc
         jsonText = jsonMatch[1];
       }
       
-      const startIdx = jsonText.indexOf('[');
-      const endIdx = jsonText.lastIndexOf(']');
+      const startIdx = jsonText.indexOf('{');
+      const endIdx = jsonText.lastIndexOf('}');
       if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
         jsonText = jsonText.substring(startIdx, endIdx + 1);
       }
       
       const parsed = JSON.parse(jsonText);
-      if (!Array.isArray(parsed)) throw new Error("Invalid output format");
+      const cardsData = parsed.flashcards;
+      if (!Array.isArray(cardsData)) throw new Error("Invalid output format: Missing flashcards array.");
 
       const deckId = `deck-ai-${Date.now()}`;
       const newDeck: FlashcardDeck = {
@@ -187,7 +196,7 @@ Answers should be detailed and use markdown (including \`\`\` language code bloc
         icon: "Brain"
       };
 
-      const newCards: Flashcard[] = parsed.map((item: any, i: number) => ({
+      const newCards: Flashcard[] = cardsData.map((item: any, i: number) => ({
         id: `card-${deckId}-${i}`,
         deckId,
         question: item.q,
