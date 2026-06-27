@@ -173,7 +173,7 @@ export interface AppContextType {
   importFlashcards: (deck: FlashcardDeck, cards: Flashcard[]) => void;
   addCustomDeck: (deck: FlashcardDeck) => void;
   deleteCustomDeck: (deckId: string) => void;
-  addFlashcards: (deckId: string, cards: Flashcard[]) => void;
+  addFlashcards: (_deckId: string, cards: Flashcard[]) => void;
   deleteFlashcard: (cardId: string) => void;
   updateFlashcard: (cardId: string, updates: Partial<Flashcard>) => void;
 
@@ -2438,7 +2438,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     }));
   };
 
-  const addFlashcards = (deckId: string, cards: Flashcard[]) => {
+  const addFlashcards = (_deckId: string, cards: Flashcard[]) => {
     setState(prev => ({
       ...prev,
       flashcards: [...(prev.flashcards || []), ...cards]

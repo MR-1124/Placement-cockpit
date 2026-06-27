@@ -6,7 +6,7 @@ import { nvidiaFetch } from "../lib/nvidiaApi";
 import ReactMarkdown from "react-markdown";
 import { 
   Brain, Layers, CheckCircle, X, ArrowRight, DownloadCloud, Database, 
-  Network, Cpu, Sparkles, Plus, Trash2, Edit2, Zap
+  Network, Cpu, Sparkles, Trash2, Zap
 } from "lucide-react";
 import flashcardsData from "../data/flashcards.json";
 import type { Flashcard, FlashcardDeck } from "../types/AppTypes";
@@ -20,7 +20,7 @@ const IconMap: Record<string, any> = {
 export const FlashcardsView: React.FC = () => {
   const { 
     state, updateFlashcardReview, importFlashcards,
-    addCustomDeck, deleteCustomDeck, addFlashcards, deleteFlashcard
+    addCustomDeck, deleteCustomDeck, addFlashcards
   } = useAppState();
   
   const [activeDeck, setActiveDeck] = useState<FlashcardDeck | null>(null);
