@@ -42,19 +42,8 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
         throw new Error("Firebase keys are missing. Configure .env.local file in workspace root.");
       }
       const result = await signInWithPopup(auth, googleProvider);
-      const firebaseUser = result.user;
-      
-      loginUser({
-        uid: firebaseUser.uid,
-        name: firebaseUser.displayName || "Google Candidate",
-        email: firebaseUser.email || "",
-        avatar: firebaseUser.photoURL || "https://api.dicebear.com/7.x/bottts/svg?seed=Google",
-        targetCompanies: ["Google", "Amazon", "Microsoft"],
-        linkedinUrl: "",
-        githubUrl: "",
-        resumeLink: "",
-        cohort: "2026 Cohort"
-      });
+      // Do NOT call loginUser here. Let onAuthStateChanged naturally catch the login event,
+      // load from Firestore, and safely set the state. This avoids overwriting cloud progress!
       setShowLoginModal(false);
       onEnterDashboard();
     } catch (err: unknown) {

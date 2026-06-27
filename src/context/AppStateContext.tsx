@@ -743,9 +743,32 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       confirmText: "Yes, Reset Everything",
       cancelText: "Cancel",
       severity: "danger",
-      onConfirm: () => {
-        setState(getInitialState(curriculum));
+      onConfirm: async () => {
+        const initialState = getInitialState(curriculum);
+        const newState = {
+          ...initialState,
+          user: state.user,
+          settings: {
+            ...initialState.settings,
+            nvidiaApiKey: state.settings.nvidiaApiKey,
+            nvidiaModelName: state.settings.nvidiaModelName,
+            nvidiaInterviewerModelName: state.settings.nvidiaInterviewerModelName,
+            accentColor: state.settings.accentColor
+          }
+        };
+        
+        setState(newState);
         localStorage.removeItem(STORAGE_KEY);
+
+        // Force an immediate wipe on the cloud to prevent debounced sync issues
+        if (state.user && hasFirebaseKeys) {
+          try {
+            const userDocRef = doc(db, "users", state.user.uid);
+            await setDoc(userDocRef, serializeState(newState));
+          } catch (err) {
+            console.error("Failed to wipe Firestore", err);
+          }
+        }
       }
     });
   };
@@ -929,7 +952,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       try {
         const serialized = serializeState(state);
         const userDocRef = doc(db, "users", state.user!.uid);
-        await setDoc(userDocRef, serialized, { merge: true });
+        await setDoc(userDocRef, serialized);
         console.log("Firestore state saved successfully");
       } catch (err) {
         console.error("Failed to save state to Firestore:", err);

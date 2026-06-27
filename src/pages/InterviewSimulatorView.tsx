@@ -231,9 +231,9 @@ export const InterviewSimulatorView: React.FC = () => {
 
   useEffect(() => {
     if (activeSession && activeSession.timeLeft === 2700 && activeSession.chatHistory.length === 0) {
-      setShowPreBrief(true);
+      setTimeout(() => setShowPreBrief(true), 0);
     }
-  }, [activeSession !== null]);
+  }, [activeSession]);
 
   const EVALUATION_MESSAGES = [
     "Analyzing logical code soundness...",
@@ -281,6 +281,7 @@ export const InterviewSimulatorView: React.FC = () => {
       phaseRef.current = activeSession.currentPhase;
       timeLeftRef.current = activeSession.timeLeft;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSession?.chatHistory, activeSession?.code, activeSession?.language, activeSession?.currentPhase, activeSession?.timeLeft]);
 
   // Sync state values if activeSession is updated or restored
@@ -291,6 +292,7 @@ export const InterviewSimulatorView: React.FC = () => {
         setSelectedLang(activeSession.language);
       }, 0);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSession?.topic]); // Run once when session changes/loads
 
   // Reset editor maximization when phase transitions away from DSA coding
@@ -298,6 +300,7 @@ export const InterviewSimulatorView: React.FC = () => {
     if (activeSession && activeSession.currentPhase !== "dsa") {
       setTimeout(() => setIsEditorMaximized(false), 0);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSession?.currentPhase]);
 
   // Bug-fix #1: Removed auto-trigger useEffect.
@@ -371,7 +374,7 @@ export const InterviewSimulatorView: React.FC = () => {
   useEffect(() => {
     if (activeSession && activeSession.currentPhase === "dsa" && !codeRef.current.trim()) {
       const defaultCode = LANGUAGE_BOILERPLATES[langRef.current] || "";
-      setInputCode(defaultCode);
+      setTimeout(() => setInputCode(defaultCode), 0);
       codeRef.current = defaultCode;
       updateInterviewSession(
         activeSession.timeLeft,
@@ -381,6 +384,7 @@ export const InterviewSimulatorView: React.FC = () => {
         "dsa"
       );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSession?.currentPhase]);
 
   // Scroll chat to bottom
@@ -761,7 +765,17 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
       const data = await response.json();
       const content = data.choices?.[0]?.message?.content || "";
 
-      const scores: any = robustJsonParse(content);
+      const scores = robustJsonParse(content) as {
+        problemSolving?: number;
+        codeQuality?: number;
+        communication?: number;
+        overallScore?: number;
+        recommendation?: string;
+        strengths?: string[];
+        weaknesses?: string[];
+        feedback?: string;
+        questionsFeedback?: Array<{ question: string; response: string; rating: number; feedback: string }>;
+      };
 
       const report: MockInterviewReport = {
         id: `report-${Date.now()}`,
