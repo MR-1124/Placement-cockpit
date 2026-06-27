@@ -2,11 +2,15 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppState } from "../context/AppStateContext";
 import { GlassCard } from "../components/Common";
-import { Brain, Layers, CheckCircle, X, ArrowRight, DownloadCloud, Database, Network, Cpu } from "lucide-react";
+import { nvidiaFetch } from "../lib/nvidiaApi";
+import ReactMarkdown from "react-markdown";
+import { 
+  Brain, Layers, CheckCircle, X, ArrowRight, DownloadCloud, Database, 
+  Network, Cpu, Sparkles, Plus, Trash2, Edit2, Zap
+} from "lucide-react";
 import flashcardsData from "../data/flashcards.json";
 import type { Flashcard, FlashcardDeck } from "../types/AppTypes";
 
-// Map string icon names to Lucide components
 const IconMap: Record<string, any> = {
   Cpu: Cpu,
   Database: Database,
@@ -14,22 +18,31 @@ const IconMap: Record<string, any> = {
 };
 
 export const FlashcardsView: React.FC = () => {
-  const { state, updateFlashcardReview, importFlashcards } = useAppState();
+  const { 
+    state, updateFlashcardReview, importFlashcards,
+    addCustomDeck, deleteCustomDeck, addFlashcards, deleteFlashcard
+  } = useAppState();
+  
   const [activeDeck, setActiveDeck] = useState<FlashcardDeck | null>(null);
   
-  // Review session state
   const [reviewQueue, setReviewQueue] = useState<Flashcard[]>([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
+  const [isCramMode, setIsCramMode] = useState(false);
 
-  // Initialize or update decks from JSON combined with local state
-  const decks = flashcardsData.decks as FlashcardDeck[];
+  // Modals
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [aiTopic, setAiTopic] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  // Computed data
+  const coreDecks = flashcardsData.decks as FlashcardDeck[];
+  const allDecks = [...coreDecks, ...(state.customDecks || [])];
   const userCards = state.flashcards || [];
 
   const handleImportDecks = () => {
-    // Merges built-in JSON cards into user's state
-    // Cards missing from user state get initial SM-2 values
     const rawCards = flashcardsData.cards;
     const cardsToImport: Flashcard[] = rawCards.map(c => ({
       id: c.id,
@@ -39,27 +52,41 @@ export const FlashcardsView: React.FC = () => {
       interval: 0,
       repetition: 0,
       easeFactor: 2.5,
-      nextReviewDate: new Date().toISOString().split("T")[0] // Due today
+      nextReviewDate: new Date().toISOString().split("T")[0]
     }));
 
-    decks.forEach(deck => {
+    coreDecks.forEach(deck => {
       const deckCards = cardsToImport.filter(c => c.deckId === deck.id);
       importFlashcards(deck, deckCards);
     });
   };
 
-  const startReview = (deck: FlashcardDeck) => {
+  const startReview = (deck: FlashcardDeck, cram: boolean = false) => {
     const today = new Date().toISOString().split("T")[0];
-    const dueCards = userCards.filter(c => c.deckId === deck.id && c.nextReviewDate <= today);
+    let dueCards = userCards.filter(c => c.deckId === deck.id);
+    
+    if (!cram) {
+      dueCards = dueCards.filter(c => c.nextReviewDate <= today);
+    }
+    
+    // Limits
+    if (!cram) {
+      const newCards = dueCards.filter(c => c.repetition === 0).slice(0, 20); // 20 new cards max
+      const reviewCards = dueCards.filter(c => c.repetition > 0).slice(0, 100); // 100 review max
+      dueCards = [...newCards, ...reviewCards];
+    }
     
     if (dueCards.length > 0) {
+      // Shuffle cram mode
+      if (cram) dueCards = dueCards.sort(() => 0.5 - Math.random());
+      
       setReviewQueue(dueCards);
       setCurrentCardIndex(0);
       setIsFlipped(false);
       setShowCompletion(false);
       setActiveDeck(deck);
+      setIsCramMode(cram);
     } else {
-      // Nothing to review
       setActiveDeck(deck);
       setReviewQueue([]);
       setShowCompletion(true);
@@ -70,30 +97,28 @@ export const FlashcardsView: React.FC = () => {
     const card = reviewQueue[currentCardIndex];
     let { interval, repetition, easeFactor } = card;
 
-    // SM-2 Algorithm
-    if (quality < 3) {
-      repetition = 0;
-      interval = 1;
-    } else {
-      if (repetition === 0) interval = 1;
-      else if (repetition === 1) interval = 6;
-      else interval = Math.round(interval * easeFactor);
-      
-      repetition += 1;
+    if (!isCramMode) {
+      if (quality < 3) {
+        repetition = 0;
+        interval = 1;
+      } else {
+        if (repetition === 0) interval = 1;
+        else if (repetition === 1) interval = 6;
+        else interval = Math.round(interval * easeFactor);
+        
+        repetition += 1;
+      }
+
+      easeFactor = easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+      if (easeFactor < 1.3) easeFactor = 1.3;
+
+      const nextDate = new Date();
+      nextDate.setDate(nextDate.getDate() + interval);
+      const nextReviewDate = nextDate.toISOString().split("T")[0];
+
+      updateFlashcardReview(card.id, easeFactor, interval, nextReviewDate, repetition);
     }
 
-    easeFactor = easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-    if (easeFactor < 1.3) easeFactor = 1.3;
-
-    // Calculate next date
-    const nextDate = new Date();
-    nextDate.setDate(nextDate.getDate() + interval);
-    const nextReviewDate = nextDate.toISOString().split("T")[0];
-
-    // Save
-    updateFlashcardReview(card.id, easeFactor, interval, nextReviewDate, repetition);
-
-    // Next card
     if (currentCardIndex + 1 < reviewQueue.length) {
       setCurrentCardIndex(prev => prev + 1);
       setIsFlipped(false);
@@ -102,8 +127,91 @@ export const FlashcardsView: React.FC = () => {
     }
   };
 
-  // If user hasn't imported decks, prompt them
-  if (userCards.length === 0) {
+  const handleGenerateAI = async () => {
+    if (!aiTopic) return;
+    if (!state.sessionNvidiaKey) {
+      setAiError("NVIDIA API Key required in Settings");
+      return;
+    }
+    
+    setIsGenerating(true);
+    setAiError(null);
+    
+    try {
+      const response = await nvidiaFetch({
+        apiKey: state.sessionNvidiaKey,
+        modelName: state.settings.nvidiaModelName,
+        temperature: 0.7,
+        maxTokens: 2000,
+        stream: false,
+        messages: [{
+          role: "system",
+          content: `Generate 10 high-quality flashcards about the requested topic for a software engineering interview. 
+Output ONLY a JSON array of objects with keys "q" (question) and "a" (answer). 
+Answers should be detailed and use markdown (including \`\`\` language code blocks \`\`\`) where appropriate for code.`
+        }, {
+          role: "user",
+          content: aiTopic
+        }]
+      });
+
+      if (!response.ok) throw new Error("API Failed");
+      const data = await response.json();
+      
+      let rawText = data.choices[0].message.content;
+      const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (jsonMatch) rawText = jsonMatch[1];
+      
+      const startIdx = rawText.indexOf('[');
+      const endIdx = rawText.lastIndexOf(']');
+      if (startIdx !== -1 && endIdx !== -1) {
+        rawText = rawText.substring(startIdx, endIdx + 1);
+      }
+      
+      const parsed = JSON.parse(rawText);
+      if (!Array.isArray(parsed)) throw new Error("Invalid output format");
+
+      const deckId = `deck-ai-${Date.now()}`;
+      const newDeck: FlashcardDeck = {
+        id: deckId,
+        name: `${aiTopic.slice(0, 20)} AI Deck`,
+        description: `Generated by AI for: ${aiTopic}`,
+        color: "bg-purple-500",
+        icon: "Brain"
+      };
+
+      const newCards: Flashcard[] = parsed.map((item: any, i: number) => ({
+        id: `card-${deckId}-${i}`,
+        deckId,
+        question: item.q,
+        answer: item.a,
+        interval: 0,
+        repetition: 0,
+        easeFactor: 2.5,
+        nextReviewDate: new Date().toISOString().split("T")[0]
+      }));
+
+      addCustomDeck(newDeck);
+      addFlashcards(deckId, newCards);
+      setShowAiModal(false);
+      setAiTopic("");
+
+    } catch (e: any) {
+      console.error(e);
+      setAiError(e.message || "Failed to parse AI output");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDeleteDeck = (e: React.MouseEvent, deckId: string) => {
+    e.stopPropagation();
+    if(confirm("Are you sure you want to delete this custom deck and all its cards?")) {
+      deleteCustomDeck(deckId);
+    }
+  };
+
+  if (userCards.length === 0 && (!state.customDecks || state.customDecks.length === 0)) {
     return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-3xl mx-auto mt-10">
         <GlassCard className="text-center py-16 space-y-6">
@@ -126,51 +234,68 @@ export const FlashcardsView: React.FC = () => {
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto space-y-6">
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto space-y-6 relative">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/[0.06] pb-6">
         <div>
           <span className="text-xs uppercase font-mono tracking-widest text-slate-500">Active Recall</span>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">Flashcards</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">Flashcards V2</h1>
           <p className="text-sm text-slate-400 mt-1">
-            Review core concepts using Spaced Repetition (SM-2) to ensure long-term retention.
+            Review core concepts using Spaced Repetition (SM-2) or generate custom AI decks.
           </p>
         </div>
+        <button 
+          onClick={() => setShowAiModal(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg text-sm font-medium transition-colors border border-purple-500/20"
+        >
+          <Sparkles className="w-4 h-4" /> AI Generate
+        </button>
       </div>
 
       {!activeDeck ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {decks.map(deck => {
+          {allDecks.map(deck => {
             const Icon = IconMap[deck.icon] || Layers;
             const today = new Date().toISOString().split("T")[0];
             const deckUserCards = userCards.filter(c => c.deckId === deck.id);
             const dueCardsCount = deckUserCards.filter(c => c.nextReviewDate <= today).length;
-            const mastery = deckUserCards.length > 0 
-              ? Math.round((deckUserCards.filter(c => c.interval > 21).length / deckUserCards.length) * 100) 
-              : 0;
+            const isCustom = state.customDecks?.some(d => d.id === deck.id);
 
             return (
-              <GlassCard key={deck.id} className="relative group overflow-hidden cursor-pointer hover:border-accentPrimary/40 transition-colors" onClick={() => startReview(deck)}>
+              <GlassCard key={deck.id} className="relative group overflow-hidden cursor-pointer hover:border-accentPrimary/40 transition-colors">
                 <div className={`absolute top-0 right-0 w-32 h-32 ${deck.color} opacity-5 blur-[60px] rounded-full group-hover:opacity-10 transition-opacity`} />
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] ${deck.color.replace('bg-', 'text-')}`}>
-                    <Icon className="w-6 h-6" />
-                  </div>
-                  {dueCardsCount > 0 && (
-                    <span className="bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-bold px-2 py-1 rounded-md">
-                      {dueCardsCount} Due
-                    </span>
-                  )}
-                </div>
                 
-                <h3 className="text-lg font-bold text-white mb-2">{deck.name}</h3>
-                <p className="text-xs text-slate-400 mb-6 line-clamp-2">{deck.description}</p>
-                
-                <div className="flex items-center justify-between text-[10px] font-mono border-t border-white/[0.06] pt-4">
-                  <div className="text-slate-500">
-                    <span className="text-slate-300 font-bold">{deckUserCards.length}</span> CARDS
+                {isCustom && (
+                  <button 
+                    onClick={(e) => handleDeleteDeck(e, deck.id)}
+                    className="absolute top-4 right-4 text-rose-500/50 hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100 z-10"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+
+                <div onClick={() => startReview(deck)} className="h-full">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] ${deck.color.replace('bg-', 'text-')}`}>
+                      <Icon className="w-6 h-6" />
+                    </div>
+                    {dueCardsCount > 0 && (
+                      <span className="bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-bold px-2 py-1 rounded-md">
+                        {dueCardsCount} Due
+                      </span>
+                    )}
                   </div>
-                  <div className="text-emerald-400">
-                    {mastery}% MATURE
+                  
+                  <h3 className="text-lg font-bold text-white mb-2">{deck.name}</h3>
+                  <p className="text-xs text-slate-400 mb-6 line-clamp-2">{deck.description}</p>
+                  
+                  <div className="flex items-center justify-between mt-auto">
+                    <span className="text-[10px] font-mono text-slate-500">{deckUserCards.length} CARDS</span>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); startReview(deck, true); }}
+                      className="text-[10px] uppercase font-bold text-amber-400 bg-amber-400/10 hover:bg-amber-400/20 px-2 py-1 rounded border border-amber-400/20 flex items-center gap-1"
+                    >
+                      <Zap className="w-3 h-3" /> Cram Mode
+                    </button>
                   </div>
                 </div>
               </GlassCard>
@@ -178,13 +303,20 @@ export const FlashcardsView: React.FC = () => {
           })}
         </div>
       ) : (
-        <div className="max-w-2xl mx-auto mt-4">
-          <button 
-            onClick={() => setActiveDeck(null)}
-            className="text-xs font-mono text-slate-500 hover:text-white mb-6 flex items-center gap-1 transition-colors"
-          >
-            <X className="w-3 h-3" /> Close Session
-          </button>
+        <div className="max-w-3xl mx-auto mt-4">
+          <div className="flex justify-between items-center mb-6">
+            <button 
+              onClick={() => setActiveDeck(null)}
+              className="text-xs font-mono text-slate-500 hover:text-white flex items-center gap-1 transition-colors"
+            >
+              <X className="w-3 h-3" /> Exit Session
+            </button>
+            {isCramMode && (
+              <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-1 rounded flex items-center gap-1">
+                <Zap className="w-3 h-3" /> Cram Mode Active (Progress not saved)
+              </span>
+            )}
+          </div>
 
           {showCompletion ? (
             <GlassCard className="text-center py-16 space-y-4">
@@ -193,7 +325,7 @@ export const FlashcardsView: React.FC = () => {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white">All caught up!</h2>
-                <p className="text-sm text-slate-400 mt-2">You've reviewed all due cards in {activeDeck.name} for today.</p>
+                <p className="text-sm text-slate-400 mt-2">You've reviewed all cards in {activeDeck.name} for today.</p>
               </div>
               <button
                 onClick={() => setActiveDeck(null)}
@@ -210,7 +342,7 @@ export const FlashcardsView: React.FC = () => {
               </div>
 
               {/* Flashcard */}
-              <div className="perspective-1000 h-[300px] w-full cursor-pointer" onClick={() => setIsFlipped(true)}>
+              <div className="perspective-1000 min-h-[400px] w-full cursor-pointer" onClick={() => !isFlipped && setIsFlipped(true)}>
                 <motion.div
                   className="w-full h-full relative preserve-3d"
                   animate={{ rotateX: isFlipped ? 180 : 0 }}
@@ -219,7 +351,7 @@ export const FlashcardsView: React.FC = () => {
                   {/* Front */}
                   <div className="absolute inset-0 backface-hidden bg-black/40 border border-white/[0.08] rounded-2xl flex flex-col items-center justify-center p-8 text-center shadow-lg">
                     <span className="text-[10px] uppercase font-mono text-slate-500 absolute top-6">Question</span>
-                    <h3 className="text-xl font-medium text-slate-200">{reviewQueue[currentCardIndex].question}</h3>
+                    <h3 className="text-2xl font-medium text-slate-200">{reviewQueue[currentCardIndex].question}</h3>
                     {!isFlipped && (
                       <p className="text-[10px] text-slate-500 absolute bottom-6 flex items-center gap-1 animate-pulse">
                         Click to reveal answer <ArrowRight className="w-3 h-3" />
@@ -229,13 +361,15 @@ export const FlashcardsView: React.FC = () => {
 
                   {/* Back */}
                   <div 
-                    className="absolute inset-0 backface-hidden bg-white/[0.02] border border-accentPrimary/30 rounded-2xl flex flex-col items-center justify-center p-8 text-center shadow-[0_0_30px_rgba(var(--accent-rgb),0.1)]"
+                    className="absolute inset-0 backface-hidden bg-black/40 border border-accentPrimary/30 rounded-2xl p-8 shadow-[0_0_30px_rgba(var(--accent-rgb),0.1)] flex flex-col"
                     style={{ transform: "rotateX(180deg)" }}
                   >
-                    <span className="text-[10px] uppercase font-mono text-accentPrimary absolute top-6">Answer</span>
-                    <p className="text-sm font-medium text-slate-300 leading-relaxed max-h-full overflow-y-auto scrollbar-thin">
-                      {reviewQueue[currentCardIndex].answer}
-                    </p>
+                    <span className="text-[10px] uppercase font-mono text-accentPrimary mb-4 block text-center">Answer</span>
+                    <div className="flex-1 overflow-y-auto scrollbar-thin text-sm text-slate-300 prose prose-invert max-w-none text-left">
+                      <ReactMarkdown>
+                        {reviewQueue[currentCardIndex].answer}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 </motion.div>
               </div>
@@ -250,23 +384,23 @@ export const FlashcardsView: React.FC = () => {
                   >
                     <button onClick={() => handleGrade(2)} className="py-3 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 font-bold text-sm transition-colors flex flex-col items-center justify-center gap-0.5">
                       Hard
-                      <span className="text-[9px] font-mono font-normal opacity-70">&lt; 1d</span>
+                      {!isCramMode && <span className="text-[9px] font-mono font-normal opacity-70">&lt; 1d</span>}
                     </button>
                     <button onClick={() => handleGrade(4)} className="py-3 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 font-bold text-sm transition-colors flex flex-col items-center justify-center gap-0.5">
                       Good
-                      <span className="text-[9px] font-mono font-normal opacity-70">
+                      {!isCramMode && <span className="text-[9px] font-mono font-normal opacity-70">
                         {reviewQueue[currentCardIndex].repetition === 0 ? "1d" : 
                          reviewQueue[currentCardIndex].repetition === 1 ? "6d" : 
                          `${Math.round(reviewQueue[currentCardIndex].interval * reviewQueue[currentCardIndex].easeFactor)}d`}
-                      </span>
+                      </span>}
                     </button>
                     <button onClick={() => handleGrade(5)} className="py-3 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 font-bold text-sm transition-colors flex flex-col items-center justify-center gap-0.5">
                       Easy
-                      <span className="text-[9px] font-mono font-normal opacity-70">
+                      {!isCramMode && <span className="text-[9px] font-mono font-normal opacity-70">
                         {reviewQueue[currentCardIndex].repetition === 0 ? "4d" : 
                          reviewQueue[currentCardIndex].repetition === 1 ? "10d" : 
                          `${Math.round(reviewQueue[currentCardIndex].interval * (reviewQueue[currentCardIndex].easeFactor + 0.15))}d`}
-                      </span>
+                      </span>}
                     </button>
                   </motion.div>
                 )}
@@ -275,6 +409,64 @@ export const FlashcardsView: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* AI Generate Modal */}
+      <AnimatePresence>
+        {showAiModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-md bg-dark/95 border border-purple-500/30 rounded-2xl shadow-2xl p-6"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-purple-400" /> AI Deck Generator
+                </h3>
+                <button onClick={() => setShowAiModal(false)} className="text-slate-400 hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs uppercase font-mono text-slate-400 block mb-2">Topic or Notes</label>
+                  <textarea
+                    value={aiTopic}
+                    onChange={e => setAiTopic(e.target.value)}
+                    placeholder="e.g. React custom hooks, AWS S3 vs EBS, or paste notes..."
+                    rows={4}
+                    className="w-full bg-black/40 border border-white/10 focus:border-purple-500 rounded-lg p-3 text-sm text-white placeholder-slate-600 focus:outline-none"
+                  />
+                </div>
+                
+                {aiError && (
+                  <p className="text-xs text-rose-400 bg-rose-500/10 p-2 rounded border border-rose-500/20">{aiError}</p>
+                )}
+
+                <button
+                  onClick={handleGenerateAI}
+                  disabled={isGenerating || !aiTopic}
+                  className="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isGenerating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" /> Create Deck
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </motion.div>
   );
 };

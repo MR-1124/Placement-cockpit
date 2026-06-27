@@ -90,6 +90,7 @@ interface AppState {
   mockInterviews?: MockInterviewReport[];
   activeInterviewSession?: ActiveInterviewSession | null;
   flashcards?: Flashcard[];
+  customDecks?: FlashcardDeck[];
   activeRoadmaps?: CompanyRoadmap[];
   atsReports?: AtsReport[];
 }
@@ -170,6 +171,12 @@ export interface AppContextType {
   enrollCompanyRoadmap: (roadmap: CompanyRoadmap) => void;
   updateRoadmapProgress: (roadmapId: string, milestoneId: string, completed: boolean) => void;
   importFlashcards: (deck: FlashcardDeck, cards: Flashcard[]) => void;
+  addCustomDeck: (deck: FlashcardDeck) => void;
+  deleteCustomDeck: (deckId: string) => void;
+  addFlashcards: (deckId: string, cards: Flashcard[]) => void;
+  deleteFlashcard: (cardId: string) => void;
+  updateFlashcard: (cardId: string, updates: Partial<Flashcard>) => void;
+
   saveAtsReport: (report: AtsReport) => void;
 }
 
@@ -237,6 +244,7 @@ interface SerializedProgress {
   mockInterviews?: MockInterviewReport[];
   activeInterviewSession?: ActiveInterviewSession | null;
   flashcards?: Flashcard[];
+  customDecks?: FlashcardDeck[];
   activeRoadmaps?: CompanyRoadmap[];
   atsReports?: AtsReport[];
 }
@@ -330,6 +338,7 @@ const serializeState = (state: AppState): SerializedProgress => {
       resumeFileName: state.user.resumeFileName || ""
     } : undefined,
     flashcards: state.flashcards || [],
+    customDecks: state.customDecks || [],
     activeRoadmaps: state.activeRoadmaps || [],
     atsReports: state.atsReports || []
   };
@@ -439,6 +448,7 @@ const deserializeState = (serialized: Partial<SerializedProgress>, curriculum: a
     mockInterviews: serialized.mockInterviews || [],
     activeInterviewSession: serialized.activeInterviewSession || null,
     flashcards: serialized.flashcards || [],
+    customDecks: serialized.customDecks || [],
     activeRoadmaps: serialized.activeRoadmaps || [],
     atsReports: serialized.atsReports || []
   };
@@ -561,6 +571,7 @@ const getInitialState = (curriculum: any): AppState => ({
   mockInterviews: [],
   activeInterviewSession: null,
   flashcards: [],
+  customDecks: [],
   activeRoadmaps: [],
   atsReports: []
 });
@@ -2414,6 +2425,40 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     });
   };
 
+
+  const addCustomDeck = (deck: FlashcardDeck) => {
+    setState(prev => ({ ...prev, customDecks: [...(prev.customDecks || []), deck] }));
+  };
+
+  const deleteCustomDeck = (deckId: string) => {
+    setState(prev => ({
+      ...prev,
+      customDecks: (prev.customDecks || []).filter(d => d.id !== deckId),
+      flashcards: (prev.flashcards || []).filter(c => c.deckId !== deckId)
+    }));
+  };
+
+  const addFlashcards = (deckId: string, cards: Flashcard[]) => {
+    setState(prev => ({
+      ...prev,
+      flashcards: [...(prev.flashcards || []), ...cards]
+    }));
+  };
+
+  const deleteFlashcard = (cardId: string) => {
+    setState(prev => ({
+      ...prev,
+      flashcards: (prev.flashcards || []).filter(c => c.id !== cardId)
+    }));
+  };
+
+  const updateFlashcard = (cardId: string, updates: Partial<Flashcard>) => {
+    setState(prev => ({
+      ...prev,
+      flashcards: (prev.flashcards || []).map(c => c.id === cardId ? { ...c, ...updates } : c)
+    }));
+  };
+
   const importFlashcards = (deck: FlashcardDeck, cards: Flashcard[]) => {
     updateState(prev => {
       const existing = prev.flashcards || [];
@@ -2495,7 +2540,14 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         updateFlashcardReview,
         enrollCompanyRoadmap,
         updateRoadmapProgress,
+
         importFlashcards,
+        addCustomDeck,
+        deleteCustomDeck,
+        addFlashcards,
+        deleteFlashcard,
+        updateFlashcard,
+
         saveAtsReport
       }}
 
