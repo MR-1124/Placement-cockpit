@@ -1,4 +1,4 @@
-import React from 'react';
+// Removed unused React import
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { GlassCard, ProgressBar } from './Common';

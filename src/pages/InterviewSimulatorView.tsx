@@ -775,6 +775,13 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
         weaknesses?: string[];
         feedback?: string;
         questionsFeedback?: Array<{ question: string; response: string; rating: number; feedback: string }>;
+        phaseScores?: {
+          intro?: number;
+          dsa?: number;
+          core?: number;
+          puzzles?: number;
+          hr?: number;
+        };
       };
 
       const report: MockInterviewReport = {
@@ -798,7 +805,7 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
             puzzles: Number(scores.phaseScores?.puzzles) || undefined,
             hr: Number(scores.phaseScores?.hr) || undefined
           },
-          recommendation: scores.recommendation || "No Hire",
+          recommendation: (scores.recommendation as "Strong Hire" | "Hire" | "Leaning Hire" | "No Hire") || "No Hire",
           strengths: Array.isArray(scores.strengths) ? scores.strengths : [],
           weaknesses: Array.isArray(scores.weaknesses) ? scores.weaknesses : [],
           feedback: scores.feedback || "No general feedback generated.",
