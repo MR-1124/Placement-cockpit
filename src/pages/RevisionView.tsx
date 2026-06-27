@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { MarkdownRenderer } from "../components/MarkdownRenderer";
 import { useAppState } from "../context/AppStateContext";
 import { GlassCard } from "../components/Common";
+import { motion } from "framer-motion";
 import {
   CalendarClock,
   AlertTriangle,
@@ -148,9 +149,11 @@ export const RevisionView: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                <div
-                    className="animate-slide-up bg-white/[0.01] border border-white/[0.06] rounded-lg p-5 space-y-4"
-                  >
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white/[0.01] border border-white/[0.06] rounded-lg p-5 space-y-4"
+                >
                   <div>
                     <span className="text-[10px] font-mono text-slate-500 uppercase block">Problem Solution</span>
                     <div className="flex items-center gap-2 mt-1">
@@ -197,7 +200,7 @@ export const RevisionView: React.FC = () => {
                       Revised (Pass)
                     </button>
                   </div>
-                </div>
+                </motion.div>
               )}
             </div>
           </GlassCard>

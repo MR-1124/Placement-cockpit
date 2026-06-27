@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAppState } from "../context/AppStateContext";
+import { motion } from "framer-motion";
 import { 
   ArrowLeft, 
   Search, 
@@ -260,8 +261,10 @@ export const FocusMode: React.FC<FocusModeProps> = ({
       
       {!activeSession ? (
         /* Setup Configuration Workspace Panel */
-        <div
-          className="w-full max-w-2xl bg-darkCard/95 border border-white/[0.08] shadow-2xl relative rounded-2xl glass-panel p-6 sm:p-8 m-4 space-y-6 z-10 animate-slide-up"
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-2xl bg-darkCard/95 border border-white/[0.08] shadow-2xl relative rounded-2xl glass-panel p-6 sm:p-8 m-4 space-y-6 z-10"
         >
           {/* Header */}
           <div className="flex items-center gap-3">
@@ -428,7 +431,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
             <Play className="w-4 h-4 fill-white" />
             <span>Initialize Focus Protocol</span>
           </button>
-        </div>
+        </motion.div>
       ) : (
         /* Immersive Distraction-Free Focus Countdown Board */
         <div className="w-full min-h-screen bg-[#0a0a0c] text-slate-200 flex flex-col justify-between items-center p-6 sm:p-8 relative">
@@ -464,18 +467,18 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                   fill="transparent"
                 />
                 {/* Active progress countdown path */}
-                <circle
+                <motion.circle
                   cx="128"
                   cy="128"
                   r="110"
-                  className="stroke-cyan-500"
+                  className="stroke-accentPrimary drop-shadow-[0_0_12px_rgba(var(--accent-rgb),0.8)]"
                   strokeWidth="6"
                   fill="transparent"
                   strokeDasharray={2 * Math.PI * 110}
-                  style={{
-                    strokeDashoffset: (2 * Math.PI * 110) * (1 - activeProgress / 100),
-                    transition: "stroke-dashoffset 0.3s linear"
+                  animate={{
+                    strokeDashoffset: (2 * Math.PI * 110) * (1 - activeProgress / 100)
                   }}
+                  transition={{ duration: 0.3, ease: "linear" }}
                 />
               </svg>
               {/* Numeric display overlay */}

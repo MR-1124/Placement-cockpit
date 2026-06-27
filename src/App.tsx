@@ -17,6 +17,7 @@ import { LandingView } from "./pages/LandingView";
 import { InterviewSimulatorView } from "./pages/InterviewSimulatorView";
 import { MarkdownRenderer } from "./components/MarkdownRenderer";
 import { FocusMode } from "./components/FocusMode";
+import { motion, AnimatePresence } from "framer-motion";
 
 import {
   LayoutDashboard,
@@ -615,9 +616,17 @@ const AppContent: React.FC = () => {
 
       {/* Main Contents Area */}
       <main className="flex-1 w-full min-h-screen pt-20 pb-24 px-4 sm:px-6 md:px-8 lg:pt-8 lg:pb-8 lg:px-12 z-10 overflow-y-auto max-w-7xl mx-auto">
-        <div key={activeTab} className="animate-fade-in">
-          {renderView()}
-        </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {renderView()}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {/* Floating Chat Bubble */}
@@ -859,18 +868,20 @@ const AppContent: React.FC = () => {
         </>
       )}
 
-      {focusSession.isOpen && (
-        <FocusMode
-          isOpen={focusSession.isOpen}
-          onClose={() => setFocusSession({ isOpen: false, active: null })}
-          onStartSession={(config) => setFocusSession({ isOpen: true, active: config })}
-          activeSession={focusSession.active}
-          onEndSession={() => {
-            setFocusSession({ isOpen: false, active: null });
-            setActiveTab("dashboard");
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {focusSession.isOpen && (
+          <FocusMode
+            isOpen={focusSession.isOpen}
+            onClose={() => setFocusSession({ isOpen: false, active: null })}
+            onStartSession={(config) => setFocusSession({ isOpen: true, active: config })}
+            activeSession={focusSession.active}
+            onEndSession={() => {
+              setFocusSession({ isOpen: false, active: null });
+              setActiveTab("dashboard");
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

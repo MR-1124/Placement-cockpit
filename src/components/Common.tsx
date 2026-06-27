@@ -1,4 +1,5 @@
 import React from "react";
+import { motion } from "framer-motion";
 
 interface GlassCardProps {
   children: React.ReactNode;
@@ -10,17 +11,21 @@ interface GlassCardProps {
 export const GlassCard: React.FC<GlassCardProps> = ({
   children,
   className = "",
+  glow = false,
   onClick
 }) => {
   return (
-    <div
+    <motion.div
         onClick={onClick}
-        className={`glass-panel border border-white/[0.04] rounded-2xl relative overflow-hidden transition-all duration-300 animate-slide-up ${
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className={`glass-panel border border-white/[0.04] p-6 sm:p-8 rounded-2xl relative overflow-hidden transition-all duration-300 ${glow ? "glow-active" : ""} ${
           onClick ? "cursor-pointer hover:border-white/[0.12] hover:shadow-xl hover:-translate-y-1" : ""
         } ${className}`}
       >
       {children}
-    </div>
+    </motion.div>
   );
 };
 
@@ -58,7 +63,7 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
           fill="transparent"
         />
         {/* Progress circle */}
-        <circle
+        <motion.circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
@@ -67,10 +72,9 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
             fill="transparent"
             strokeLinecap="round"
             strokeDasharray={circumference}
-            style={{
-              strokeDashoffset: offset,
-              transition: "stroke-dashoffset 0.5s ease-out"
-            }}
+            initial={{ strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset: offset }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
           />
       </svg>
       {/* Center text */}
@@ -110,9 +114,11 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
         className="w-full bg-white/[0.04] rounded-full overflow-hidden border border-white/[0.02]"
         style={{ height }}
       >
-        <div
+        <motion.div
             className={`h-full rounded-full ${colorClass}`}
-            style={{ width: `${Math.min(100, Math.max(0, percentage))}%`, transition: "width 0.5s ease-out" }}
+            initial={{ width: 0 }}
+            animate={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
           />
       </div>
     </div>

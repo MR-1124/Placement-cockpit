@@ -19,6 +19,7 @@ import {
   ShieldAlert,
   X
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 
 interface LandingViewProps {
@@ -321,9 +322,16 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
       </section>
 
       {/* Integrated Login Modal */}
-      {showLoginModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-[9999] select-none">
-          <div className="bg-[#0f0f11] border border-white/10 p-8 rounded-3xl w-full max-w-md relative shadow-2xl animate-slide-up">
+      <AnimatePresence>
+        {showLoginModal && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-[9999] select-none">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="bg-[#0f0f11] border border-white/10 p-8 rounded-3xl w-full max-w-md relative shadow-2xl"
+            >
             {/* Close Button */}
             <button
               onClick={() => setShowLoginModal(false)}
@@ -391,9 +399,10 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
                 </div>
               )}
             </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 };

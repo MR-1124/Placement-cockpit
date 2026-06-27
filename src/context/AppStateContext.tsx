@@ -3,7 +3,8 @@ import confetti from "canvas-confetti";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db, hasFirebaseKeys } from "../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle, AlertCircle, Info } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import type { DsaTopic, DevCategory, UserPlan, Plan, Badge } from "../data/curriculum";
 
 // Arch Debt #13 fix: import all domain types from centralised types file.
@@ -2341,9 +2342,16 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       }}
     >
       {children}
+      <AnimatePresence>
         {confirmState.isOpen && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] select-none">
-            <div className="w-full max-w-md bg-darkCard/95 border border-white/[0.08] shadow-2xl relative rounded-2xl overflow-hidden glass-panel animate-slide-up">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="w-full max-w-md bg-darkCard/95 border border-white/[0.08] shadow-2xl relative rounded-2xl overflow-hidden glass-panel"
+            >
               {/* Glow border depending on severity */}
               <div 
                 className={`h-1.5 w-full ${
@@ -2367,11 +2375,11 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
                     }`}
                   >
                     {confirmState.severity === "danger" ? (
-                      <span className="w-6 h-6" />
+                      <AlertCircle className="w-6 h-6" />
                     ) : confirmState.severity === "warning" ? (
-                      <span className="w-6 h-6" />
+                      <AlertTriangle className="w-6 h-6" />
                     ) : (
-                      <span className="w-6 h-6" />
+                      <Info className="w-6 h-6" />
                     )}
                   </div>
                   
@@ -2409,9 +2417,10 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
                   </button>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         )}
+      </AnimatePresence>
     </AppContext.Provider>
   );
 };

@@ -14,7 +14,7 @@ import {
   ArrowUpDown,
   BookOpen
 } from "lucide-react";
-
+import { motion, AnimatePresence } from "framer-motion";
 
 export const PlansView: React.FC = () => {
   const { 
@@ -189,15 +189,19 @@ export const PlansView: React.FC = () => {
 
       {/* Plans Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        <AnimatePresence>
           {filteredPlans.map((plan) => {
             const followed = getFollowedPlan(plan.id);
             const isPrimary = primaryPlanId === plan.id;
             const completion = getPlanCompletion(plan);
 
             return (
-              <div
+              <motion.div
                 key={plan.id}
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
                 className={`relative group bg-darkCard/40 border rounded-2xl backdrop-blur-md flex flex-col justify-between overflow-hidden transition-all duration-300 hover:border-white/[0.12] hover:shadow-xl ${
                   isPrimary ? "border-accentPrimary/40 shadow-accentPrimary/5" : "border-white/[0.04]"
                 }`}
@@ -359,10 +363,10 @@ export const PlansView: React.FC = () => {
                     </button>
                   )}
                 </div>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </AnimatePresence>
       </div>
     </div>
   );
