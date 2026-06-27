@@ -6,7 +6,7 @@ import { ResumeParser } from "../components/ResumeParser";
 import { nvidiaFetch } from "../lib/nvidiaApi";
 import { 
   Search, Loader2, Star, AlertTriangle, FileText, CheckCircle, 
-  XCircle, Check, ArrowRight, Zap, Target, Award, List
+  XCircle, Zap, Target, Award, List
 } from "lucide-react";
 
 interface AtsReport {
