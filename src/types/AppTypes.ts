@@ -103,6 +103,13 @@ export interface AppSettings {
   nvidiaApiKey: string;
   nvidiaModelName: string;
   nvidiaInterviewerModelName?: string;
+  integrations?: {
+    leetcodeUsername?: string;
+    leetcodeLastSynced?: string;
+    githubUsername?: string;
+    githubToken?: string;
+    githubLastSynced?: string;
+  };
 }
 
 export interface ChatMessage {
@@ -194,4 +201,56 @@ export interface ActiveInterviewSession {
   goal?: string;
   resumeText?: string;
   resumeFileName?: string;
+}
+
+// ─── Flashcards ───────────────────────────────────────────────────────────────
+
+export interface Flashcard {
+  id: string;
+  deckId: string;
+  question: string;
+  answer: string;
+  
+  // Spaced Repetition System (SM-2 based)
+  interval: number; // days until next review
+  repetition: number; // consecutive correct answers
+  easeFactor: number; // easiness factor (starts at 2.5)
+  nextReviewDate: string; // YYYY-MM-DD
+}
+
+export interface FlashcardDeck {
+  id: string;
+  name: string;
+  description: string;
+  color: string;
+  icon: string; // Lucide icon name
+}
+
+// ─── Company Roadmaps ────────────────────────────────────────────────────────
+
+export interface RoadmapMilestone {
+  id: string;
+  title: string;
+  description: string;
+  type: "dsa" | "system_design" | "core" | "project" | "behavioral";
+  isCompleted: boolean;
+  links?: { title: string; url: string }[];
+}
+
+export interface RoadmapPhase {
+  id: string;
+  name: string;
+  description: string;
+  milestones: RoadmapMilestone[];
+}
+
+export interface CompanyRoadmap {
+  id: string;
+  companyName: string;
+  logoUrl?: string;
+  description: string;
+  focusAreas: string[];
+  phases: RoadmapPhase[];
+  isEnrolled: boolean;
+  progress: number;
 }

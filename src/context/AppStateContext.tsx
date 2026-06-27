@@ -24,7 +24,9 @@ import type {
   ActiveInterviewSession,
   InterviewPhase,
   WeeklyGoal,
-  DailyChallenge
+  DailyChallenge,
+  Flashcard,
+  CompanyRoadmap
 } from "../types/AppTypes";
 
 // Re-export all types so existing consumers (import { X } from '../context/AppStateContext')
@@ -45,7 +47,9 @@ export type {
   ActiveInterviewSession,
   InterviewPhase,
   WeeklyGoal,
-  DailyChallenge
+  DailyChallenge,
+  Flashcard,
+  CompanyRoadmap
 };
 
 // All domain interfaces are now in src/types/AppTypes.ts (Arch Debt #13).
@@ -82,6 +86,8 @@ interface AppState {
   primaryPlanId?: string;
   mockInterviews?: MockInterviewReport[];
   activeInterviewSession?: ActiveInterviewSession | null;
+  flashcards?: Flashcard[];
+  activeRoadmaps?: CompanyRoadmap[];
 }
 
 export interface AppContextType {
@@ -156,6 +162,10 @@ export interface AppContextType {
   completeDailyChallenge: () => void;
   refreshDailyChallenge: () => void;
   setSessionNvidiaKey: (key: string) => void;
+  updateFlashcardReview: (flashcardId: string, easeFactor: number, interval: number, nextReviewDate: string, repetition: number) => void;
+  enrollCompanyRoadmap: (roadmap: CompanyRoadmap) => void;
+  updateRoadmapProgress: (roadmapId: string, milestoneId: string, completed: boolean) => void;
+  importFlashcards: (deck: FlashcardDeck, cards: Flashcard[]) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -221,6 +231,8 @@ interface SerializedProgress {
   primaryPlanId?: string;
   mockInterviews?: MockInterviewReport[];
   activeInterviewSession?: ActiveInterviewSession | null;
+  flashcards?: Flashcard[];
+  activeRoadmaps?: CompanyRoadmap[];
 }
 
 const serializeState = (state: AppState): SerializedProgress => {
@@ -310,7 +322,9 @@ const serializeState = (state: AppState): SerializedProgress => {
       // Arch Debt #16: persist resume to profile
       resumeText: state.user.resumeText || "",
       resumeFileName: state.user.resumeFileName || ""
-    } : undefined
+    } : undefined,
+    flashcards: state.flashcards || [],
+    activeRoadmaps: state.activeRoadmaps || []
   };
 };
 
@@ -416,7 +430,9 @@ const deserializeState = (serialized: Partial<SerializedProgress>, curriculum: a
     userPlans: serialized.userPlans || [],
     primaryPlanId: serialized.primaryPlanId || "16-week-mastery",
     mockInterviews: serialized.mockInterviews || [],
-    activeInterviewSession: serialized.activeInterviewSession || null
+    activeInterviewSession: serialized.activeInterviewSession || null,
+    flashcards: serialized.flashcards || [],
+    activeRoadmaps: serialized.activeRoadmaps || []
   };
 };
 
@@ -535,7 +551,9 @@ const getInitialState = (curriculum: any): AppState => ({
   ],
   primaryPlanId: "16-week-mastery",
   mockInterviews: [],
-  activeInterviewSession: null
+  activeInterviewSession: null,
+  flashcards: [],
+  activeRoadmaps: []
 });
 
 const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: any }> = ({ children, curriculum }) => {
@@ -2332,6 +2350,59 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
   };
 
 
+
+  const updateFlashcardReview = (flashcardId: string, easeFactor: number, interval: number, nextReviewDate: string, repetition: number) => {
+    updateState(prev => {
+      const flashcards = prev.flashcards || [];
+      const index = flashcards.findIndex(c => c.id === flashcardId);
+      if (index === -1) return prev;
+      const newFlashcards = [...flashcards];
+      newFlashcards[index] = { ...newFlashcards[index], easeFactor, interval, nextReviewDate, repetition };
+      return { ...prev, flashcards: newFlashcards };
+    });
+  };
+
+  const enrollCompanyRoadmap = (roadmap: CompanyRoadmap) => {
+    updateState(prev => {
+      const roadmaps = prev.activeRoadmaps || [];
+      if (roadmaps.some(r => r.id === roadmap.id)) return prev;
+      return { ...prev, activeRoadmaps: [...roadmaps, roadmap] };
+    });
+  };
+
+  const updateRoadmapProgress = (roadmapId: string, milestoneId: string, completed: boolean) => {
+    updateState(prev => {
+      const roadmaps = prev.activeRoadmaps || [];
+      const updated = roadmaps.map(r => {
+        if (r.id !== roadmapId) return r;
+        const newPhases = r.phases.map(p => ({
+          ...p,
+          milestones: p.milestones.map(m => m.id === milestoneId ? { ...m, isCompleted: completed } : m)
+        }));
+        
+        let total = 0;
+        let completedCount = 0;
+        newPhases.forEach(p => p.milestones.forEach(m => {
+          total++;
+          if (m.isCompleted) completedCount++;
+        }));
+        const progress = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+        
+        return { ...r, phases: newPhases, progress };
+      });
+      return { ...prev, activeRoadmaps: updated };
+    });
+  };
+
+  const importFlashcards = (deck: FlashcardDeck, cards: Flashcard[]) => {
+    updateState(prev => {
+      const existing = prev.flashcards || [];
+      // Replace existing cards for this deck
+      const filtered = existing.filter(c => c.deckId !== deck.id);
+      return { ...prev, flashcards: [...filtered, ...cards] };
+    });
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -2399,9 +2470,15 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         endInterviewSession,
         deleteMockInterviewReport,
         completeDailyChallenge,
+
         refreshDailyChallenge,
-        setSessionNvidiaKey
+        setSessionNvidiaKey,
+        updateFlashcardReview,
+        enrollCompanyRoadmap,
+        updateRoadmapProgress,
+        importFlashcards
       }}
+
     >
       {children}
       <AnimatePresence>
@@ -2520,4 +2597,5 @@ export function useAppState<T = AppContextType>(selector?: (state: AppContextTyp
   }
   return context as unknown as T;
 }
+
 

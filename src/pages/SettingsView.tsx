@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useAppState } from "../context/AppStateContext";
 import { GlassCard } from "../components/Common";
 import { MasterPasswordModal } from "../components/MasterPasswordModal";
+import { useIntegrations } from "../hooks/useIntegrations";
 import { motion } from "framer-motion";
 import {
   Palette,
@@ -13,11 +14,13 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
-  Lock
+  Lock,
+  Link2
 } from "lucide-react";
 
 export const SettingsView: React.FC = () => {
   const { state, updateSettings, resetAllData, seedMockData, confirmAction, setSessionNvidiaKey } = useAppState();
+  const { syncGitHub, syncLeetCode, isSyncingGitHub, isSyncingLeetCode, syncMessage } = useIntegrations();
   const [showSeedToast, setShowSeedToast] = useState(false);
   const [showResetToast, setShowResetToast] = useState(false);
 
@@ -394,6 +397,78 @@ export const SettingsView: React.FC = () => {
 
         {/* Right Column: Database operations (Seed/Reset) */}
         <div className="space-y-6">
+          {/* Integrations Configuration */}
+          <GlassCard className="space-y-4">
+            <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider border-b border-white/[0.06] pb-3 flex items-center gap-2">
+              <Link2 className="w-4 h-4 text-slate-400" /> External Integrations
+            </h3>
+
+            <p className="text-[10px] text-slate-500 leading-relaxed font-mono">
+              Connect external profiles. Data is fetched directly from the browser to public APIs (or proxies) and stored locally. Proxies are unstable and might fail.
+            </p>
+
+            {syncMessage && (
+              <div className={`p-3 rounded-lg text-xs font-mono border ${syncMessage.type === "success" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-rose-500/10 border-rose-500/20 text-rose-400"}`}>
+                {syncMessage.text}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div className="p-3 bg-black/20 border border-white/[0.04] rounded-lg">
+                <label className="text-[10px] uppercase font-mono text-slate-500 block mb-2">GitHub Username</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={state.settings.integrations?.githubUsername || ""}
+                    onChange={(e) => updateSettings({ integrations: { ...state.settings.integrations, githubUsername: e.target.value } })}
+                    placeholder="e.g. octocat"
+                    className="flex-1 bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-1.5 px-3 text-xs font-mono text-white placeholder-slate-600 focus:outline-none transition-colors"
+                  />
+                  <button
+                    onClick={syncGitHub}
+                    disabled={isSyncingGitHub || !state.settings.integrations?.githubUsername}
+                    className="px-3 py-1.5 bg-white/[0.05] hover:bg-white/[0.1] text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSyncingGitHub ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                    Sync
+                  </button>
+                </div>
+                {state.settings.integrations?.githubLastSynced && (
+                  <div className="text-[9px] text-slate-600 mt-2 font-mono">
+                    Last synced: {new Date(state.settings.integrations.githubLastSynced).toLocaleString()}
+                  </div>
+                )}
+              </div>
+
+              <div className="p-3 bg-black/20 border border-white/[0.04] rounded-lg">
+                <label className="text-[10px] uppercase font-mono text-slate-500 block mb-2">LeetCode Username</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={state.settings.integrations?.leetcodeUsername || ""}
+                    onChange={(e) => updateSettings({ integrations: { ...state.settings.integrations, leetcodeUsername: e.target.value } })}
+                    placeholder="e.g. neetcode"
+                    className="flex-1 bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-1.5 px-3 text-xs font-mono text-white placeholder-slate-600 focus:outline-none transition-colors"
+                  />
+                  <button
+                    onClick={syncLeetCode}
+                    disabled={isSyncingLeetCode || !state.settings.integrations?.leetcodeUsername}
+                    className="px-3 py-1.5 bg-white/[0.05] hover:bg-white/[0.1] text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Attempt to sync via community proxy (may be unstable)"
+                  >
+                    {isSyncingLeetCode ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                    Proxy Sync
+                  </button>
+                </div>
+                {state.settings.integrations?.leetcodeLastSynced && (
+                  <div className="text-[9px] text-slate-600 mt-2 font-mono">
+                    Last synced: {new Date(state.settings.integrations.leetcodeLastSynced).toLocaleString()}
+                  </div>
+                )}
+              </div>
+            </div>
+          </GlassCard>
+
           <GlassCard className="space-y-4 border-l-4 border-l-rose-500">
             <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider border-b border-white/[0.06] pb-3 flex items-center gap-1.5">
               <AlertOctagon className="w-4 h-4 text-rose-500" /> Database Administration

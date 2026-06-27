@@ -13,6 +13,11 @@ const AiChatView = React.lazy(() => import("./pages/AiChatView").then(module => 
 const AiTrackerView = React.lazy(() => import("./pages/AiTrackerView").then(module => ({ default: module.AiTrackerView })));
 const BadgesView = React.lazy(() => import("./pages/BadgesView").then(module => ({ default: module.BadgesView })));
 
+const FlashcardsView = React.lazy(() => import("./pages/FlashcardsView").then(module => ({ default: module.FlashcardsView })));
+const CompanyRoadmapsView = React.lazy(() => import("./pages/CompanyRoadmapsView").then(module => ({ default: module.CompanyRoadmapsView })));
+const ResumeGraderView = React.lazy(() => import("./pages/ResumeGraderView").then(module => ({ default: module.ResumeGraderView })));
+
+
 import { DashboardView } from "./pages/DashboardView";
 import { RoadmapView } from "./pages/RoadmapView";
 import { SettingsView } from "./pages/SettingsView";
@@ -46,7 +51,10 @@ import {
   Maximize2,
   Minimize2,
   ClipboardList,
-  Speech
+  Speech,
+  Briefcase,
+  Brain,
+  FileText
 } from "lucide-react";
 
 
@@ -377,6 +385,9 @@ const confirmAction = useAppState(s => s.confirmAction);
 
   const navigationItems = [
     { id: "dashboard", name: "Dashboard", icon: LayoutDashboard },
+    { id: "companies", name: "Company Roadmaps", icon: Briefcase },
+    { id: "flashcards", name: "Flashcards", icon: Brain },
+    { id: "resume", name: "Resume ATS", icon: FileText },
     { id: "plans", name: "Plans", icon: ClipboardList },
     { id: "roadmap", name: primaryPlan.title, icon: Map },
     { id: "dsa", name: "DSA Tracker", icon: Code2 },
@@ -395,6 +406,12 @@ const confirmAction = useAppState(s => s.confirmAction);
   // Helper to resolve currently active page view
   const renderView = () => {
     switch (activeTab) {
+      case "companies":
+        return <CompanyRoadmapsView />;
+      case "flashcards":
+        return <FlashcardsView />;
+      case "resume":
+        return <ResumeGraderView />;
       case "dashboard":
         return (
           <DashboardView 

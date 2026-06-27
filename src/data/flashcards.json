@@ -1,0 +1,63 @@
+{
+  "decks": [
+    {
+      "id": "os",
+      "name": "Operating Systems",
+      "description": "Core OS concepts, memory management, scheduling, and concurrency.",
+      "color": "bg-blue-500",
+      "icon": "Cpu"
+    },
+    {
+      "id": "dbms",
+      "name": "Database Management",
+      "description": "SQL, normalization, indexing, transactions, and NoSQL basics.",
+      "color": "bg-emerald-500",
+      "icon": "Database"
+    },
+    {
+      "id": "cn",
+      "name": "Computer Networks",
+      "description": "OSI model, TCP/IP, protocols, routing, and network security.",
+      "color": "bg-violet-500",
+      "icon": "Network"
+    }
+  ],
+  "cards": [
+    {
+      "id": "os-1",
+      "deckId": "os",
+      "question": "What is the main difference between a process and a thread?",
+      "answer": "A process is an independent program in execution with its own memory space, whereas a thread is a lightweight unit of execution within a process that shares the memory space of its parent process."
+    },
+    {
+      "id": "os-2",
+      "deckId": "os",
+      "question": "What is a deadlock and what are its four necessary conditions?",
+      "answer": "A deadlock is a state where a set of processes are blocked because each process is holding a resource and waiting for another resource acquired by some other process. The 4 conditions are: Mutual Exclusion, Hold and Wait, No Preemption, and Circular Wait."
+    },
+    {
+      "id": "dbms-1",
+      "deckId": "dbms",
+      "question": "What are ACID properties in a database?",
+      "answer": "Atomicity (all or nothing), Consistency (valid state before and after), Isolation (concurrent execution is safe), and Durability (committed data is saved permanently)."
+    },
+    {
+      "id": "dbms-2",
+      "deckId": "dbms",
+      "question": "What is the difference between Primary Key and Unique Key?",
+      "answer": "A Primary Key uniquely identifies a record and cannot contain NULL values. A Unique Key also uniquely identifies a record but can contain exactly one NULL value (in most SQL dialects)."
+    },
+    {
+      "id": "cn-1",
+      "deckId": "cn",
+      "question": "What are the 7 layers of the OSI Model?",
+      "answer": "1. Physical, 2. Data Link, 3. Network, 4. Transport, 5. Session, 6. Presentation, 7. Application. (Please Do Not Throw Sausage Pizza Away)"
+    },
+    {
+      "id": "cn-2",
+      "deckId": "cn",
+      "question": "Difference between TCP and UDP?",
+      "answer": "TCP is connection-oriented, reliable, orders packets, and has flow control. UDP is connectionless, unreliable, faster, and used for streaming/gaming where some packet loss is acceptable."
+    }
+  ]
+}

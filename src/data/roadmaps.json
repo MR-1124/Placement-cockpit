@@ -1,0 +1,83 @@
+[
+  {
+    "id": "amazon",
+    "companyName": "Amazon",
+    "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg",
+    "description": "Amazon focuses heavily on Data Structures, Algorithms, and System Design for experienced roles, but places immense weight on their 16 Leadership Principles.",
+    "focusAreas": ["16 Leadership Principles", "Graphs & Trees", "OOD (Object Oriented Design)", "Scalability"],
+    "phases": [
+      {
+        "id": "amz-phase-1",
+        "name": "Phase 1: DSA Core & LP Basics",
+        "description": "Master the core DSA topics and memorize the 16 Leadership Principles.",
+        "milestones": [
+          { "id": "m1", "title": "Trees & Graphs Mastery", "description": "Solve 20 medium/hard LeetCode questions focusing on BFS/DFS and Binary Trees.", "type": "dsa", "isCompleted": false },
+          { "id": "m2", "title": "Leadership Principles Story Matrix", "description": "Create a STAR-format story matrix for all 16 Leadership Principles.", "type": "behavioral", "isCompleted": false }
+        ]
+      },
+      {
+        "id": "amz-phase-2",
+        "name": "Phase 2: Object-Oriented Design (OOD)",
+        "description": "Amazon frequently asks OOD questions like 'Design a Parking Lot' or 'Design Amazon Locker'.",
+        "milestones": [
+          { "id": "m3", "title": "OOD Principles (SOLID)", "description": "Review SOLID principles and design patterns.", "type": "core", "isCompleted": false },
+          { "id": "m4", "title": "Mock OOD Interview", "description": "Do a mock interview designing a real-world entity.", "type": "system_design", "isCompleted": false }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "google",
+    "companyName": "Google",
+    "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg",
+    "description": "Google interviews are notoriously difficult on the algorithms front. Expect Dynamic Programming, Graphs, and open-ended problem solving.",
+    "focusAreas": ["Dynamic Programming", "Graph Theory", "Googleyness", "System Design"],
+    "phases": [
+      {
+        "id": "goog-phase-1",
+        "name": "Phase 1: Advanced Algorithms",
+        "description": "Focus intensely on hard algorithmic problems.",
+        "milestones": [
+          { "id": "m1", "title": "Dynamic Programming", "description": "Master 1D and 2D DP problems.", "type": "dsa", "isCompleted": false },
+          { "id": "m2", "title": "Graph Algorithms", "description": "Dijkstra's, Topological Sort, and Union Find.", "type": "dsa", "isCompleted": false }
+        ]
+      },
+      {
+        "id": "goog-phase-2",
+        "name": "Phase 2: System Design & Culture",
+        "description": "System Design for L4+ and 'Googleyness' behavioral questions.",
+        "milestones": [
+          { "id": "m3", "title": "Distributed Systems", "description": "Study MapReduce, BigTable, and distributed consensus.", "type": "system_design", "isCompleted": false },
+          { "id": "m4", "title": "Googleyness Prep", "description": "Prepare scenarios where you handled ambiguity and showed leadership.", "type": "behavioral", "isCompleted": false }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "microsoft",
+    "companyName": "Microsoft",
+    "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg",
+    "description": "Microsoft interviews focus on strong coding fundamentals, debugging skills, system design, and cultural fit.",
+    "focusAreas": ["Strings & Arrays", "System Design", "Debugging", "Cultural Fit"],
+    "phases": [
+      {
+        "id": "ms-phase-1",
+        "name": "Phase 1: Core Fundamentals",
+        "description": "Solidify string manipulation, arrays, and linked lists.",
+        "milestones": [
+          { "id": "m1", "title": "Strings & Arrays", "description": "Practice two-pointer and sliding window techniques.", "type": "dsa", "isCompleted": false },
+          { "id": "m2", "title": "Linked Lists & Trees", "description": "Practice pointer manipulation and traversal.", "type": "dsa", "isCompleted": false }
+        ]
+      },
+      {
+        "id": "ms-phase-2",
+        "name": "Phase 2: System Design & Behavioral",
+        "description": "Prepare for high-level system design and past experience deep-dives.",
+        "milestones": [
+          { "id": "m3", "title": "System Design Prep", "description": "Study load balancing, caching, and database scaling.", "type": "system_design", "isCompleted": false },
+          { "id": "m4", "title": "Experience Deep-Dive", "description": "Prepare to discuss your past projects in detail.", "type": "behavioral", "isCompleted": false }
+        ]
+      }
+    ]
+  }
+]
