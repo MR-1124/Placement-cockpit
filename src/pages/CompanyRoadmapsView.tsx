@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useAppState } from "../context/AppStateContext";
 import { GlassCard } from "../components/Common";
 import roadmapsData from "../data/roadmaps.json";
-import { CompanyRoadmap } from "../types/AppTypes";
-import { Map, ArrowRight, CheckCircle, ChevronDown, Code2, Users, Layers, MessageSquare } from "lucide-react";
+import type { CompanyRoadmap } from "../types/AppTypes";
+import { Map, ArrowRight, CheckCircle, Code2, Users, Layers, MessageSquare } from "lucide-react";
 
 const typeIcons = {
   dsa: Code2,

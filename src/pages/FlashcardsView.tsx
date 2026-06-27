@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppState } from "../context/AppStateContext";
 import { GlassCard } from "../components/Common";
-import { Brain, Layers, CheckCircle, RefreshCw, X, ArrowRight, DownloadCloud, Database, Network, Cpu } from "lucide-react";
+import { Brain, Layers, CheckCircle, X, ArrowRight, DownloadCloud, Database, Network, Cpu } from "lucide-react";
 import flashcardsData from "../data/flashcards.json";
-import { Flashcard, FlashcardDeck } from "../types/AppTypes";
+import type { Flashcard, FlashcardDeck } from "../types/AppTypes";
 
 // Map string icon names to Lucide components
 const IconMap: Record<string, any> = {

@@ -26,6 +26,7 @@ import type {
   WeeklyGoal,
   DailyChallenge,
   Flashcard,
+  FlashcardDeck,
   CompanyRoadmap
 } from "../types/AppTypes";
 
