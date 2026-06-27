@@ -254,3 +254,24 @@ export interface CompanyRoadmap {
   isEnrolled: boolean;
   progress: number;
 }
+
+export interface AtsReport {
+  id: string;
+  timestamp: string;
+  role: string;
+  level: string;
+  focus: string;
+  scores: {
+    overall: number;
+    keywords: number;
+    impact: number;
+    clarity: number;
+    verbs: number;
+  };
+  summary: string;
+  foundKeywords: string[];
+  missingKeywords: string[];
+  actionVerbs: { strong: string[]; weak: string[] };
+  impactIssues: { original: string; fixed: string; reason: string }[];
+  formattingIssues: string[];
+}

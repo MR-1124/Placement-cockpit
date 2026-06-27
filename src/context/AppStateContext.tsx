@@ -27,7 +27,8 @@ import type {
   DailyChallenge,
   Flashcard,
   FlashcardDeck,
-  CompanyRoadmap
+  CompanyRoadmap,
+  AtsReport
 } from "../types/AppTypes";
 
 // Re-export all types so existing consumers (import { X } from '../context/AppStateContext')
@@ -50,7 +51,8 @@ export type {
   WeeklyGoal,
   DailyChallenge,
   Flashcard,
-  CompanyRoadmap
+  CompanyRoadmap,
+  AtsReport
 };
 
 // All domain interfaces are now in src/types/AppTypes.ts (Arch Debt #13).
@@ -89,6 +91,7 @@ interface AppState {
   activeInterviewSession?: ActiveInterviewSession | null;
   flashcards?: Flashcard[];
   activeRoadmaps?: CompanyRoadmap[];
+  atsReports?: AtsReport[];
 }
 
 export interface AppContextType {
@@ -234,6 +237,7 @@ interface SerializedProgress {
   activeInterviewSession?: ActiveInterviewSession | null;
   flashcards?: Flashcard[];
   activeRoadmaps?: CompanyRoadmap[];
+  atsReports?: AtsReport[];
 }
 
 const serializeState = (state: AppState): SerializedProgress => {
@@ -2368,6 +2372,17 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       const roadmaps = prev.activeRoadmaps || [];
       if (roadmaps.some(r => r.id === roadmap.id)) return prev;
       return { ...prev, activeRoadmaps: [...roadmaps, roadmap] };
+    });
+  };
+
+
+  const saveAtsReport = (report: AtsReport) => {
+    setState(prev => {
+      const currentReports = prev.atsReports || [];
+      return {
+        ...prev,
+        atsReports: [report, ...currentReports]
+      };
     });
   };
 
