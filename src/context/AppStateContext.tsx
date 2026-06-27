@@ -736,56 +736,47 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
   const onConfirmRef = useRef<(() => void) | null>(null);
 
-  const resetAllData = () => {
-    confirmAction({
-      title: "Hard Reset Confirmation",
-      message: "Are you absolutely sure you want to completely erase all your progress? This includes DSA completion, project statuses, AI analytics, and logs. This action cannot be undone.",
-      confirmText: "Yes, Reset Everything",
-      cancelText: "Cancel",
-      severity: "danger",
-      onConfirm: async () => {
-        const initialState = getInitialState(curriculum);
-        const newState = {
-          ...initialState,
-          isLoadingUser: false,
-          user: state.user,
-          userPlans: [
-            {
-              planId: "16-week-mastery",
-              active: true,
-              primary: true,
-              startedAt: new Date().toISOString(),
-              paused: false,
-              completedWeeks: [],
-              customProgress: {}
-            }
-          ],
-          primaryPlanId: "16-week-mastery",
-          mockInterviews: [],
-          activeInterviewSession: null,
-          settings: {
-            ...initialState.settings,
-            nvidiaApiKey: state.settings.nvidiaApiKey,
-            nvidiaModelName: state.settings.nvidiaModelName,
-            nvidiaInterviewerModelName: state.settings.nvidiaInterviewerModelName,
-            accentColor: state.settings.accentColor
-          }
-        };
-        
-        setState(newState);
-        localStorage.removeItem(STORAGE_KEY);
-
-        // Force an immediate wipe on the cloud to prevent debounced sync issues
-        if (state.user && hasFirebaseKeys) {
-          try {
-            const userDocRef = doc(db, "users", state.user.uid);
-            await setDoc(userDocRef, serializeState(newState));
-          } catch (err) {
-            console.error("Failed to wipe Firestore", err);
-          }
+  const resetAllData = async () => {
+    const initialState = getInitialState(curriculum);
+    const newState = {
+      ...initialState,
+      isLoadingUser: false,
+      user: state.user,
+      userPlans: [
+        {
+          planId: "16-week-mastery",
+          active: true,
+          primary: true,
+          startedAt: new Date().toISOString(),
+          paused: false,
+          completedWeeks: [],
+          customProgress: {}
         }
+      ],
+      primaryPlanId: "16-week-mastery",
+      mockInterviews: [],
+      activeInterviewSession: null,
+      settings: {
+        ...initialState.settings,
+        nvidiaApiKey: state.settings.nvidiaApiKey,
+        nvidiaModelName: state.settings.nvidiaModelName,
+        nvidiaInterviewerModelName: state.settings.nvidiaInterviewerModelName,
+        accentColor: state.settings.accentColor
       }
-    });
+    };
+    
+    setState(newState);
+    localStorage.removeItem(STORAGE_KEY);
+
+    // Force an immediate wipe on the cloud to prevent debounced sync issues
+    if (state.user && hasFirebaseKeys) {
+      try {
+        const userDocRef = doc(db, "users", state.user.uid);
+        await setDoc(userDocRef, serializeState(newState));
+      } catch (err) {
+        console.error("Failed to wipe Firestore", err);
+      }
+    }
   };
 
   const confirmAction = (options: ConfirmationOptions) => {
