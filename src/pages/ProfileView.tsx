@@ -148,7 +148,7 @@ export const ProfileView: React.FC = () => {
             </span>
 
             {/* Photo */}
-            <div className="w-24 h-24 rounded-full border-2 border-accentPrimary p-1 bg-black/40 overflow-hidden mb-4 relative shadow-[0_0_15px_rgba(var(--accent-rgb),0.2)]">
+            <div className="w-24 h-24 rounded-full border-2 border-accentPrimary p-1 bg-black/40 overflow-hidden mb-4 relative shadow-[0_0_15px_rgba(var(--color-accent-primary),0.3)]">
               <img
                 src={user.avatar}
                 alt="Profile Avatar"
@@ -194,7 +194,11 @@ export const ProfileView: React.FC = () => {
           </GlassCard>
 
           {/* Placement Metrics Card */}
-          <GlassCard className="p-5 border border-white/[0.06] space-y-4">
+          <GlassCard className="p-5 border border-white/[0.06] space-y-4 relative group hover:border-white/[0.1] transition-all overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+              <Activity className="w-24 h-24 text-accentPrimary" />
+            </div>
+            <div className="relative z-10">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono flex items-center gap-1.5">
               <Activity className="w-4 h-4 text-slate-500" />
               Active Placement Indicators
@@ -228,6 +232,7 @@ export const ProfileView: React.FC = () => {
                 );
               })}
             </div>
+          </div>
           </GlassCard>
         </div>
 
@@ -251,7 +256,7 @@ export const ProfileView: React.FC = () => {
                     type="text"
                     value={name}
                     onChange={e => setName(e.target.value)}
-                    className="w-full bg-white/[0.01] border border-white/[0.06] rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accentPrimary"
+                    className="w-full bg-black/60 border border-white/[0.08] focus:border-accentPrimary rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none transition-colors shadow-inner"
                   />
                 </div>
               </div>
@@ -268,7 +273,7 @@ export const ProfileView: React.FC = () => {
                     placeholder="e.g. 2026 Placement Candidate"
                     value={cohort}
                     onChange={e => setCohort(e.target.value)}
-                    className="w-full bg-white/[0.01] border border-white/[0.06] rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accentPrimary"
+                    className="w-full bg-black/60 border border-white/[0.08] focus:border-accentPrimary rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none transition-colors shadow-inner"
                   />
                 </div>
               </div>
@@ -285,7 +290,7 @@ export const ProfileView: React.FC = () => {
                     placeholder="https://linkedin.com/in/username"
                     value={linkedinUrl}
                     onChange={e => setLinkedinUrl(e.target.value)}
-                    className="w-full bg-white/[0.01] border border-white/[0.06] rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accentPrimary font-mono"
+                    className="w-full bg-black/60 border border-white/[0.08] focus:border-accentPrimary rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none transition-colors shadow-inner font-mono"
                   />
                 </div>
               </div>
@@ -302,7 +307,7 @@ export const ProfileView: React.FC = () => {
                     placeholder="https://github.com/username"
                     value={githubUrl}
                     onChange={e => setGithubUrl(e.target.value)}
-                    className="w-full bg-white/[0.01] border border-white/[0.06] rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accentPrimary font-mono"
+                    className="w-full bg-black/60 border border-white/[0.08] focus:border-accentPrimary rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none transition-colors shadow-inner font-mono"
                   />
                 </div>
               </div>
@@ -380,7 +385,7 @@ export const ProfileView: React.FC = () => {
               <button
                 onClick={handleSaveProfile}
                 disabled={isSaving}
-                className="w-full sm:w-auto h-10 bg-accentPrimary hover:bg-accentPrimary/90 disabled:bg-slate-800 text-white font-bold font-mono uppercase px-5 rounded-xl flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer text-xs"
+                className="w-full sm:w-auto h-10 bg-accentPrimary hover:bg-accentPrimary/90 disabled:bg-slate-800 text-black font-bold font-mono uppercase px-5 rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer shadow-[0_0_15px_rgba(var(--color-accent-primary),0.3)] text-xs"
               >
                 <Save className="w-4 h-4" />
                 <span>{isSaving ? "Saving..." : "Save Profile"}</span>

@@ -436,24 +436,24 @@ const curriculum = useAppState(s => s.curriculum);
             </button>
           )}
 
-          <div className="glass-panel rounded-lg px-4 py-2 flex items-center gap-2.5 border border-white/[0.06]">
-            <Award className="w-5 h-5 text-accentPrimary" />
+          <div className="glass-panel rounded-lg px-4 py-2 flex items-center gap-2.5 border border-white/[0.06] shadow-inner group">
+            <Award className="w-5 h-5 text-accentPrimary group-hover:scale-110 transition-transform" />
             <div>
               <div className="text-sm font-bold text-white leading-none">Lvl {level}</div>
               <div className="text-[9px] text-accentPrimary font-semibold font-mono tracking-wider mt-0.5">{levelTitle}</div>
             </div>
           </div>
 
-          <div className="glass-panel rounded-lg px-4 py-2 flex items-center gap-2.5 border border-white/[0.06]">
-            <Flame className="w-5 h-5 text-amber-500 fill-amber-500/20 animate-pulse" />
+          <div className="glass-panel rounded-lg px-4 py-2 flex items-center gap-2.5 border border-white/[0.06] shadow-[0_0_10px_rgba(245,158,11,0.1)] group">
+            <Flame className="w-5 h-5 text-amber-500 fill-amber-500/20 group-hover:animate-pulse" />
             <div>
               <div className="text-lg font-bold font-mono text-white leading-none">{state.streak}</div>
               <div className="text-[10px] text-slate-500 uppercase font-mono tracking-wider">Day Streak</div>
             </div>
           </div>
           
-          <div className="glass-panel rounded-lg px-4 py-2 flex items-center gap-2.5 border border-white/[0.06]">
-            <Activity className="w-5 h-5 text-accentPrimary" />
+          <div className="glass-panel rounded-lg px-4 py-2 flex items-center gap-2.5 border border-white/[0.06] group">
+            <Activity className="w-5 h-5 text-accentPrimary group-hover:scale-110 transition-transform" />
             <div>
               <div className="text-lg font-bold font-mono text-white leading-none">
                 {Object.values(state.dailyHabits).filter(Boolean).length}/6
@@ -492,8 +492,11 @@ const curriculum = useAppState(s => s.curriculum);
 
         {/* Progress Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:col-span-2 gap-6">
-          <GlassCard className="flex flex-col justify-between h-full">
-            <div>
+          <GlassCard className="flex flex-col justify-between h-full relative group hover:border-white/[0.1] transition-all overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+              <BookOpen className="w-32 h-32" />
+            </div>
+            <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-semibold text-slate-300">Syllabus Completion</span>
                 <BookOpen className="w-4 h-4 text-slate-500" />
@@ -503,13 +506,16 @@ const curriculum = useAppState(s => s.curriculum);
                 {state.completedWeeks.length} of {weekPlans.length} Weeks completed
               </p>
             </div>
-            <div className="mt-4">
+            <div className="mt-4 relative z-10">
               <ProgressBar percentage={overallCompletion} />
             </div>
           </GlassCard>
 
-          <GlassCard className="flex flex-col justify-between h-full">
-            <div>
+          <GlassCard className="flex flex-col justify-between h-full relative group hover:border-white/[0.1] transition-all overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+              <Code2 className="w-32 h-32 text-violet-500" />
+            </div>
+            <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-semibold text-slate-300">DSA Proficiency</span>
                 <Code2 className="w-4 h-4 text-slate-500" />
@@ -519,13 +525,16 @@ const curriculum = useAppState(s => s.curriculum);
                 {state.dsaTopics.reduce((acc, t) => acc + t.problems.filter(p => p.isCompleted).length, 0)} Solved Problems
               </p>
             </div>
-            <div className="mt-4">
+            <div className="mt-4 relative z-10">
               <ProgressBar percentage={dsaCompletion} colorClass="bg-violet-500" />
             </div>
           </GlassCard>
 
-          <GlassCard className="flex flex-col justify-between h-full">
-            <div>
+          <GlassCard className="flex flex-col justify-between h-full relative group hover:border-white/[0.1] transition-all overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+              <Zap className="w-32 h-32 text-emerald-500" />
+            </div>
+            <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-semibold text-slate-300">Full Stack Skills</span>
                 <Zap className="w-4 h-4 text-slate-500" />
@@ -535,13 +544,16 @@ const curriculum = useAppState(s => s.curriculum);
                 {projectCount} projects added to stack
               </p>
             </div>
-            <div className="mt-4">
+            <div className="mt-4 relative z-10">
               <ProgressBar percentage={devCompletion} colorClass="bg-emerald-500" />
             </div>
           </GlassCard>
 
-          <GlassCard className="flex flex-col justify-between h-full">
-            <div>
+          <GlassCard className="flex flex-col justify-between h-full relative group hover:border-white/[0.1] transition-all overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+              <Terminal className="w-32 h-32 text-rose-500" />
+            </div>
+            <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-semibold text-slate-300">AI Dependency</span>
                 <Terminal className="w-4 h-4 text-slate-500" />
@@ -556,7 +568,7 @@ const curriculum = useAppState(s => s.curriculum);
                 Goal: Keep below 20% dependency
               </p>
             </div>
-            <div className="mt-4">
+            <div className="mt-4 relative z-10">
               <ProgressBar percentage={aiDependencyScore} colorClass="bg-rose-500" />
             </div>
           </GlassCard>
@@ -613,21 +625,32 @@ const curriculum = useAppState(s => s.curriculum);
                 <div
                   key={habit.key}
                   onClick={() => toggleHabit(habit.key)}
-                  className={`flex items-start gap-3 p-3 rounded-lg border transition-all cursor-pointer select-none ${
+                  className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer select-none overflow-hidden relative group ${
                     checked
-                      ? "bg-accentPrimary/5 border-accentPrimary/20 text-white"
-                      : "bg-white/[0.01] border-white/[0.04] text-slate-400 hover:bg-white/[0.02]"
+                      ? "bg-accentPrimary/10 border-accentPrimary/30 text-white shadow-[0_0_15px_rgba(var(--color-accent-primary),0.15)]"
+                      : "bg-black/40 border-white/[0.04] text-slate-400 hover:border-white/[0.1] hover:bg-white/[0.02]"
                   }`}
                 >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => {}}
-                    className="mt-0.5 accent-accentPrimary rounded cursor-pointer"
-                  />
-                  <div>
-                    <div className="text-xs font-semibold">{habit.label}</div>
-                    <div className="text-[10px] text-slate-500 font-mono mt-0.5">{habit.desc}</div>
+                  {checked && (
+                    <motion.div
+                      layoutId={`habit-glow-${habit.key}`}
+                      className="absolute inset-0 bg-gradient-to-r from-accentPrimary/0 via-accentPrimary/5 to-accentPrimary/0 pointer-events-none"
+                      initial={{ x: '-100%' }}
+                      animate={{ x: '100%' }}
+                      transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                    />
+                  )}
+                  <div className="relative z-10 flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {}}
+                      className="mt-1 w-4 h-4 accent-accentPrimary rounded-md cursor-pointer transition-transform group-hover:scale-110"
+                    />
+                    <div>
+                      <div className={`text-xs font-bold ${checked ? "text-white" : "text-slate-300"}`}>{habit.label}</div>
+                      <div className="text-[10px] text-slate-500 font-mono mt-0.5">{habit.desc}</div>
+                    </div>
                   </div>
                 </div>
               );
