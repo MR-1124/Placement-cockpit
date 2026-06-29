@@ -86,7 +86,9 @@ const curriculum = useAppState(s => s.curriculum);
 const addChatMessage = useAppState(s => s.addChatMessage);
 const clearChatHistory = useAppState(s => s.clearChatHistory);
 const confirmAction = useAppState(s => s.confirmAction);
-
+const updateSettings = useAppState(s => s.updateSettings);
+const collapsed = state.settings.sidebarCollapsed || false;
+const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isWideChat, setIsWideChat] = useState(false);
