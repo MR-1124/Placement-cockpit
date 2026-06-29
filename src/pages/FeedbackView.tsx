@@ -1,14 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { GlassCard } from '../components/Common';
-import { MessageCircleHeart, Info } from 'lucide-react';
+import { MessageCircleHeart } from 'lucide-react';
 import { Widget } from '@typeform/embed-react';
 
 export const FeedbackView: React.FC = () => {
-  // Replace this with the actual Typeform link provided by the user
-  const TYPEFORM_URL = import.meta.env.VITE_TYPEFORM_URL || "https://form.typeform.com/to/psyig6s8";
-  
-  const isPlaceholder = false;
 
   return (
     <motion.div
@@ -25,18 +21,6 @@ export const FeedbackView: React.FC = () => {
           <p className="text-xs text-slate-400 font-medium">Help us improve the Placement Cockpit by sharing your thoughts</p>
         </div>
       </div>
-      
-      {isPlaceholder && (
-        <div className="shrink-0 bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-start gap-3 text-amber-500">
-          <Info className="w-5 h-5 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <h4 className="text-sm font-bold tracking-wide uppercase">Typeform URL Needed</h4>
-            <p className="text-xs text-amber-500/80 leading-relaxed">
-              The feedback form is currently using a placeholder URL. Please update <code>VITE_TYPEFORM_URL</code> in your <code>.env.local</code> file or replace it directly in <code>src/pages/FeedbackView.tsx</code> with your actual Typeform link.
-            </p>
-          </div>
-        </div>
-      )}
 
       <GlassCard className="flex-1 w-full relative overflow-hidden rounded-[2rem] border border-white/5 p-0 bg-[#060608]/50">
         <Widget 
