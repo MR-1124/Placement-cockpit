@@ -332,7 +332,7 @@ Example format:
         {!activeDeck && (
           <button 
             onClick={() => setShowAiModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg text-sm font-medium transition-colors border border-purple-500/20"
+            className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 hover:scale-[1.02] hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] text-purple-400 rounded-lg text-sm font-medium transition-all border border-purple-500/20"
           >
             <Sparkles className="w-4 h-4" /> AI Generate
           </button>
@@ -487,7 +487,7 @@ Example format:
                   transition={{ duration: 0.4, type: "spring", stiffness: 200, damping: 20 }}
                 >
                   {/* Front */}
-                  <div className="absolute inset-0 backface-hidden bg-darkCard border border-white/[0.08] rounded-2xl flex flex-col items-center justify-center p-8 text-center shadow-lg">
+                  <div className="absolute inset-0 backface-hidden bg-black/80 border border-white/[0.08] rounded-2xl flex flex-col items-center justify-center p-8 text-center shadow-[0_0_30px_rgba(255,255,255,0.05)]">
                     <span className="text-[10px] uppercase font-mono text-slate-500 absolute top-6">Question</span>
                     <h3 className="text-2xl font-medium text-slate-200">{reviewQueue[currentCardIndex].question}</h3>
                     {!isFlipped && (
@@ -499,7 +499,7 @@ Example format:
 
                   {/* Back */}
                   <div 
-                    className="absolute inset-0 backface-hidden bg-darkCard border border-accentPrimary/30 rounded-2xl p-8 shadow-[0_0_30px_rgba(var(--accent-rgb),0.1)] flex flex-col"
+                    className="absolute inset-0 backface-hidden bg-black/90 border border-accentPrimary/40 rounded-2xl p-8 shadow-[0_0_30px_rgba(var(--color-accent-primary),0.2)] flex flex-col"
                     style={{ transform: "rotateX(180deg)" }}
                   >
                     <span className="text-[10px] uppercase font-mono text-accentPrimary mb-4 block text-center">Answer</span>
@@ -575,7 +575,7 @@ Example format:
                     onChange={e => setAiTopic(e.target.value)}
                     placeholder="e.g. React custom hooks, AWS S3 vs EBS, or paste notes..."
                     rows={4}
-                    className="w-full bg-black/40 border border-white/10 focus:border-purple-500 rounded-lg p-3 text-sm text-white placeholder-slate-600 focus:outline-none"
+                    className="w-full bg-black/60 shadow-inner border border-white/10 focus:border-purple-500 rounded-lg p-3 text-sm text-white placeholder-slate-600 focus:outline-none transition-colors"
                   />
                 </div>
                 
@@ -586,7 +586,7 @@ Example format:
                 <button
                   onClick={handleGenerateAI}
                   disabled={isGenerating || !aiTopic}
-                  className="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full py-3 bg-purple-500 hover:bg-purple-600 text-black font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isGenerating ? (
                     <>
@@ -631,7 +631,7 @@ const DeckCard = ({ deck, userCards, onStart, onDelete }: { deck: FlashcardDeck,
 
       <div onClick={() => onStart(false)} className="h-full">
         <div className="flex items-start justify-between mb-4">
-          <div className={`p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] ${deck.color.replace('bg-', 'text-')}`}>
+          <div className={`p-3 rounded-xl bg-black/40 shadow-inner border border-white/[0.06] ${deck.color.replace('bg-', 'text-')}`}>
             <Icon className="w-6 h-6" />
           </div>
           {dueCardsCount > 0 && (
@@ -648,7 +648,7 @@ const DeckCard = ({ deck, userCards, onStart, onDelete }: { deck: FlashcardDeck,
           <span className="text-[10px] font-mono text-slate-500">{deckUserCards.length} CARDS</span>
           <button 
             onClick={(e) => { e.stopPropagation(); onStart(true); }}
-            className="text-[10px] uppercase font-bold text-amber-400 bg-amber-400/10 hover:bg-amber-400/20 px-2 py-1 rounded border border-amber-400/20 flex items-center gap-1"
+            className="text-[10px] uppercase font-bold text-amber-400 bg-amber-400/10 hover:bg-amber-400/20 hover:shadow-[0_0_10px_rgba(251,191,36,0.3)] hover:scale-[1.05] px-2 py-1 rounded border border-amber-400/20 flex items-center gap-1 transition-all"
           >
             <Zap className="w-3 h-3" /> Cram Mode
           </button>

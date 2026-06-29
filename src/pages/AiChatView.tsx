@@ -365,7 +365,7 @@ const removeLastAssistantMessage = useAppState(s => s.removeLastAssistantMessage
               onClick={() => setSidebarTab("templates")}
               className={`flex-1 py-1.5 px-3 rounded-lg transition-all cursor-pointer text-center ${
                 sidebarTab === "templates"
-                  ? "bg-accentPrimary text-white shadow-md"
+                  ? "bg-accentPrimary text-black shadow-[0_0_15px_rgba(var(--color-accent-primary),0.4)]"
                   : "text-slate-500 hover:text-slate-300"
               }`}
             >
@@ -375,7 +375,7 @@ const removeLastAssistantMessage = useAppState(s => s.removeLastAssistantMessage
               onClick={() => setSidebarTab("history")}
               className={`flex-1 py-1.5 px-3 rounded-lg transition-all cursor-pointer text-center flex items-center justify-center gap-1.5 ${
                 sidebarTab === "history"
-                  ? "bg-accentPrimary text-white shadow-md"
+                  ? "bg-accentPrimary text-black shadow-[0_0_15px_rgba(var(--color-accent-primary),0.4)]"
                   : "text-slate-500 hover:text-slate-300"
               }`}
             >
@@ -390,7 +390,7 @@ const removeLastAssistantMessage = useAppState(s => s.removeLastAssistantMessage
               onClick={() => setSidebarTab("settings")}
               className={`flex-1 py-1.5 px-3 rounded-lg transition-all cursor-pointer text-center flex items-center justify-center gap-1.5 ${
                 sidebarTab === "settings"
-                  ? "bg-accentPrimary text-white shadow-md"
+                  ? "bg-accentPrimary text-black shadow-[0_0_15px_rgba(var(--color-accent-primary),0.4)]"
                   : "text-slate-500 hover:text-slate-300"
               }`}
             >
@@ -424,7 +424,7 @@ const removeLastAssistantMessage = useAppState(s => s.removeLastAssistantMessage
               <div className="space-y-2">
                 <button
                   onClick={() => createNewSession()}
-                  className="w-full py-2 bg-accentPrimary/10 border border-accentPrimary/20 hover:bg-accentPrimary/20 text-accentPrimary rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer mb-2"
+                  className="w-full py-2 bg-accentPrimary/10 border border-accentPrimary/20 hover:bg-accentPrimary/20 hover:shadow-lg text-accentPrimary rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer hover:scale-[1.02] mb-2"
                 >
                   + New Chat
                 </button>
@@ -558,7 +558,7 @@ const removeLastAssistantMessage = useAppState(s => s.removeLastAssistantMessage
                       }}
                       disabled={!activeSession}
                       placeholder={SYSTEM_PROMPT}
-                      className="w-full h-40 bg-black/40 border border-white/[0.06] rounded-lg p-3 text-[11px] text-slate-300 font-mono resize-y focus:outline-none focus:border-accentPrimary transition-colors disabled:opacity-50"
+                      className="w-full h-40 bg-black/60 shadow-inner border border-white/[0.06] rounded-lg p-3 text-[11px] text-slate-300 font-mono resize-y focus:outline-none focus:border-accentPrimary transition-colors disabled:opacity-50"
                     />
                   </div>
                   {!activeSession && (
@@ -574,7 +574,7 @@ const removeLastAssistantMessage = useAppState(s => s.removeLastAssistantMessage
         {currentMessages.length > 0 && (
           <button
             onClick={handleClearHistory}
-            className="w-full py-2 border border-rose-500/20 hover:border-rose-500 bg-rose-500/5 hover:bg-rose-500 text-rose-400 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow shrink-0"
+            className="w-full py-2 border border-rose-500/20 hover:border-rose-500 bg-rose-500/5 hover:bg-rose-500 text-rose-400 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer hover:shadow-[0_0_15px_rgba(244,63,94,0.4)] hover:scale-[1.02] shrink-0"
           >
             <Trash2 className="w-4 h-4" /> Clear Current Chat
           </button>
@@ -665,7 +665,7 @@ const removeLastAssistantMessage = useAppState(s => s.removeLastAssistantMessage
                     <div
                       className={`max-w-[80%] rounded-2xl px-4 py-3 select-text relative shadow-sm leading-relaxed border ${
                         isUser
-                          ? "bg-accentPrimary/10 border-accentPrimary/20 rounded-tr-none text-slate-200"
+                          ? "bg-accentPrimary/20 border-accentPrimary/40 rounded-tr-none text-slate-100 shadow-[0_0_15px_rgba(var(--color-accent-primary),0.1)]"
                           : "bg-white/[0.01] border-white/[0.04] rounded-tl-none text-slate-300"
                       }`}
                     >
@@ -784,12 +784,12 @@ const removeLastAssistantMessage = useAppState(s => s.removeLastAssistantMessage
                   : "NVIDIA API token key properties missing in cockpit config settings..."
               }
               rows={1}
-              className="flex-1 min-w-0 bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-xl py-2.5 px-4 text-xs text-white placeholder-slate-600 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed transition-colors resize-none overflow-y-auto max-h-[120px] leading-relaxed"
+              className="flex-1 min-w-0 bg-black/60 shadow-inner border border-white/[0.08] focus:border-accentPrimary rounded-xl py-2.5 px-4 text-xs text-white placeholder-slate-600 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed transition-colors resize-none overflow-y-auto max-h-[120px] leading-relaxed"
             />
             <button
               type="submit"
               disabled={isLoading || !chatInput.trim() || !state.sessionNvidiaKey}
-              className="w-10 h-10 rounded-xl bg-accentPrimary hover:bg-accentPrimary/90 disabled:bg-white/[0.02] text-white disabled:text-slate-600 border border-white/[0.04] disabled:border-transparent flex items-center justify-center shrink-0 transition-colors cursor-pointer"
+              className="w-10 h-10 rounded-xl bg-accentPrimary hover:bg-accentPrimary/90 disabled:bg-white/[0.02] text-black disabled:text-slate-600 border border-white/[0.04] disabled:border-transparent flex items-center justify-center shrink-0 transition-all cursor-pointer shadow-[0_0_15px_rgba(var(--color-accent-primary),0.4)] hover:scale-[1.02] active:scale-95 disabled:shadow-none"
             >
               {isLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

@@ -194,7 +194,7 @@ ${gradeResult.formattingIssues.map(i => `- ${i}`).join('\n')}
   };
 
   const renderMiniGauge = (label: string, score: number) => (
-    <div className="flex flex-col items-center bg-black/20 p-4 rounded-xl border border-white/5">
+    <div className="flex flex-col items-center bg-black/40 shadow-inner p-4 rounded-xl border border-white/5">
       <div className="relative w-16 h-16 shrink-0 mb-3">
         <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
           <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="8" className="text-white/5" />
@@ -257,7 +257,7 @@ ${gradeResult.formattingIssues.map(i => `- ${i}`).join('\n')}
         <div className="flex gap-2">
           <button 
             onClick={() => setShowHistory(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-black/40 hover:bg-white/10 text-slate-300 rounded-lg text-sm font-medium transition-colors border border-white/[0.08]"
+            className="flex items-center gap-2 px-4 py-2 bg-black/40 hover:bg-white/10 hover:shadow-lg text-slate-300 rounded-lg text-sm font-medium transition-all border border-white/[0.08] hover:scale-[1.02]"
           >
             <History className="w-4 h-4" />
             Past Scans
@@ -289,7 +289,7 @@ ${gradeResult.formattingIssues.map(i => `- ${i}`).join('\n')}
                 value={targetRole}
                 onChange={(e) => setTargetRole(e.target.value)}
                 placeholder="e.g. Frontend Developer"
-                className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-sm text-white placeholder-slate-600 focus:outline-none transition-colors"
+                className="w-full bg-black/60 shadow-inner border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-sm text-white placeholder-slate-600 focus:outline-none transition-colors"
               />
             </div>
             
@@ -300,7 +300,7 @@ ${gradeResult.formattingIssues.map(i => `- ${i}`).join('\n')}
                 value={techStack}
                 onChange={(e) => setTechStack(e.target.value)}
                 placeholder="e.g. MERN, AWS, Python"
-                className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-sm text-white placeholder-slate-600 focus:outline-none transition-colors"
+                className="w-full bg-black/60 shadow-inner border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-sm text-white placeholder-slate-600 focus:outline-none transition-colors"
               />
             </div>
 
@@ -309,7 +309,7 @@ ${gradeResult.formattingIssues.map(i => `- ${i}`).join('\n')}
               <select
                 value={experienceLevel}
                 onChange={(e) => setExperienceLevel(e.target.value)}
-                className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-sm text-white focus:outline-none transition-colors appearance-none"
+                className="w-full bg-black/60 shadow-inner border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-sm text-white focus:outline-none transition-colors appearance-none"
               >
                 <option>Entry Level / New Grad</option>
                 <option>Junior (1-3 yrs)</option>
@@ -333,7 +333,7 @@ ${gradeResult.formattingIssues.map(i => `- ${i}`).join('\n')}
           <button
             onClick={handleGradeResume}
             disabled={isGrading || !resumeText}
-            className="w-full px-6 py-4 bg-accentPrimary hover:bg-accentPrimary/90 text-white rounded-xl font-bold shadow-lg shadow-accentPrimary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="w-full px-6 py-4 bg-accentPrimary hover:bg-accentPrimary/90 text-black rounded-xl font-bold shadow-[0_0_20px_rgba(var(--color-accent-primary),0.4)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {isGrading ? (
               <>
@@ -463,7 +463,7 @@ ${gradeResult.formattingIssues.map(i => `- ${i}`).join('\n')}
                       <div className="space-y-4">
                         {gradeResult.impactIssues.length > 0 ? (
                           gradeResult.impactIssues.map((issue, i) => (
-                            <div key={i} className="bg-black/30 border border-white/10 rounded-xl overflow-hidden">
+                            <div key={i} className="bg-black/50 shadow-inner border border-white/10 rounded-xl overflow-hidden">
                               <div className="p-4 bg-rose-500/5 border-b border-white/5">
                                 <span className="text-[10px] uppercase font-mono text-rose-400 mb-1 block">Before (Weak)</span>
                                 <p className="text-sm text-slate-300">"{issue.original}"</p>
