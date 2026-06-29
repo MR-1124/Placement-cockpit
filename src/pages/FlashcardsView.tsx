@@ -6,10 +6,10 @@ import { nvidiaFetch } from "../lib/nvidiaApi";
 import ReactMarkdown from "react-markdown";
 import { 
   Brain, Layers, CheckCircle, X, ArrowRight, DownloadCloud, Database, 
-  Network, Cpu, Sparkles, Trash2, Zap
+  Network, Cpu, Sparkles, Trash2, Zap, History, RotateCcw, Award
 } from "lucide-react";
 import flashcardsData from "../data/flashcards.json";
-import type { Flashcard, FlashcardDeck } from "../types/AppTypes";
+import type { Flashcard, FlashcardDeck, FlashcardSession } from "../types/AppTypes";
 
 const IconMap: Record<string, any> = {
   Cpu: Cpu,
@@ -20,7 +20,7 @@ const IconMap: Record<string, any> = {
 export const FlashcardsView: React.FC = () => {
   const { 
     state, updateFlashcardReview, importFlashcards,
-    addCustomDeck, deleteCustomDeck, addFlashcards
+    addCustomDeck, deleteCustomDeck, addFlashcards, saveFlashcardSession
   } = useAppState();
   
   const [activeDeck, setActiveDeck] = useState<FlashcardDeck | null>(null);
@@ -30,6 +30,12 @@ export const FlashcardsView: React.FC = () => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
   const [isCramMode, setIsCramMode] = useState(false);
+  
+  // Session Stats for History
+  const [sessionStats, setSessionStats] = useState({ hard: 0, good: 0, easy: 0 });
+  const [lastGrade, setLastGrade] = useState<{ card: Flashcard, oldStats: { hard: 0, good: 0, easy: 0 }, index: number } | null>(null);
+
+  const [activeTab, setActiveTab] = useState<"decks" | "history">("decks");
 
   // Modals
   const [showAiModal, setShowAiModal] = useState(false);
@@ -69,15 +75,16 @@ export const FlashcardsView: React.FC = () => {
       dueCards = dueCards.filter(c => c.nextReviewDate <= today);
     }
     
-    // Limits
     if (!cram) {
-      const newCards = dueCards.filter(c => c.repetition === 0).slice(0, 20); // 20 new cards max
-      const reviewCards = dueCards.filter(c => c.repetition > 0).slice(0, 100); // 100 review max
+      const newCards = dueCards.filter(c => c.repetition === 0).slice(0, 20);
+      const reviewCards = dueCards.filter(c => c.repetition > 0).slice(0, 100);
       dueCards = [...newCards, ...reviewCards];
     }
     
+    setSessionStats({ hard: 0, good: 0, easy: 0 });
+    setLastGrade(null);
+
     if (dueCards.length > 0) {
-      // Shuffle cram mode
       if (cram) dueCards = dueCards.sort(() => 0.5 - Math.random());
       
       setReviewQueue(dueCards);
@@ -96,6 +103,9 @@ export const FlashcardsView: React.FC = () => {
   const handleGrade = (quality: 2 | 4 | 5) => {
     const card = reviewQueue[currentCardIndex];
     let { interval, repetition, easeFactor } = card;
+
+    const oldStats = { ...sessionStats };
+    setLastGrade({ card: { ...card }, oldStats, index: currentCardIndex });
 
     if (!isCramMode) {
       if (quality < 3) {
@@ -119,11 +129,59 @@ export const FlashcardsView: React.FC = () => {
       updateFlashcardReview(card.id, easeFactor, interval, nextReviewDate, repetition);
     }
 
+    const newStats = { ...sessionStats };
+    if (quality === 2) newStats.hard++;
+    else if (quality === 4) newStats.good++;
+    else if (quality === 5) newStats.easy++;
+    setSessionStats(newStats);
+
     if (currentCardIndex + 1 < reviewQueue.length) {
       setCurrentCardIndex(prev => prev + 1);
       setIsFlipped(false);
     } else {
-      setShowCompletion(true);
+      finishSession(newStats);
+    }
+  };
+
+  const handleUndo = () => {
+    if (!lastGrade || isCramMode) return;
+    
+    // Revert card state in AppStateContext
+    updateFlashcardReview(
+      lastGrade.card.id, 
+      lastGrade.card.easeFactor, 
+      lastGrade.card.interval, 
+      lastGrade.card.nextReviewDate, 
+      lastGrade.card.repetition
+    );
+    
+    // Revert UI state
+    setSessionStats(lastGrade.oldStats);
+    setCurrentCardIndex(lastGrade.index);
+    setIsFlipped(true);
+    setLastGrade(null);
+  };
+
+  const finishSession = (stats: { hard: number, good: number, easy: number }) => {
+    setShowCompletion(true);
+    
+    if (reviewQueue.length > 0) {
+      const total = reviewQueue.length;
+      const score = Math.round(((stats.easy * 100) + (stats.good * 75) + (stats.hard * 25)) / total);
+      
+      const session: FlashcardSession = {
+        id: `session-${Date.now()}`,
+        deckId: activeDeck!.id,
+        deckName: activeDeck!.name,
+        date: new Date().toISOString(),
+        cardsReviewed: total,
+        score,
+        hardCount: stats.hard,
+        goodCount: stats.good,
+        easyCount: stats.easy
+      };
+      
+      saveFlashcardSession(session);
     }
   };
 
@@ -149,7 +207,7 @@ export const FlashcardsView: React.FC = () => {
           content: `You are an expert software engineering instructor.
 Generate up to 10 high-quality flashcards about the requested topic.
 Output ONLY a JSON object with a single key "flashcards" containing an array of objects with keys "q" (question) and "a" (answer).
-Answers should be detailed and use markdown (including \`\`\` language code blocks \`\`\`) where appropriate for code.
+Answers should be detailed and use markdown (including \\`\\`\\` language code blocks \\`\\`\\`) where appropriate for code.
 Do not output any conversational text.
 Example format:
 {
@@ -179,6 +237,7 @@ Example format:
       }
       
       const jsonText = rawText.substring(startIdx, endIdx + 1);
+      
       const parsed = JSON.parse(jsonText);
       const cardsData = parsed.flashcards;
       if (!Array.isArray(cardsData)) throw new Error("Invalid output format: Missing flashcards array.");
@@ -245,75 +304,125 @@ Example format:
     );
   }
 
+  // Filter decks
+  const todayStr = new Date().toISOString().split("T")[0];
+  const dueDecks: FlashcardDeck[] = [];
+  const caughtUpDecks: FlashcardDeck[] = [];
+
+  allDecks.forEach(deck => {
+    const deckUserCards = userCards.filter(c => c.deckId === deck.id);
+    const dueCount = deckUserCards.filter(c => c.nextReviewDate <= todayStr).length;
+    if (dueCount > 0 || deckUserCards.length === 0) {
+      dueDecks.push(deck);
+    } else {
+      caughtUpDecks.push(deck);
+    }
+  });
+
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto space-y-6 relative">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/[0.06] pb-6">
         <div>
           <span className="text-xs uppercase font-mono tracking-widest text-slate-500">Active Recall</span>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">Flashcards V2</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">Flashcards V3</h1>
           <p className="text-sm text-slate-400 mt-1">
             Review core concepts using Spaced Repetition (SM-2) or generate custom AI decks.
           </p>
         </div>
-        <button 
-          onClick={() => setShowAiModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg text-sm font-medium transition-colors border border-purple-500/20"
-        >
-          <Sparkles className="w-4 h-4" /> AI Generate
-        </button>
+        {!activeDeck && (
+          <button 
+            onClick={() => setShowAiModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg text-sm font-medium transition-colors border border-purple-500/20"
+          >
+            <Sparkles className="w-4 h-4" /> AI Generate
+          </button>
+        )}
       </div>
 
-      {!activeDeck ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {allDecks.map(deck => {
-            const Icon = IconMap[deck.icon] || Layers;
-            const today = new Date().toISOString().split("T")[0];
-            const deckUserCards = userCards.filter(c => c.deckId === deck.id);
-            const dueCardsCount = deckUserCards.filter(c => c.nextReviewDate <= today).length;
-            const isCustom = state.customDecks?.some(d => d.id === deck.id);
-
-            return (
-              <GlassCard key={deck.id} className="relative group overflow-hidden cursor-pointer hover:border-accentPrimary/40 transition-colors">
-                <div className={`absolute top-0 right-0 w-32 h-32 ${deck.color} opacity-5 blur-[60px] rounded-full group-hover:opacity-10 transition-opacity`} />
-                
-                {isCustom && (
-                  <button 
-                    onClick={(e) => handleDeleteDeck(e, deck.id)}
-                    className="absolute top-4 right-4 text-rose-500/50 hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100 z-10"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
-
-                <div onClick={() => startReview(deck)} className="h-full">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className={`p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] ${deck.color.replace('bg-', 'text-')}`}>
-                      <Icon className="w-6 h-6" />
-                    </div>
-                    {dueCardsCount > 0 && (
-                      <span className="bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-bold px-2 py-1 rounded-md">
-                        {dueCardsCount} Due
-                      </span>
-                    )}
-                  </div>
-                  
-                  <h3 className="text-lg font-bold text-white mb-2">{deck.name}</h3>
-                  <p className="text-xs text-slate-400 mb-6 line-clamp-2">{deck.description}</p>
-                  
-                  <div className="flex items-center justify-between mt-auto">
-                    <span className="text-[10px] font-mono text-slate-500">{deckUserCards.length} CARDS</span>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); startReview(deck, true); }}
-                      className="text-[10px] uppercase font-bold text-amber-400 bg-amber-400/10 hover:bg-amber-400/20 px-2 py-1 rounded border border-amber-400/20 flex items-center gap-1"
-                    >
-                      <Zap className="w-3 h-3" /> Cram Mode
-                    </button>
-                  </div>
-                </div>
-              </GlassCard>
-            );
-          })}
+      {!activeDeck && (
+        <div className="flex gap-4 border-b border-white/[0.06] mb-6">
+          <button
+            onClick={() => setActiveTab("decks")}
+            className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'decks' ? 'border-accentPrimary text-white' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
+          >
+            <Layers className="w-4 h-4" /> Decks
+          </button>
+          <button
+            onClick={() => setActiveTab("history")}
+            className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'history' ? 'border-accentPrimary text-white' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
+          >
+            <History className="w-4 h-4" /> Session History
+          </button>
         </div>
+      )}
+
+      {!activeDeck ? (
+        activeTab === "decks" ? (
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {dueDecks.map(deck => (
+                <DeckCard 
+                  key={deck.id} deck={deck} userCards={userCards} 
+                  onStart={(cram) => startReview(deck, cram)} 
+                  onDelete={state.customDecks?.some(d => d.id === deck.id) ? handleDeleteDeck : undefined} 
+                />
+              ))}
+            </div>
+
+            {caughtUpDecks.length > 0 && (
+              <div className="pt-8 border-t border-white/[0.04]">
+                <h3 className="text-sm font-mono text-emerald-500/70 mb-4 flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4" /> Caught Up (0 Due)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-60 hover:opacity-100 transition-opacity">
+                  {caughtUpDecks.map(deck => (
+                    <DeckCard 
+                      key={deck.id} deck={deck} userCards={userCards} 
+                      onStart={(cram) => startReview(deck, cram)} 
+                      onDelete={state.customDecks?.some(d => d.id === deck.id) ? handleDeleteDeck : undefined} 
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {!state.flashcardHistory || state.flashcardHistory.length === 0 ? (
+              <div className="text-center py-16 text-slate-500 border border-dashed border-white/10 rounded-2xl">
+                No session history yet. Complete a flashcard review to see stats!
+              </div>
+            ) : (
+              state.flashcardHistory.map(session => (
+                <GlassCard key={session.id} className="flex flex-col md:flex-row items-center justify-between gap-4 py-4 px-6">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${session.score >= 80 ? 'bg-emerald-500/10 text-emerald-400' : session.score >= 50 ? 'bg-amber-500/10 text-amber-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                      <Award className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white">{session.deckName}</h4>
+                      <p className="text-xs text-slate-400">{new Date(session.date).toLocaleString()} • {session.cardsReviewed} Cards Reviewed</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-6">
+                    <div className="flex gap-3 text-xs font-mono">
+                      <span className="text-emerald-400">{session.easyCount} E</span>
+                      <span className="text-amber-400">{session.goodCount} G</span>
+                      <span className="text-rose-400">{session.hardCount} H</span>
+                    </div>
+                    <div className="text-right">
+                      <div className={`text-xl font-black ${session.score >= 80 ? 'text-emerald-400' : session.score >= 50 ? 'text-amber-400' : 'text-rose-400'}`}>
+                        {session.score}%
+                      </div>
+                      <div className="text-[10px] uppercase font-mono text-slate-500 tracking-wider">Mastery</div>
+                    </div>
+                  </div>
+                </GlassCard>
+              ))
+            )}
+          </div>
+        )
       ) : (
         <div className="max-w-3xl mx-auto mt-4">
           <div className="flex justify-between items-center mb-6">
@@ -328,7 +437,24 @@ Example format:
                 <Zap className="w-3 h-3" /> Cram Mode Active (Progress not saved)
               </span>
             )}
+            {!isCramMode && lastGrade && (
+              <button 
+                onClick={handleUndo}
+                className="text-xs font-mono text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors bg-amber-400/10 px-2 py-1 rounded"
+              >
+                <RotateCcw className="w-3 h-3" /> Undo Last
+              </button>
+            )}
           </div>
+
+          {!showCompletion && (
+            <div className="w-full bg-white/[0.05] h-1.5 rounded-full mb-6 overflow-hidden">
+              <div 
+                className="h-full bg-accentPrimary transition-all duration-300"
+                style={{ width: `${(currentCardIndex / reviewQueue.length) * 100}%` }}
+              />
+            </div>
+          )}
 
           {showCompletion ? (
             <GlassCard className="text-center py-16 space-y-4">
@@ -336,8 +462,8 @@ Example format:
                 <CheckCircle className="w-8 h-8" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">All caught up!</h2>
-                <p className="text-sm text-slate-400 mt-2">You've reviewed all cards in {activeDeck.name} for today.</p>
+                <h2 className="text-xl font-bold text-white">Session Complete!</h2>
+                <p className="text-sm text-slate-400 mt-2">You reviewed {reviewQueue.length} cards from {activeDeck.name}.</p>
               </div>
               <button
                 onClick={() => setActiveDeck(null)}
@@ -430,7 +556,7 @@ Example format:
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-md bg-dark/95 border border-purple-500/30 rounded-2xl shadow-2xl p-6"
+              className="w-full max-w-md bg-darkCard border border-purple-500/30 rounded-2xl shadow-2xl p-6"
             >
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
@@ -480,5 +606,54 @@ Example format:
       </AnimatePresence>
 
     </motion.div>
+  );
+};
+
+// Deck Card Component for reusability
+const DeckCard = ({ deck, userCards, onStart, onDelete }: { deck: FlashcardDeck, userCards: Flashcard[], onStart: (cram: boolean) => void, onDelete?: (e: any, id: string) => void }) => {
+  const Icon = IconMap[deck.icon] || Layers;
+  const today = new Date().toISOString().split("T")[0];
+  const deckUserCards = userCards.filter(c => c.deckId === deck.id);
+  const dueCardsCount = deckUserCards.filter(c => c.nextReviewDate <= today).length;
+
+  return (
+    <GlassCard className="relative group overflow-hidden cursor-pointer hover:border-accentPrimary/40 transition-colors">
+      <div className={`absolute top-0 right-0 w-32 h-32 ${deck.color} opacity-5 blur-[60px] rounded-full group-hover:opacity-10 transition-opacity`} />
+      
+      {onDelete && (
+        <button 
+          onClick={(e) => onDelete(e, deck.id)}
+          className="absolute top-4 right-4 text-rose-500/50 hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100 z-10"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      )}
+
+      <div onClick={() => onStart(false)} className="h-full">
+        <div className="flex items-start justify-between mb-4">
+          <div className={`p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] ${deck.color.replace('bg-', 'text-')}`}>
+            <Icon className="w-6 h-6" />
+          </div>
+          {dueCardsCount > 0 && (
+            <span className="bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-bold px-2 py-1 rounded-md">
+              {dueCardsCount} Due
+            </span>
+          )}
+        </div>
+        
+        <h3 className="text-lg font-bold text-white mb-2">{deck.name}</h3>
+        <p className="text-xs text-slate-400 mb-6 line-clamp-2">{deck.description}</p>
+        
+        <div className="flex items-center justify-between mt-auto">
+          <span className="text-[10px] font-mono text-slate-500">{deckUserCards.length} CARDS</span>
+          <button 
+            onClick={(e) => { e.stopPropagation(); onStart(true); }}
+            className="text-[10px] uppercase font-bold text-amber-400 bg-amber-400/10 hover:bg-amber-400/20 px-2 py-1 rounded border border-amber-400/20 flex items-center gap-1"
+          >
+            <Zap className="w-3 h-3" /> Cram Mode
+          </button>
+        </div>
+      </div>
+    </GlassCard>
   );
 };

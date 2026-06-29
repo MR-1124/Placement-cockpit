@@ -176,6 +176,7 @@ export interface AppContextType {
   addFlashcards: (_deckId: string, cards: Flashcard[]) => void;
   deleteFlashcard: (cardId: string) => void;
   updateFlashcard: (cardId: string, updates: Partial<Flashcard>) => void;
+  saveFlashcardSession: (session: FlashcardSession) => void;
 
   saveAtsReport: (report: AtsReport) => void;
 }
@@ -339,6 +340,7 @@ const serializeState = (state: AppState): SerializedProgress => {
     } : undefined,
     flashcards: state.flashcards || [],
     customDecks: state.customDecks || [],
+    flashcardHistory: state.flashcardHistory || [],
     activeRoadmaps: state.activeRoadmaps || [],
     atsReports: state.atsReports || []
   };
@@ -449,6 +451,7 @@ const deserializeState = (serialized: Partial<SerializedProgress>, curriculum: a
     activeInterviewSession: serialized.activeInterviewSession || null,
     flashcards: serialized.flashcards || [],
     customDecks: serialized.customDecks || [],
+    flashcardHistory: serialized.flashcardHistory || [],
     activeRoadmaps: serialized.activeRoadmaps || [],
     atsReports: serialized.atsReports || []
   };
@@ -572,6 +575,7 @@ const getInitialState = (curriculum: any): AppState => ({
   activeInterviewSession: null,
   flashcards: [],
   customDecks: [],
+  flashcardHistory: [],
   activeRoadmaps: [],
   atsReports: []
 });
@@ -2459,6 +2463,13 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     }));
   };
 
+  const saveFlashcardSession = (session: FlashcardSession) => {
+    setState(prev => ({
+      ...prev,
+      flashcardHistory: [session, ...(prev.flashcardHistory || [])]
+    }));
+  };
+
   const importFlashcards = (deck: FlashcardDeck, cards: Flashcard[]) => {
     updateState(prev => {
       const existing = prev.flashcards || [];
@@ -2547,6 +2558,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         addFlashcards,
         deleteFlashcard,
         updateFlashcard,
+        saveFlashcardSession,
 
         saveAtsReport
       }}
