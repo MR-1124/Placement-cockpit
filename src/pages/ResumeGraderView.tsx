@@ -89,19 +89,19 @@ You MUST respond with ONLY a valid JSON object matching this exact structure, wi
       }
 
       const data = await response.json();
-      const rawText = data.choices[0].message.content;
+      let rawText = data.choices[0].message.content;
       
-      let jsonText = rawText;
-      const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-      if (jsonMatch && jsonMatch[1]) {
-        jsonText = jsonMatch[1];
+      // Remove <think> blocks first
+      rawText = rawText.replace(/<think>[\s\S]*?<\/think>/g, '');
+      
+      const startIdx = rawText.indexOf('{');
+      const endIdx = rawText.lastIndexOf('}');
+      
+      if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) {
+        throw new Error("Could not find a valid JSON object in the AI response.");
       }
       
-      const startIdx = jsonText.indexOf('{');
-      const endIdx = jsonText.lastIndexOf('}');
-      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-        jsonText = jsonText.substring(startIdx, endIdx + 1);
-      }
+      const jsonText = rawText.substring(startIdx, endIdx + 1);
 
       try {
         const parsed = JSON.parse(jsonText);
