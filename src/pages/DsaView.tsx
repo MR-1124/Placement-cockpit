@@ -4,6 +4,7 @@ import { useAppState } from "../context/AppStateContext";
 import { GlassCard, ProgressBar } from "../components/Common";
 import {
   Search,
+  BookOpen,
   AlertTriangle,
   Calendar,
   ChevronDown,
@@ -162,7 +163,7 @@ const incrementDsaSubmissions = useAppState(s => s.incrementDsaSubmissions);
           </div>
           <button
             onClick={handleRandomProblem}
-            className="flex items-center gap-2 px-4 py-2 bg-accentPrimary/10 border border-accentPrimary/20 text-accentPrimary hover:bg-accentPrimary hover:text-white rounded-lg text-sm font-bold transition-all shrink-0"
+            className="flex items-center gap-2 px-4 py-2 bg-accentPrimary/10 border border-accentPrimary/30 text-accentPrimary hover:bg-accentPrimary hover:text-black hover:shadow-[0_0_15px_rgba(var(--color-accent-primary),0.4)] rounded-xl text-sm font-bold transition-all shrink-0 active:scale-95 cursor-pointer"
           >
             <Dices className="w-4 h-4" />
             <span>Random Problem</span>
@@ -171,7 +172,7 @@ const incrementDsaSubmissions = useAppState(s => s.incrementDsaSubmissions);
 
       {/* Smart DSA Recommendation Engine (Fix 90) */}
       {recommendedProblem && (
-         <div className="bg-gradient-to-r from-accentPrimary/10 to-transparent border border-accentPrimary/20 p-5 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+         <div className="bg-gradient-to-r from-accentPrimary/10 to-transparent border border-accentPrimary/30 shadow-[0_0_20px_rgba(var(--color-accent-primary),0.1)] p-5 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative overflow-hidden group">
            <div>
              <span className="text-[10px] font-mono text-accentPrimary uppercase font-bold flex items-center gap-1.5 mb-1"><Award className="w-3.5 h-3.5" /> Recommended Next Step</span>
              <h2 className="text-sm font-bold text-white tracking-wide">{recommendedProblem.problem.name}</h2>
@@ -189,7 +190,7 @@ const incrementDsaSubmissions = useAppState(s => s.incrementDsaSubmissions);
                   spaceComplexity: recommendedProblem.problem.spaceComplexity || ""
                 });
              }}
-             className="px-5 py-2.5 bg-accentPrimary hover:bg-accentPrimary/90 text-white rounded-lg text-xs font-bold transition-all shadow-[0_0_15px_rgba(var(--color-accentPrimary),0.4)] flex items-center gap-2 shrink-0 cursor-pointer w-full sm:w-auto justify-center"
+             className="px-5 py-2.5 bg-accentPrimary hover:bg-accentPrimary/90 text-black rounded-xl text-xs font-bold transition-all shadow-[0_0_15px_rgba(var(--color-accent-primary),0.4)] hover:scale-[1.02] active:scale-95 flex items-center gap-2 shrink-0 cursor-pointer w-full sm:w-auto justify-center relative z-10"
            >
              <span>Solve Now</span>
            </button>
@@ -205,7 +206,7 @@ const incrementDsaSubmissions = useAppState(s => s.incrementDsaSubmissions);
             placeholder="Search problems, Leetcode titles..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full bg-white/[0.02] border border-white/[0.06] rounded-xl pl-9 pr-4 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accentPrimary"
+            className="w-full bg-black/60 border border-white/[0.08] rounded-xl pl-9 pr-4 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accentPrimary transition-colors shadow-inner"
           />
         </div>
 
@@ -216,8 +217,8 @@ const incrementDsaSubmissions = useAppState(s => s.incrementDsaSubmissions);
               onClick={() => setDifficultyFilter(diff)}
               className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 difficultyFilter === diff
-                  ? "bg-white/[0.06] text-white"
-                  : "text-slate-500 hover:text-slate-300"
+                  ? "bg-white/[0.08] text-white shadow-sm border border-white/[0.04]"
+                  : "text-slate-500 hover:text-slate-300 hover:bg-white/[0.02] border border-transparent"
               }`}
             >
               {diff}
@@ -263,9 +264,12 @@ const incrementDsaSubmissions = useAppState(s => s.incrementDsaSubmissions);
                 onClick={() =>
                   setExpandedTopics(prev => ({ ...prev, [topic.id]: !prev[topic.id] }))
                 }
-                className="p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 cursor-pointer hover:bg-white/[0.01] transition-all select-none"
+                className="p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 cursor-pointer hover:bg-white/[0.02] transition-all select-none relative group/header"
               >
-                <div className="space-y-1 flex-1">
+                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover/header:opacity-10 transition-opacity pointer-events-none">
+                  <BookOpen className="w-24 h-24 text-accentPrimary" />
+                </div>
+                <div className="space-y-1 flex-1 relative z-10">
                   <div className="flex items-center gap-2">
                     <h3 className="text-base font-bold text-white leading-none">{topic.name}</h3>
                     <span className="text-[10px] font-mono text-slate-500">
@@ -275,7 +279,7 @@ const incrementDsaSubmissions = useAppState(s => s.incrementDsaSubmissions);
                   <p className="text-xs text-slate-400 max-w-xl leading-normal">{topic.description}</p>
                 </div>
 
-                <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+                <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end relative z-10">
                   {/* Mastery Dropdown inside card */}
                   <div
                     onClick={e => e.stopPropagation()}
@@ -344,7 +348,7 @@ const incrementDsaSubmissions = useAppState(s => s.incrementDsaSubmissions);
                           return (
                             <tr
                               key={problem.id}
-                              className={`text-xs hover:bg-white/[0.01] transition-colors ${
+                              className={`text-xs hover:bg-white/[0.03] transition-colors cursor-default ${
                                 problem.isCompleted ? "text-slate-400 bg-white/[0.005]" : "text-slate-200"
                               }`}
                             >
@@ -523,7 +527,7 @@ const incrementDsaSubmissions = useAppState(s => s.incrementDsaSubmissions);
 
       {/* Local Notes Editing Modal Overlay */}
       {activeEditProblem && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
           <GlassCard className="w-full max-w-lg space-y-4 border border-white/[0.08] shadow-2xl bg-darkCard/95 p-6">
             <div className="flex justify-between items-center border-b border-white/[0.06] pb-3">
               <div>
@@ -666,7 +670,7 @@ const incrementDsaSubmissions = useAppState(s => s.incrementDsaSubmissions);
                   setTimerRunning(false);
                   setActiveEditProblem(null);
                 }}
-                className="bg-accentPrimary hover:bg-accentPrimary/90 text-white px-4 py-2 rounded-lg font-bold transition-all cursor-pointer"
+                className="bg-accentPrimary hover:bg-accentPrimary/90 text-black px-4 py-2 rounded-xl font-bold transition-all cursor-pointer shadow-[0_0_15px_rgba(var(--color-accent-primary),0.3)] hover:scale-[1.02] active:scale-95"
               >
                 Save Notes
               </button>

@@ -173,7 +173,7 @@ const confirmAction = useAppState(s => s.confirmAction);
             placeholder="Search weeks, target goals, topics..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full bg-white/[0.02] border border-white/[0.06] rounded-xl pl-9 pr-4 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accentPrimary"
+            className="w-full bg-black/60 shadow-inner border border-white/[0.08] rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-accentPrimary transition-colors"
           />
         </div>
 
@@ -185,8 +185,8 @@ const confirmAction = useAppState(s => s.confirmAction);
               onClick={() => setActivePhaseFilter(phase)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                 activePhaseFilter === phase
-                  ? "bg-white/[0.06] text-white"
-                  : "text-slate-500 hover:text-slate-300"
+                  ? "bg-white/[0.08] text-white shadow-sm border border-white/[0.04]"
+                  : "text-slate-500 hover:text-slate-300 hover:bg-white/[0.02] border border-transparent"
               }`}
             >
               {phase}
@@ -388,7 +388,7 @@ const confirmAction = useAppState(s => s.confirmAction);
                                     <div
                                       key={problem.id}
                                       onClick={() => toggleDsaProblem(topic.id, problem.id)}
-                                      className={`flex justify-between items-center p-2.5 rounded-lg border transition-all cursor-pointer select-none ${
+                                      className={`flex justify-between items-center p-2.5 rounded-lg border transition-all cursor-pointer hover:scale-[1.01] select-none ${
                                         problem.isCompleted
                                           ? "bg-violet-500/5 border-violet-500/20 text-white"
                                           : "bg-white/[0.01] border-white/[0.04] text-slate-400 hover:bg-white/[0.02]"
@@ -426,7 +426,7 @@ const confirmAction = useAppState(s => s.confirmAction);
                                   <div
                                     key={problem.id}
                                     onClick={() => toggleDsaProblem(topic.id, problem.id)}
-                                    className={`flex justify-between items-center p-2.5 rounded-lg border transition-all cursor-pointer select-none ${
+                                    className={`flex justify-between items-center p-2.5 rounded-lg border transition-all cursor-pointer hover:scale-[1.01] select-none ${
                                       problem.isCompleted
                                         ? "bg-violet-500/5 border-violet-500/20 text-white"
                                         : "bg-white/[0.01] border-white/[0.04] text-slate-400 hover:bg-white/[0.02]"
@@ -537,7 +537,7 @@ const confirmAction = useAppState(s => s.confirmAction);
                         className={`flex items-center gap-1.5 text-xs px-3.5 py-1.8 rounded-lg font-bold border transition-all ${
                           isChecked
                             ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                            : "bg-accentPrimary text-white border-accentPrimary hover:bg-accentPrimary/90"
+                            : "bg-accentPrimary text-black font-bold shadow-[0_0_15px_rgba(var(--color-accent-primary),0.4)] hover:scale-[1.02] active:scale-95 border-transparent"
                         }`}
                       >
                         <CheckSquare className="w-3.5 h-3.5" />

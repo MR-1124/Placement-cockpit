@@ -113,7 +113,7 @@ const confirmAction = useAppState(s => s.confirmAction);
               placeholder="Search plans by name or focus tags..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-900/50 border border-white/[0.08] focus:border-accentPrimary rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-all"
+              className="w-full bg-black/60 shadow-inner border border-white/[0.08] focus:border-accentPrimary rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-all"
             />
           </div>
 
@@ -122,7 +122,7 @@ const confirmAction = useAppState(s => s.confirmAction);
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value as any)}
-              className="w-full bg-slate-900/50 border border-white/[0.08] focus:border-accentPrimary rounded-xl px-3 py-2.5 text-xs text-slate-300 outline-none transition-all"
+              className="w-full bg-black/60 shadow-inner border border-white/[0.08] focus:border-accentPrimary rounded-xl px-3 py-2.5 text-xs text-slate-300 outline-none transition-all cursor-pointer"
             >
               <option value="All">All Categories</option>
               <option value="Mastery">Mastery (Full Term)</option>
@@ -136,7 +136,7 @@ const confirmAction = useAppState(s => s.confirmAction);
             <select
               value={difficultyFilter}
               onChange={(e) => setDifficultyFilter(e.target.value as any)}
-              className="w-full bg-slate-900/50 border border-white/[0.08] focus:border-accentPrimary rounded-xl px-3 py-2.5 text-xs text-slate-300 outline-none transition-all"
+              className="w-full bg-black/60 shadow-inner border border-white/[0.08] focus:border-accentPrimary rounded-xl px-3 py-2.5 text-xs text-slate-300 outline-none transition-all cursor-pointer"
             >
               <option value="All">All Difficulties</option>
               <option value="Easy">Easy</option>
@@ -155,7 +155,7 @@ const confirmAction = useAppState(s => s.confirmAction);
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="w-full bg-slate-900/50 border border-white/[0.08] focus:border-accentPrimary rounded-xl pl-9 pr-3 py-2.5 text-xs text-slate-300 outline-none transition-all"
+                className="w-full bg-black/60 shadow-inner border border-white/[0.08] focus:border-accentPrimary rounded-xl pl-9 pr-3 py-2.5 text-xs text-slate-300 outline-none transition-all cursor-pointer"
               >
                 <option value="default">Sort: Default</option>
                 <option value="shortest">Sort: Shortest Duration</option>
@@ -310,9 +310,9 @@ const confirmAction = useAppState(s => s.confirmAction);
                       {!isPrimary && (
                         <button
                           onClick={() => setPrimaryPlan(plan.id)}
-                          className="w-full py-2 bg-accentPrimary hover:bg-accentPrimary/90 active:scale-[0.98] text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-accentPrimary/20 cursor-pointer"
+                          className="w-full py-2 bg-accentPrimary hover:bg-accentPrimary/90 active:scale-[0.98] hover:scale-[1.02] text-black font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-[0_0_15px_rgba(var(--color-accent-primary),0.4)] cursor-pointer"
                         >
-                          <Star className="w-3.5 h-3.5 fill-white" /> Set As Primary
+                          <Star className="w-3.5 h-3.5 fill-black" /> Set As Primary
                         </button>
                       )}
                       
@@ -356,7 +356,7 @@ const confirmAction = useAppState(s => s.confirmAction);
                     /* Not following yet */
                     <button
                       onClick={() => followPlan(plan.id)}
-                      className="w-full py-2 bg-slate-900 border border-white/[0.08] hover:bg-slate-800 active:scale-[0.98] text-slate-200 font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                      className="w-full py-2 bg-slate-900 border border-white/[0.08] hover:bg-slate-800 active:scale-[0.98] hover:scale-[1.02] text-slate-200 font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
                     >
                       <Plus className="w-3.5 h-3.5" /> Follow Plan
                     </button>

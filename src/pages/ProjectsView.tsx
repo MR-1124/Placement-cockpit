@@ -185,7 +185,7 @@ export const ProjectsView: React.FC = () => {
         
         <button
           onClick={() => setShowAddModal(true)}
-          className="bg-accentPrimary hover:bg-accentPrimary/90 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-2 shadow-md transition-all"
+          className="bg-accentPrimary hover:bg-accentPrimary/90 text-black font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-2 shadow-[0_0_15px_rgba(var(--color-accent-primary),0.4)] hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
         >
           <Plus className="w-4 h-4" /> Add Project
         </button>
@@ -199,7 +199,7 @@ export const ProjectsView: React.FC = () => {
           placeholder="Search projects by name, technologies (e.g. Redis, React)..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          className="w-full bg-white/[0.02] border border-white/[0.06] rounded-xl pl-9 pr-4 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accentPrimary"
+          className="w-full bg-black/60 shadow-inner border border-white/[0.08] rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-accentPrimary transition-colors"
         />
       </div>
 
@@ -234,9 +234,12 @@ export const ProjectsView: React.FC = () => {
                 {/* Collapsed Header */}
                 <div
                   onClick={() => toggleExpand(project.id)}
-                  className="p-5 flex flex-col md:flex-row justify-between md:items-center gap-4 cursor-pointer hover:bg-white/[0.01] transition-all select-none"
+                  className="p-5 flex flex-col md:flex-row justify-between md:items-center gap-4 cursor-pointer hover:bg-white/[0.02] transition-all select-none relative group/phead"
                 >
-                  <div className="space-y-2 flex-1">
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover/phead:opacity-10 transition-opacity pointer-events-none">
+                    <Rocket className="w-24 h-24 text-accentPrimary" />
+                  </div>
+                  <div className="space-y-2 flex-1 relative z-10">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className={`text-[9px] font-mono border px-2 py-0.5 rounded uppercase tracking-wider ${getStatusColor(project.status)}`}>
                         {project.status}
@@ -259,7 +262,7 @@ export const ProjectsView: React.FC = () => {
                     {project.links.github && <GithubStats url={project.links.github} />}
                   </div>
 
-                  <div className="flex items-center gap-5 w-full md:w-auto justify-between md:justify-end">
+                  <div className="flex items-center gap-5 w-full md:w-auto justify-between md:justify-end relative z-10">
                     {/* Links */}
                     <div className="flex gap-2" onClick={e => e.stopPropagation()}>
                       {project.links.github && (
@@ -424,7 +427,7 @@ export const ProjectsView: React.FC = () => {
                               })
                             }
                             placeholder="e.g. High API latency and database connection bottlenecks under heavy reading pressure..."
-                            className="w-full h-28 bg-white/[0.01] border border-white/[0.04] rounded-lg p-2.5 text-xs text-slate-300 placeholder-slate-800 focus:outline-none focus:border-accentPrimary resize-none"
+                            className="w-full h-28 bg-black/40 shadow-inner border border-white/[0.08] rounded-lg p-2.5 text-xs text-slate-200 placeholder-slate-700 focus:outline-none focus:border-accentPrimary transition-colors resize-none"
                           />
                         </div>
 
@@ -446,7 +449,7 @@ export const ProjectsView: React.FC = () => {
                               })
                             }
                             placeholder="e.g. Intercept high-frequency requests, validate payload types via Zod, and cache key hits..."
-                            className="w-full h-28 bg-white/[0.01] border border-white/[0.04] rounded-lg p-2.5 text-xs text-slate-300 placeholder-slate-800 focus:outline-none focus:border-accentPrimary resize-none"
+                            className="w-full h-28 bg-black/40 shadow-inner border border-white/[0.08] rounded-lg p-2.5 text-xs text-slate-200 placeholder-slate-700 focus:outline-none focus:border-accentPrimary transition-colors resize-none"
                           />
                         </div>
 
@@ -468,7 +471,7 @@ export const ProjectsView: React.FC = () => {
                               })
                             }
                             placeholder="e.g. Implemented Redis caching layers on Express routers, setup LRU eviction policies, wrote schema files..."
-                            className="w-full h-28 bg-white/[0.01] border border-white/[0.04] rounded-lg p-2.5 text-xs text-slate-300 placeholder-slate-800 focus:outline-none focus:border-accentPrimary resize-none"
+                            className="w-full h-28 bg-black/40 shadow-inner border border-white/[0.08] rounded-lg p-2.5 text-xs text-slate-200 placeholder-slate-700 focus:outline-none focus:border-accentPrimary transition-colors resize-none"
                           />
                         </div>
 
@@ -490,7 +493,7 @@ export const ProjectsView: React.FC = () => {
                               })
                             }
                             placeholder="e.g. Reduced query response latency from 180ms to 12ms, boosting client API load capacities by 300%..."
-                            className="w-full h-28 bg-white/[0.01] border border-white/[0.04] rounded-lg p-2.5 text-xs text-slate-300 placeholder-slate-800 focus:outline-none focus:border-accentPrimary resize-none"
+                            className="w-full h-28 bg-black/40 shadow-inner border border-white/[0.08] rounded-lg p-2.5 text-xs text-slate-200 placeholder-slate-700 focus:outline-none focus:border-accentPrimary transition-colors resize-none"
                           />
                         </div>
                       </div>
@@ -516,7 +519,7 @@ export const ProjectsView: React.FC = () => {
 
       {/* Add Project Overlay Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
           <GlassCard className="w-full max-w-lg space-y-4 border border-white/[0.08] shadow-2xl bg-darkCard/95 my-8">
             <div className="flex justify-between items-center border-b border-white/[0.06] pb-3">
               <div>
@@ -542,7 +545,7 @@ export const ProjectsView: React.FC = () => {
                   required
                   value={name}
                   onChange={e => setName(e.target.value)}
-                  className="w-full bg-white/[0.02] border border-white/[0.06] rounded-lg px-3 py-2 text-slate-200 outline-none focus:border-accentPrimary"
+                  className="w-full bg-black/40 shadow-inner border border-white/[0.08] rounded-lg px-3 py-2 text-white outline-none focus:border-accentPrimary transition-colors"
                 />
               </div>
 
@@ -588,7 +591,7 @@ export const ProjectsView: React.FC = () => {
                     placeholder="React, Redis, PostgreSQL"
                     value={techStackInput}
                     onChange={e => setTechStackInput(e.target.value)}
-                    className="w-full bg-white/[0.02] border border-white/[0.06] rounded-lg px-3 py-2 text-slate-200 outline-none focus:border-accentPrimary"
+                    className="w-full bg-black/40 shadow-inner border border-white/[0.08] rounded-lg px-3 py-2 text-white outline-none focus:border-accentPrimary transition-colors"
                   />
                 </div>
 
@@ -617,7 +620,7 @@ export const ProjectsView: React.FC = () => {
                   placeholder="A realtime socket network supporting client cache hits..."
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
-                  className="w-full bg-white/[0.02] border border-white/[0.06] rounded-lg px-3 py-2 text-slate-200 outline-none focus:border-accentPrimary"
+                  className="w-full bg-black/40 shadow-inner border border-white/[0.08] rounded-lg px-3 py-2 text-white outline-none focus:border-accentPrimary transition-colors"
                 />
               </div>
 
@@ -630,7 +633,7 @@ export const ProjectsView: React.FC = () => {
                     placeholder="https://github.com/..."
                     value={githubLink}
                     onChange={e => setGithubLink(e.target.value)}
-                    className="w-full bg-white/[0.02] border border-white/[0.06] rounded-lg px-3 py-2 text-slate-200 outline-none focus:border-accentPrimary"
+                    className="w-full bg-black/40 shadow-inner border border-white/[0.08] rounded-lg px-3 py-2 text-white outline-none focus:border-accentPrimary transition-colors"
                   />
                 </div>
 
@@ -641,7 +644,7 @@ export const ProjectsView: React.FC = () => {
                     placeholder="https://chat.render.com"
                     value={liveLink}
                     onChange={e => setLiveLink(e.target.value)}
-                    className="w-full bg-white/[0.02] border border-white/[0.06] rounded-lg px-3 py-2 text-slate-200 outline-none focus:border-accentPrimary"
+                    className="w-full bg-black/40 shadow-inner border border-white/[0.08] rounded-lg px-3 py-2 text-white outline-none focus:border-accentPrimary transition-colors"
                   />
                 </div>
               </div>
@@ -657,7 +660,7 @@ export const ProjectsView: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="bg-accentPrimary hover:bg-accentPrimary/90 text-white font-bold px-4 py-2 rounded-lg transition-all"
+                  className="bg-accentPrimary hover:bg-accentPrimary/90 text-black font-bold px-4 py-2 rounded-xl transition-all shadow-[0_0_15px_rgba(var(--color-accent-primary),0.3)] hover:scale-[1.02] active:scale-95"
                 >
                   Save Project Blueprint
                 </button>
