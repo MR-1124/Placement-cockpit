@@ -5,9 +5,9 @@ import { MessageCircleHeart, Info } from 'lucide-react';
 
 export const FeedbackView: React.FC = () => {
   // Replace this with the actual Typeform link provided by the user
-  const TYPEFORM_URL = import.meta.env.VITE_TYPEFORM_URL || "https://form.typeform.com/to/YOUR_FORM_ID";
+  const TYPEFORM_URL = import.meta.env.VITE_TYPEFORM_URL || "https://form.typeform.com/to/psyig6s8";
   
-  const isPlaceholder = TYPEFORM_URL.includes("YOUR_FORM_ID");
+  const isPlaceholder = false;
 
   return (
     <motion.div
