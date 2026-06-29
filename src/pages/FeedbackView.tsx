@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { GlassCard } from '../components/Common';
 import { MessageCircleHeart, Info } from 'lucide-react';
+import { Widget } from '@typeform/embed-react';
 
 export const FeedbackView: React.FC = () => {
   // Replace this with the actual Typeform link provided by the user
@@ -38,14 +39,10 @@ export const FeedbackView: React.FC = () => {
       )}
 
       <GlassCard className="flex-1 w-full relative overflow-hidden rounded-[2rem] border border-white/5 p-0 bg-[#060608]/50">
-        <iframe
-          src={TYPEFORM_URL}
-          width="100%"
-          height="100%"
-          frameBorder="0"
-          className="absolute inset-0 w-full h-full rounded-[2rem]"
-          title="Placement Cockpit Feedback"
-          allow="camera; microphone; autoplay; encrypted-media;"
+        <Widget 
+          id="psyig6s8" 
+          style={{ width: '100%', height: '100%' }} 
+          className="my-form" 
         />
       </GlassCard>
     </motion.div>

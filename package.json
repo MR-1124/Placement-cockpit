@@ -14,6 +14,7 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
+    "@typeform/embed-react": "^5.0.0",
     "canvas-confetti": "^1.9.4",
     "dompurify": "^3.4.11",
     "firebase": "^12.14.0",
