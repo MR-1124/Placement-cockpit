@@ -16,7 +16,7 @@ const BadgesView = React.lazy(() => import("./pages/BadgesView").then(module => 
 const FlashcardsView = React.lazy(() => import("./pages/FlashcardsView").then(module => ({ default: module.FlashcardsView })));
 const CompanyRoadmapsView = React.lazy(() => import("./pages/CompanyRoadmapsView").then(module => ({ default: module.CompanyRoadmapsView })));
 const ResumeGraderView = React.lazy(() => import("./pages/ResumeGraderView").then(module => ({ default: module.ResumeGraderView })));
-
+const FeedbackView = React.lazy(() => import("./pages/FeedbackView").then(module => ({ default: module.FeedbackView })));
 
 import { DashboardView } from "./pages/DashboardView";
 import { RoadmapView } from "./pages/RoadmapView";
@@ -56,7 +56,8 @@ import {
   Brain,
   FileText,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  MessageCircleHeart
 } from "lucide-react";
 
 
@@ -403,6 +404,7 @@ const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
     { id: "revision", name: "Revision Plan", icon: CalendarRange },
     { id: "notes", name: "Notebook", icon: StickyNote },
     { id: "badges", name: "Badges", icon: Trophy },
+    { id: "feedback", name: "Feedback", icon: MessageCircleHeart },
     { id: "profile", name: "My Profile", icon: User },
     { id: "settings", name: "Settings", icon: Settings }
   ];
@@ -447,6 +449,8 @@ const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
         return <BadgesView />;
       case "profile":
         return <ProfileView />;
+      case "feedback":
+        return <FeedbackView />;
       case "settings":
         return <SettingsView />;
       default:
