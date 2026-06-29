@@ -98,6 +98,7 @@ export interface Note {
 export interface AppSettings {
   accentColor: "violet" | "emerald" | "amber" | "rose" | "blue";
   compactUi: boolean;
+  sidebarCollapsed?: boolean;
   reminderFrequency: "daily" | "weekly";
   showSections: Record<string, boolean>;
   nvidiaApiKey: string;

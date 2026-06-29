@@ -55,6 +55,8 @@ import {
   Briefcase,
   Brain,
   FileText
+  PanelLeftClose,
+  PanelLeftOpen
 } from "lucide-react";
 
 
@@ -468,33 +470,33 @@ const confirmAction = useAppState(s => s.confirmAction);
       <div className="absolute inset-0 bg-dot-grid pointer-events-none z-0" />
 
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col w-64 bg-darkCard/80 border-r border-white/[0.06] backdrop-blur-md sticky top-0 h-screen z-20 justify-between select-none">
+      <aside className={`hidden lg:flex flex-col bg-darkCard/80 border-r border-white/[0.06] backdrop-blur-md sticky top-0 h-screen z-20 justify-between select-none transition-all duration-300 ${collapsed ? "w-20" : "w-64"}`}>
         
         {/* Top Header Logo */}
-        <div className="p-6 border-b border-white/[0.06] flex items-center justify-between">
+        <div className={`p-6 border-b border-white/[0.06] flex items-center ${collapsed ? "justify-center flex-col gap-4" : "justify-between"}`}>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-accentPrimary flex items-center justify-center font-bold text-white text-xs shadow-md">
+            <div className="w-6 h-6 rounded-md bg-accentPrimary flex items-center justify-center font-bold text-white text-xs shadow-md shrink-0">
               P
             </div>
-            <div>
-              <span className="font-extrabold text-white text-sm tracking-tight block">Placement Cockpit</span>
-              <span className="text-[9px] font-mono text-slate-500 uppercase tracking-widest leading-none">Personal OS</span>
-            </div>
+            {!collapsed && (
+              <div className="overflow-hidden">
+                <span className="font-extrabold text-white text-sm tracking-tight block truncate">Placement Cockpit</span>
+                <span className="text-[9px] font-mono text-slate-500 uppercase tracking-widest leading-none">Personal OS</span>
+              </div>
+            )}
           </div>
-          {state.user && (
-            <button
-              onClick={() => setActiveTab("profile")}
-              className="w-7 h-7 rounded-full border border-white/[0.08] overflow-hidden hover:border-accentPrimary transition-all cursor-pointer relative group"
-              title="View Profile"
-              aria-label="View Profile"
-            >
-              <img src={state.user.avatar} alt="User avatar" className="w-full h-full object-cover" />
-            </button>
-          )}
+          
+          <button 
+            onClick={toggleSidebar} 
+            className="text-slate-500 hover:text-white transition-colors"
+            title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+          >
+            {collapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+          </button>
         </div>
 
         {/* Sidebar Nav Items */}
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+        <nav className={`flex-1 py-6 space-y-1 overflow-y-auto overflow-x-hidden ${collapsed ? "px-2" : "px-4"}`}>
           {navigationItems.map(item => {
             const Icon = item.icon;
             const active = activeTab === item.id;
@@ -502,16 +504,27 @@ const confirmAction = useAppState(s => s.confirmAction);
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold tracking-wide transition-all border ${
+                className={`group relative w-full flex items-center ${collapsed ? "justify-center" : "gap-3"} px-3 py-2.5 rounded-lg text-xs font-semibold tracking-wide transition-all border ${
                   active
                     ? "bg-accentPrimary/5 border-accentPrimary/20 text-white"
                     : "bg-transparent border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/[0.01]"
                 }`}
               >
-                <Icon className={`w-4 h-4 ${active ? "text-accentPrimary" : "text-slate-500"}`} />
-                <span>{item.name}</span>
-                {/* Active Indicator LED */}
-                {active && (
+                {collapsed && active && (
+                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r bg-accentPrimary shadow-[0_0_8px_var(--accent-color)]" />
+                )}
+                <Icon className={`w-4 h-4 shrink-0 ${active ? "text-accentPrimary" : "text-slate-500"}`} />
+                {!collapsed && <span className="truncate">{item.name}</span>}
+                
+                {/* Tooltip for Collapsed Mode */}
+                {collapsed && (
+                  <div className="absolute left-full ml-4 px-2 py-1 bg-darkCard border border-white/10 rounded text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 transition-opacity">
+                    {item.name}
+                  </div>
+                )}
+
+                {/* Active Indicator LED (Expanded Mode) */}
+                {!collapsed && active && (
                   <div className="w-1 h-1 rounded-full bg-accentPrimary ml-auto shadow-[0_0_8px_var(--accent-color)]" />
                 )}
               </button>
