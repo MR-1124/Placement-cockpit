@@ -27,6 +27,7 @@ import type {
   DailyChallenge,
   Flashcard,
   FlashcardDeck,
+  FlashcardSession,
   CompanyRoadmap,
   AtsReport
 } from "../types/AppTypes";
