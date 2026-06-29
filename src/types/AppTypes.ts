@@ -218,6 +218,18 @@ export interface Flashcard {
   nextReviewDate: string; // YYYY-MM-DD
 }
 
+export interface FlashcardSession {
+  id: string;
+  deckId: string;
+  deckName: string;
+  date: string;
+  cardsReviewed: number;
+  score: number;
+  hardCount: number;
+  goodCount: number;
+  easyCount: number;
+}
+
 export interface FlashcardDeck {
   id: string;
   name: string;

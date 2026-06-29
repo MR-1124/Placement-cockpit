@@ -33,7 +33,7 @@ export const FlashcardsView: React.FC = () => {
   
   // Session Stats for History
   const [sessionStats, setSessionStats] = useState({ hard: 0, good: 0, easy: 0 });
-  const [lastGrade, setLastGrade] = useState<{ card: Flashcard, oldStats: { hard: 0, good: 0, easy: 0 }, index: number } | null>(null);
+  const [lastGrade, setLastGrade] = useState<{ card: Flashcard, oldStats: { hard: number, good: number, easy: number }, index: number } | null>(null);
 
   const [activeTab, setActiveTab] = useState<"decks" | "history">("decks");
 

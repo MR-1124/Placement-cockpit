@@ -91,6 +91,7 @@ interface AppState {
   activeInterviewSession?: ActiveInterviewSession | null;
   flashcards?: Flashcard[];
   customDecks?: FlashcardDeck[];
+  flashcardHistory?: FlashcardSession[];
   activeRoadmaps?: CompanyRoadmap[];
   atsReports?: AtsReport[];
 }
@@ -246,6 +247,7 @@ interface SerializedProgress {
   activeInterviewSession?: ActiveInterviewSession | null;
   flashcards?: Flashcard[];
   customDecks?: FlashcardDeck[];
+  flashcardHistory?: FlashcardSession[];
   activeRoadmaps?: CompanyRoadmap[];
   atsReports?: AtsReport[];
 }
