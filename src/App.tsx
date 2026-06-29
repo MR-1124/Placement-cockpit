@@ -54,7 +54,7 @@ import {
   Speech,
   Briefcase,
   Brain,
-  FileText
+  FileText,
   PanelLeftClose,
   PanelLeftOpen
 } from "lucide-react";
