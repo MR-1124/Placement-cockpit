@@ -16,12 +16,25 @@ import {
   Loader2,
   Lock,
   Link2,
-  Github,
   Code2,
   Cpu,
   ChevronDown,
   ShieldCheck
 } from "lucide-react";
+
+
+const GithubIcon: React.FC<{className?: string}> = ({ className }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    width="24" height="24" 
+    viewBox="0 0 24 24" 
+    fill="none" stroke="currentColor" strokeWidth="2" 
+    strokeLinecap="round" strokeLinejoin="round" 
+    className={className}
+  >
+    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.2c3-.3 6-1.5 6-6.5a5.4 5.4 0 0 0-1.5-3.8 5.3 5.3 0 0 0-.1-3.7s-1.2-.4-3.9 1.4a13.3 13.3 0 0 0-7 0C6.2 1.5 5 1.9 5 1.9a5.3 5.3 0 0 0-.1 3.7 5.4 5.4 0 0 0-1.5 3.8c0 5 3 6.2 6 6.5a4.8 4.8 0 0 0-1 3.2v4"></path>
+  </svg>
+);
 
 export const SettingsView: React.FC = () => {
   const { state, updateSettings, resetAllData, seedMockData, confirmAction, setSessionNvidiaKey } = useAppState();
@@ -468,10 +481,10 @@ export const SettingsView: React.FC = () => {
               {/* GitHub */}
               <div className="p-4 bg-black/40 border border-white/[0.06] rounded-2xl relative overflow-hidden group hover:border-white/[0.1] transition-colors">
                 <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
-                  <Github className="w-24 h-24" />
+                  <GithubIcon className="w-24 h-24" />
                 </div>
                 <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-3 flex items-center gap-2">
-                  <Github className="w-3.5 h-3.5" /> GitHub Profile
+                  <GithubIcon className="w-3.5 h-3.5" /> GitHub Profile
                 </label>
                 <div className="space-y-3 relative z-10">
                   <div className="relative">
