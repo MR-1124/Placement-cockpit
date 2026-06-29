@@ -354,14 +354,14 @@ Example format:
               </div>
 
               {/* Flashcard */}
-              <div className="perspective-1000 min-h-[400px] w-full cursor-pointer" onClick={() => !isFlipped && setIsFlipped(true)}>
+              <div className="perspective-1000 h-[400px] md:h-[500px] w-full cursor-pointer" onClick={() => !isFlipped && setIsFlipped(true)}>
                 <motion.div
                   className="w-full h-full relative preserve-3d"
                   animate={{ rotateX: isFlipped ? 180 : 0 }}
                   transition={{ duration: 0.4, type: "spring", stiffness: 200, damping: 20 }}
                 >
                   {/* Front */}
-                  <div className="absolute inset-0 backface-hidden bg-black/40 border border-white/[0.08] rounded-2xl flex flex-col items-center justify-center p-8 text-center shadow-lg">
+                  <div className="absolute inset-0 backface-hidden bg-darkCard border border-white/[0.08] rounded-2xl flex flex-col items-center justify-center p-8 text-center shadow-lg">
                     <span className="text-[10px] uppercase font-mono text-slate-500 absolute top-6">Question</span>
                     <h3 className="text-2xl font-medium text-slate-200">{reviewQueue[currentCardIndex].question}</h3>
                     {!isFlipped && (
@@ -373,7 +373,7 @@ Example format:
 
                   {/* Back */}
                   <div 
-                    className="absolute inset-0 backface-hidden bg-black/40 border border-accentPrimary/30 rounded-2xl p-8 shadow-[0_0_30px_rgba(var(--accent-rgb),0.1)] flex flex-col"
+                    className="absolute inset-0 backface-hidden bg-darkCard border border-accentPrimary/30 rounded-2xl p-8 shadow-[0_0_30px_rgba(var(--accent-rgb),0.1)] flex flex-col"
                     style={{ transform: "rotateX(180deg)" }}
                   >
                     <span className="text-[10px] uppercase font-mono text-accentPrimary mb-4 block text-center">Answer</span>
