@@ -233,7 +233,7 @@ const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
             model: state.settings.nvidiaModelName || "meta/llama-3.1-70b-instruct",
             messages: apiMessages,
             temperature: 0.2,
-            max_tokens: 1024,
+            max_tokens: 4096,
             stream: useStream
           }),
           signal: controller.signal
@@ -259,7 +259,7 @@ const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
             model: state.settings.nvidiaModelName || "meta/llama-3.1-70b-instruct",
             messages: apiMessages,
             temperature: 0.2,
-            max_tokens: 1024,
+            max_tokens: 4096,
             stream: useStream
           }),
           signal: controller.signal

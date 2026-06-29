@@ -25,7 +25,7 @@ export interface NvidiaFetchOptions {
   messages: NvidiaMessage[];
   /** @default 0.4 */
   temperature?: number;
-  /** @default 1000 */
+  /** @default 4096 */
   maxTokens?: number;
   /** When true the response body is an SSE text/event-stream. @default false */
   stream?: boolean;
@@ -48,7 +48,7 @@ export async function nvidiaFetch(opts: NvidiaFetchOptions): Promise<Response> {
     modelName,
     messages,
     temperature = 0.4,
-    maxTokens = 1000,
+    maxTokens = 4096,
     stream = false,
     signal,
   } = opts;
