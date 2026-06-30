@@ -1,0 +1,354 @@
+{
+  "id": "2-month-readiness",
+  "title": "2 Month Placement Readiness Plan",
+  "duration": 8,
+  "durationType": "Weeks",
+  "description": "Become interview ready quickly with a structured 8-week core path focusing on key concepts.",
+  "difficulty": "Hard",
+  "tags": [
+    "DSA",
+    "CS Fundamentals",
+    "Projects",
+    "Mock Interviews"
+  ],
+  "estimatedHoursPerDay": "4\u20136 hours",
+  "category": "Placement",
+  "recommendedFor": [
+    "Final year students",
+    "Immediate interview readiness"
+  ],
+  "segments": [
+    {
+      "id": "week-1",
+      "title": "Week 1: Array Fundamentals & Layouts",
+      "phase": "Foundation",
+      "focus": "Basic Array search/frequency counting + CSS & layout tools",
+      "goals": [
+        "Solve core Array-based problems",
+        "Master CSS Grid & Flexbox properties"
+      ],
+      "estimatedTime": "15 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "arrays-hashing"
+          ],
+          "customContent": "Key Problems: dsa-1, dsa-2, dsa-3, dsa-3b, dsa-arrays-hashing-11, dsa-4, dsa-5, dsa-6, dsa-7, dsa-8, dsa-9, dsa-10, dsa-arrays-hashing-12, dsa-11, dsa-12"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-1",
+            "skill-2"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Design system dashboard mockups"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "LeetCode arrays basic concepts"
+        }
+      ]
+    },
+    {
+      "id": "week-2",
+      "title": "Week 2: Pointers, Sliding Window & React State",
+      "phase": "Foundation",
+      "focus": "Two Pointers, Sliding Window + React Hooks",
+      "goals": [
+        "Master Two Pointers technique",
+        "Build responsive layouts in React"
+      ],
+      "estimatedTime": "18 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "two-pointers",
+            "sliding-window"
+          ],
+          "customContent": "Key Problems: dsa-13, dsa-14, dsa-15, dsa-16, dsa-two-pointers-11, dsa-two-pointers-12, dsa-17, dsa-18, dsa-19, dsa-20, dsa-21, dsa-sliding-window-10, dsa-sliding-window-11, dsa-sliding-window-12, dsa-sliding-window-13"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-3",
+            "skill-4"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "React-based task manager"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Array searching & indexing"
+        }
+      ]
+    },
+    {
+      "id": "week-3",
+      "title": "Week 3: Linked Lists, Stack & Web APIs",
+      "phase": "Core Mastery",
+      "focus": "Linear structures & DOM/fetch interactions",
+      "goals": [
+        "Solve core Stack/Queue and Linked List problems",
+        "Understand fetch and REST APIs"
+      ],
+      "estimatedTime": "18 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "stack-queue",
+            "linked-list"
+          ],
+          "customContent": "Key Problems: dsa-22, dsa-23, dsa-24, dsa-25, dsa-stack-queue-29, dsa-26, dsa-27, dsa-28, dsa-29, dsa-30, dsa-31, dsa-32, dsa-33, dsa-34, dsa-35"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-5",
+            "skill-6",
+            "skill-7"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Mock API Integration Client"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Sliding window and two pointers patterns"
+        }
+      ]
+    },
+    {
+      "id": "week-4",
+      "title": "Week 4: Binary Trees, BST & Backend Basics",
+      "phase": "Core Mastery",
+      "focus": "Tree traversal & server/routing fundamentals",
+      "goals": [
+        "Master DFS & BFS tree traversals",
+        "Build clean Node/Express server skeleton"
+      ],
+      "estimatedTime": "20 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "trees"
+          ],
+          "customContent": "Key Problems: dsa-36, dsa-37, dsa-38, dsa-39, dsa-trees-11, dsa-40, dsa-41, dsa-42, dsa-43, dsa-44, dsa-45, dsa-46, dsa-47, dsa-48, dsa-49"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-8",
+            "skill-9",
+            "skill-10"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Basic Express CRUD Server"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Linked list manipulation"
+        }
+      ]
+    },
+    {
+      "id": "week-5",
+      "title": "Week 5: Backtracking, Heaps & Database Design",
+      "phase": "Advanced Topics",
+      "focus": "State search space & SQL/NoSQL storage config",
+      "goals": [
+        "Solve heap pattern questions",
+        "Connect database with Express backend"
+      ],
+      "estimatedTime": "22 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "backtracking",
+            "heaps"
+          ],
+          "customContent": "Key Problems: dsa-50, dsa-51, dsa-52, dsa-heaps-9, dsa-heaps-10, dsa-53, dsa-54, dsa-55, dsa-backtracking-9, dsa-backtracking-23, dsa-56, dsa-57, dsa-58, dsa-59, dsa-60"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-11",
+            "skill-12",
+            "skill-13"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Full-stack Database-Backed API"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Tree depth-first traversals"
+        }
+      ]
+    },
+    {
+      "id": "week-6",
+      "title": "Week 6: Graphs & State Management",
+      "phase": "Advanced Topics",
+      "focus": "Graph traversals (DFS/BFS) & complex react state",
+      "goals": [
+        "Solve core graph connectivity questions",
+        "Integrate global state (Zustand/Redux)"
+      ],
+      "estimatedTime": "22 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "graphs"
+          ],
+          "customContent": "Key Problems: dsa-61, dsa-62, dsa-63, dsa-graphs-16, dsa-64, dsa-65, dsa-66, dsa-67, dsa-68, dsa-69, dsa-70, dsa-71, dsa-71b, dsa-71c, dsa-72"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-14",
+            "skill-15",
+            "skill-16"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Realtime messaging interface layout"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Backtracking recursion space"
+        }
+      ]
+    },
+    {
+      "id": "week-7",
+      "title": "Week 7: Greedy, DP & Deployment Security",
+      "phase": "Advanced Topics",
+      "focus": "Interval scheduling, memoization & HTTPS/CORS config",
+      "goals": [
+        "Understand basic dynamic programming concepts",
+        "Deploy app with secure cookies & CORS protection"
+      ],
+      "estimatedTime": "25 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "greedy",
+            "dynamic-programming"
+          ],
+          "customContent": "Key Problems: dsa-73, dsa-74, dsa-75, dsa-dynamic-programming-15, dsa-greedy-19, dsa-greedy-8, dsa-greedy-9, dsa-greedy-10, dsa-76, dsa-77, dsa-78, dsa-79, dsa-79c, dsa-79b, dsa-79d"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-18",
+            "skill-19",
+            "skill-20",
+            "skill-21"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Secure webapp deployment to Cloud"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Graph BFS/DFS complexity"
+        }
+      ]
+    },
+    {
+      "id": "week-8",
+      "title": "Week 8: Capstone Review & HR Preparation",
+      "phase": "Placement Ready",
+      "focus": "Mixed Capstone DSA + Mock assessment & HR drills",
+      "goals": [
+        "Pass mixed Capstone study challenges",
+        "Optimize resume and master behavioral questions"
+      ],
+      "estimatedTime": "25 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "arrays-hashing",
+            "two-pointers",
+            "stack-queue",
+            "trees",
+            "heaps",
+            "backtracking",
+            "graphs",
+            "greedy",
+            "dynamic-programming"
+          ],
+          "customContent": "Key Problems: dsa-trees-11, dsa-arrays-hashing-18, dsa-two-pointers-11, dsa-stack-queue-29, dsa-bit-manipulation-10, dsa-arrays-hashing-43, dsa-stack-queue-18, dsa-trees-24, dsa-heaps-10, dsa-backtracking-9, dsa-graphs-16, dsa-greedy-19, dsa-dynamic-programming-15, dsa-heaps-9, dsa-backtracking-23, dsa-75c"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-23",
+            "skill-24"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "All milestones reviewed & portfolio pitch frozen"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Mixed capstone question sweep"
+        }
+      ]
+    }
+  ],
+  "layoutType": "timeline",
+  "segmentType": "week"
+}

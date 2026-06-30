@@ -66,10 +66,11 @@ interface AppState {
   version: number;
   isLoadingUser: boolean;
   user: UserProfile | null;
-  completedWeeks: string[];
+  completedSegments: string[];
   dsaTopics: DsaTopic[];
   devCategories: DevCategory[];
   projects: Project[];
+  completedSkills: string[];
   aiLogs: AiLog[];
   dailyHabits: DailyHabitState;
   customTasks: CustomTask[];
@@ -139,7 +140,9 @@ export interface AppContextType {
   updateProject: (project: Project) => void;
   deleteProject: (id: string) => void;
   addChatMessage: (role: "user" | "assistant", content: string) => void;
+  openChatWithPrompt: (prompt: string) => void;
   clearChatHistory: () => void;
+  toggleSkill: (skillId: string) => void;
   createNewSession: (title?: string) => void;
   setActiveSession: (sessionId: string) => void;
   deleteSession: (sessionId: string) => void;
@@ -158,7 +161,7 @@ export interface AppContextType {
   pausePlan: (planId: string) => void;
   unfollowPlan: (planId: string) => void;
   setPrimaryPlan: (planId: string) => void;
-  togglePlanWeek: (planId: string, weekNum: number) => void;
+  togglePlanWeek: (planId: string, segmentId: string) => void;
   togglePlanTask: (planId: string, taskKey: string) => void;
   confirmAction: (options: ConfirmationOptions) => void;
   startInterviewSession: (topic: string, difficulty: "Easy" | "Medium" | "Hard", personality: "Helpful Mentor" | "Quiet Observer" | "Strict Interviewer", problemDescription: string, resumeText?: string, resumeFileName?: string) => void;
@@ -170,8 +173,8 @@ export interface AppContextType {
   refreshDailyChallenge: () => void;
   setSessionNvidiaKey: (key: string) => void;
   updateFlashcardReview: (flashcardId: string, easeFactor: number, interval: number, nextReviewDate: string, repetition: number) => void;
-  enrollCompanyRoadmap: (roadmap: CompanyRoadmap) => void;
-  updateRoadmapProgress: (roadmapId: string, milestoneId: string, completed: boolean) => void;
+  enrollCompanyRoadmap: (segments: CompanyRoadmap) => void;
+  updateRoadmapProgress: (segmentsId: string, milestoneId: string, completed: boolean) => void;
   importFlashcards: (deck: FlashcardDeck, cards: Flashcard[]) => void;
   addCustomDeck: (deck: FlashcardDeck) => void;
   deleteCustomDeck: (deckId: string) => void;
@@ -188,7 +191,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 interface SerializedProgress {
   version?: number;
   user?: UserProfile;
-  completedWeeks: string[];
+  completedSegments: string[];
   dsaProblems: {
     [problemId: string]: {
       isCompleted?: boolean;
@@ -215,6 +218,7 @@ interface SerializedProgress {
     };
   };
   projects: Project[];
+  completedSkills: string[];
   aiLogs: AiLog[];
   dailyHabits: DailyHabitState;
   customTasks: CustomTask[];
@@ -306,11 +310,12 @@ const serializeState = (state: AppState): SerializedProgress => {
   return {
     version: state.version,
     user: state.user || undefined,
-    completedWeeks: state.completedWeeks || [],
+    completedSegments: state.completedSegments || [],
     dsaProblems,
     dsaTopicMastery,
     devSkills,
     projects: state.projects || [],
+      completedSkills: state.completedSkills || [],
     aiLogs: state.aiLogs || [],
     dailyHabits: state.dailyHabits,
     customTasks: state.customTasks || [],
@@ -398,10 +403,11 @@ const deserializeState = (serialized: Partial<SerializedProgress>, curriculum: a
     isLoadingUser: false,
     version: serialized.version || SCHEMA_VERSION,
     user: serialized.user || null,
-    completedWeeks: serialized.completedWeeks || [],
+    completedSegments: serialized.completedSegments || [],
     dsaTopics,
     devCategories,
     projects: serialized.projects || [],
+      completedSkills: serialized.completedSkills || [],
     aiLogs: serialized.aiLogs || [],
     dailyHabits: serialized.dailyHabits || {
       solveDsa: false,
@@ -420,7 +426,7 @@ const deserializeState = (serialized: Partial<SerializedProgress>, curriculum: a
       reminderFrequency: serialized.settings?.reminderFrequency ?? "weekly",
       showSections: serialized.settings?.showSections ?? {
         dashboard: true,
-        roadmap: true,
+        segments: true,
         dsa: true,
         dev: true,
         ai: true,
@@ -511,10 +517,11 @@ const getInitialState = (curriculum: any): AppState => ({
   version: SCHEMA_VERSION,
   isLoadingUser: true,
   user: null,
-  completedWeeks: [],
+  completedSegments: [] as string[] as string[] as string[],
   dsaTopics: curriculum.DEFAULT_DSA_TOPICS,
   devCategories: curriculum.DEFAULT_DEV_CATEGORIES,
   projects: [],
+    completedSkills: [],
   aiLogs: [],
   dailyHabits: {
     solveDsa: false,
@@ -533,7 +540,7 @@ const getInitialState = (curriculum: any): AppState => ({
     reminderFrequency: "weekly",
     showSections: {
       dashboard: true,
-      roadmap: true,
+      segments: true,
       dsa: true,
       dev: true,
       ai: true,
@@ -569,7 +576,7 @@ const getInitialState = (curriculum: any): AppState => ({
       primary: true,
       startedAt: new Date().toISOString(),
       paused: false,
-      completedWeeks: [],
+      completedSegments: [] as string[] as string[] as string[],
       customProgress: {}
     }
   ],
@@ -693,10 +700,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         }
 
         if (updatedState.userPlans === undefined || updatedState.userPlans.length === 0) {
-          const migratedCompletedWeeks = (parsed.completedWeeks || []).map((id: string) => {
-            const num = parseInt(id.replace("week-", ""));
-            return isNaN(num) ? 1 : num;
-          });
+          const migratedCompletedWeeks: string[] = parsed.completedSegments || [];
 
           updatedState.userPlans = [
             {
@@ -705,7 +709,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
               primary: true,
               startedAt: new Date().toISOString(),
               paused: false,
-              completedWeeks: migratedCompletedWeeks,
+              completedSegments: migratedCompletedWeeks,
               customProgress: {}
             }
           ];
@@ -796,7 +800,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
           primary: true,
           startedAt: new Date().toISOString(),
           paused: false,
-          completedWeeks: [],
+          completedSegments: [] as string[] as string[] as string[],
           customProgress: {}
         }
       ],
@@ -1265,7 +1269,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
   const primaryPlanId = state.primaryPlanId || "16-week-mastery";
   const primaryPlan = curriculum.ALL_PLANS.find((p: any) => p.id === primaryPlanId) || curriculum.ALL_PLANS[0];
   const overallCompletion = Math.round(
-    (state.completedWeeks.length / primaryPlan.roadmap.length) * 100
+    (state.completedSegments.length / primaryPlan.segments.length) * 100
   );
 
   // Dynamic level progression system (RPG-style)
@@ -1287,21 +1291,19 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       const userPlans = prev.userPlans || [];
       const primaryUserPlan = userPlans.find(up => up.planId === primaryPlanId);
 
-      const weekNum = parseInt(weekId.replace("week-", ""));
-      if (isNaN(weekNum)) return prev;
-
-      const isCompleted = primaryUserPlan?.completedWeeks.includes(weekNum) ?? false;
+      const segmentId = weekId; // reuse arg name
+      const isCompleted = primaryUserPlan?.completedSegments.includes(segmentId) ?? false;
 
       const updatedUserPlans = userPlans.map(up => {
         if (up.planId !== primaryPlanId) return up;
-        const completedWeeksList = isCompleted
-          ? up.completedWeeks.filter((w: number) => w !== weekNum)
-          : [...up.completedWeeks, weekNum];
-        return { ...up, completedWeeks: completedWeeksList };
+        const completedSegmentsList = isCompleted
+          ? up.completedSegments.filter((w: string) => String(w) !== String(segmentId))
+          : [...up.completedSegments, String(segmentId)];
+        return { ...up, completedSegments: completedSegmentsList };
       });
 
       const updatedPrimaryPlan = updatedUserPlans.find(up => up.planId === primaryPlanId);
-      const primaryPlanCompletedWeeksStr = (updatedPrimaryPlan?.completedWeeks || []).map((w: number) => `week-${w}`);
+      const primaryPlanCompletedWeeksStr = updatedPrimaryPlan?.completedSegments || [];
 
       if (!isCompleted) {
         // Week completed confetti!
@@ -1322,7 +1324,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       return {
         ...prev,
         userPlans: updatedUserPlans,
-        completedWeeks: primaryPlanCompletedWeeksStr
+        completedSegments: primaryPlanCompletedWeeksStr
       };
     });
   };
@@ -1658,6 +1660,10 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     });
   };
 
+  const openChatWithPrompt = (prompt: string) => {
+    addChatMessage("user", prompt);
+  };
+
   const addChatMessage = (role: "user" | "assistant", content: string) => {
     updateState(prev => {
       const newMsg: ChatMessage = {
@@ -1679,6 +1685,16 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         ...prev,
         chatSessions: { ...chatSessions, [activeId]: { ...activeSession, title, messages: [...activeSession.messages, newMsg] } }
       };
+    });
+  };
+
+  const toggleSkill = (skillId: string) => {
+    updateState(prev => {
+      const isCompleted = (prev.completedSkills || []).includes(skillId);
+      const newSkills = isCompleted 
+        ? prev.completedSkills.filter(s => s !== skillId)
+        : [...(prev.completedSkills || []), skillId];
+      return { ...prev, completedSkills: newSkills };
     });
   };
 
@@ -1856,7 +1872,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
       // Mark first 4 weeks completed
-      const completedWeeks = ["week-1", "week-2", "week-3", "week-4"];
+      const completedSegments = ["week-1", "week-2", "week-3", "week-4"];
 
       // Solve 12 DSA problems
       const dsaTopics = prev.dsaTopics.map(topic => {
@@ -2048,7 +2064,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
       return {
         ...prev,
-        completedWeeks,
+        completedSegments,
         dsaTopics,
         devCategories,
         projects,
@@ -2073,7 +2089,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         primary: false,
         startedAt: new Date().toISOString(),
         paused: false,
-        completedWeeks: [],
+        completedSegments: [] as string[] as string[] as string[],
         customProgress: {}
       };
 
@@ -2110,14 +2126,14 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         primary: up.planId === primaryPlanId
       }));
 
-      const primaryPlanCompletedWeeks = updatedUserPlans.find(up => up.planId === primaryPlanId)?.completedWeeks || [];
-      const completedWeeks = primaryPlanCompletedWeeks.map((w: number) => `week-${w}`);
+      const primaryPlanCompletedWeeks = updatedUserPlans.find(up => up.planId === primaryPlanId)?.completedSegments || [];
+      const completedSegments = primaryPlanCompletedWeeks.map((w: string) => `week-${w}`);
 
       return {
         ...prev,
         userPlans: updatedUserPlans,
         primaryPlanId,
-        completedWeeks
+        completedSegments
       };
     });
   };
@@ -2134,7 +2150,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
           primary: false,
           startedAt: new Date().toISOString(),
           paused: false,
-          completedWeeks: [],
+          completedSegments: [] as string[] as string[] as string[],
           customProgress: {}
         });
       }
@@ -2144,39 +2160,39 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         primary: up.planId === planId
       }));
 
-      const primaryPlanCompletedWeeks = updatedUserPlans.find(up => up.planId === planId)?.completedWeeks || [];
-      const completedWeeks = primaryPlanCompletedWeeks.map((w: number) => `week-${w}`);
+      const primaryPlanCompletedWeeks = updatedUserPlans.find(up => up.planId === planId)?.completedSegments || [];
+      const completedSegments = primaryPlanCompletedWeeks.map((w: string) => `week-${w}`);
 
       return {
         ...prev,
         userPlans: updatedUserPlans,
         primaryPlanId: planId,
-        completedWeeks
+        completedSegments
       };
     });
   };
 
-  const togglePlanWeek = (planId: string, weekNum: number) => {
+  const togglePlanWeek = (planId: string, segmentId: string) => {
     updateState(prev => {
       const userPlans = (prev.userPlans || []).map(up => {
         if (up.planId !== planId) return up;
-        const isCompleted = up.completedWeeks.includes(weekNum);
-        const completedWeeks = isCompleted
-          ? up.completedWeeks.filter((w: number) => w !== weekNum)
-          : [...up.completedWeeks, weekNum];
-        return { ...up, completedWeeks };
+        const isCompleted = up.completedSegments.includes(segmentId);
+        const completedSegments = isCompleted
+          ? up.completedSegments.filter((w: string) => w !== segmentId)
+          : [...up.completedSegments, segmentId];
+        return { ...up, completedSegments };
       });
 
-      let completedWeeks = prev.completedWeeks;
+      let completedSegments = prev.completedSegments;
       if (prev.primaryPlanId === planId) {
-        const primaryPlanCompletedWeeks = userPlans.find(up => up.planId === planId)?.completedWeeks || [];
-        completedWeeks = primaryPlanCompletedWeeks.map((w: number) => `week-${w}`);
+        const primaryPlanCompletedWeeks = userPlans.find(up => up.planId === planId)?.completedSegments || [];
+        completedSegments = primaryPlanCompletedWeeks;
       }
 
       return {
         ...prev,
         userPlans,
-        completedWeeks
+        completedSegments
       };
     });
   };
@@ -2389,11 +2405,11 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     });
   };
 
-  const enrollCompanyRoadmap = (roadmap: CompanyRoadmap) => {
+  const enrollCompanyRoadmap = (segments: CompanyRoadmap) => {
     updateState(prev => {
-      const roadmaps = prev.activeRoadmaps || [];
-      if (roadmaps.some(r => r.id === roadmap.id)) return prev;
-      return { ...prev, activeRoadmaps: [...roadmaps, roadmap] };
+      const segmentss = prev.activeRoadmaps || [];
+      if (segmentss.some(r => r.id === segments.id)) return prev;
+      return { ...prev, activeRoadmaps: [...segmentss, segments] };
     });
   };
 
@@ -2408,11 +2424,11 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     });
   };
 
-  const updateRoadmapProgress = (roadmapId: string, milestoneId: string, completed: boolean) => {
+  const updateRoadmapProgress = (segmentsId: string, milestoneId: string, completed: boolean) => {
     updateState(prev => {
-      const roadmaps = prev.activeRoadmaps || [];
-      const updated = roadmaps.map(r => {
-        if (r.id !== roadmapId) return r;
+      const segmentss = prev.activeRoadmaps || [];
+      const updated = segmentss.map(r => {
+        if (r.id !== segmentsId) return r;
         const newPhases = r.phases.map(p => ({
           ...p,
           milestones: p.milestones.map(m => m.id === milestoneId ? { ...m, isCompleted: completed } : m)
@@ -2521,7 +2537,9 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         updateProject,
         deleteProject,
         addChatMessage,
+        openChatWithPrompt,
         clearChatHistory,
+          toggleSkill,
         createNewSession,
         setActiveSession,
         deleteSession,

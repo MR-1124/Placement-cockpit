@@ -1,0 +1,201 @@
+{
+  "id": "1-month-sprint",
+  "title": "1 Month Emergency Sprint",
+  "duration": 4,
+  "durationType": "Weeks",
+  "description": "Prepare for companies currently visiting campus with a highly intensive daily checklist and priority questions.",
+  "difficulty": "Extreme",
+  "tags": [
+    "Blind 75",
+    "NeetCode 150 core",
+    "Project polishing",
+    "CS fundamentals"
+  ],
+  "estimatedHoursPerDay": "5\u20137 hours",
+  "category": "Sprint",
+  "recommendedFor": [
+    "Emergency preparation",
+    "Last-minute crash course"
+  ],
+  "segments": [
+    {
+      "id": "week-1",
+      "title": "Week 1: Core Linear Patterns & CSS layouts",
+      "phase": "Foundation",
+      "focus": "Arrays, Pointers, Stack, Sliding Window + Layout skills",
+      "goals": [
+        "Master arrays, sliding window, and two pointers",
+        "Establish strong layout foundation"
+      ],
+      "estimatedTime": "20 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "arrays-hashing",
+            "two-pointers",
+            "sliding-window",
+            "stack-queue"
+          ],
+          "customContent": "Key Problems: dsa-1, dsa-2, dsa-3, dsa-3b, dsa-two-pointers-11, dsa-two-pointers-12, dsa-sliding-window-10, dsa-sliding-window-11, dsa-stack-queue-29, dsa-22, dsa-23, dsa-24, dsa-25, dsa-26, dsa-27"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-1",
+            "skill-2",
+            "skill-3"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Component layout library"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Common linear complexity patterns"
+        }
+      ]
+    },
+    {
+      "id": "week-2",
+      "title": "Week 2: Non-Linear Structures & React/State",
+      "phase": "Core Mastery",
+      "focus": "Linked Lists, Trees, Heaps & React state structures",
+      "goals": [
+        "Solve core tree & heap challenges",
+        "Integrate state-management libraries"
+      ],
+      "estimatedTime": "25 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "linked-list",
+            "trees",
+            "heaps"
+          ],
+          "customContent": "Key Problems: dsa-31, dsa-32, dsa-33, dsa-34, dsa-36, dsa-37, dsa-38, dsa-trees-11, dsa-heaps-9, dsa-heaps-10, dsa-39, dsa-40, dsa-41, dsa-42, dsa-43"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-4",
+            "skill-5",
+            "skill-6"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "SPA Application integration"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Recursion call-stack profiling"
+        }
+      ]
+    },
+    {
+      "id": "week-3",
+      "title": "Week 3: Advanced Logic & Server/DB",
+      "phase": "Advanced Topics",
+      "focus": "Backtracking, Graphs, DP & Node/Express REST backend",
+      "goals": [
+        "Develop Graph BFS/DFS skills",
+        "Build database-backed backend service"
+      ],
+      "estimatedTime": "25 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "backtracking",
+            "graphs",
+            "dynamic-programming"
+          ],
+          "customContent": "Key Problems: dsa-50, dsa-51, dsa-backtracking-9, dsa-backtracking-23, dsa-61, dsa-62, dsa-graphs-16, dsa-64, dsa-65, dsa-dynamic-programming-15, dsa-76, dsa-77, dsa-78, dsa-79, dsa-79c"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-8",
+            "skill-9",
+            "skill-11",
+            "skill-12"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Secure REST Server Setup"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Grid search space optimization"
+        }
+      ]
+    },
+    {
+      "id": "week-4",
+      "title": "Week 4: Capstone Review, Deployment & Pitching",
+      "phase": "Placement Ready",
+      "focus": "FAANG Mixed Capstone + Live cloud deploy & pitches",
+      "goals": [
+        "Deploy full-stack product",
+        "FinishCapstones & mock assessments"
+      ],
+      "estimatedTime": "30 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "arrays-hashing",
+            "two-pointers",
+            "stack-queue",
+            "trees",
+            "heaps",
+            "backtracking",
+            "graphs",
+            "greedy",
+            "dynamic-programming"
+          ],
+          "customContent": "Key Problems: dsa-trees-11, dsa-arrays-hashing-18, dsa-two-pointers-11, dsa-stack-queue-29, dsa-bit-manipulation-10, dsa-arrays-hashing-43, dsa-stack-queue-18, dsa-trees-24, dsa-heaps-10, dsa-backtracking-9, dsa-graphs-16, dsa-greedy-19, dsa-dynamic-programming-15, dsa-heaps-9, dsa-backtracking-23"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-18",
+            "skill-19",
+            "skill-23",
+            "skill-24"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Production showcase deployed, freeze pitches"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Behavioral interview strategies"
+        }
+      ]
+    }
+  ],
+  "layoutType": "timeline",
+  "segmentType": "week"
+}

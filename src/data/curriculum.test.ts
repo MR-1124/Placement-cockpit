@@ -9,16 +9,16 @@ describe('Curriculum Data', () => {
     // Check if the primary mastery plan exists
     const masteryPlan = ALL_PLANS.find(p => p.id === '16-week-mastery');
     expect(masteryPlan).toBeDefined();
-    expect(masteryPlan?.durationWeeks).toBe(16);
+    expect(masteryPlan?.duration).toBe(16);
   });
 
   it('validates plan structures', () => {
     ALL_PLANS.forEach(plan => {
       expect(plan).toHaveProperty('id');
       expect(plan).toHaveProperty('title');
-      expect(plan).toHaveProperty('durationWeeks');
-      expect(plan.roadmap).toBeInstanceOf(Array);
-      expect(plan.roadmap.length).toBeGreaterThanOrEqual(0);
+      expect(plan).toHaveProperty('duration');
+      expect(plan.segments).toBeInstanceOf(Array);
+      expect(plan.segments.length).toBeGreaterThanOrEqual(0);
     });
   });
 

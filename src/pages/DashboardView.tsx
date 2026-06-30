@@ -58,10 +58,10 @@ const curriculum = useAppState(s => s.curriculum);
   const today = new Date().toISOString().split("T")[0];
   const primaryPlanId = state.primaryPlanId || "16-week-mastery";
   const primaryPlan = ALL_PLANS.find(p => p.id === primaryPlanId) || ALL_PLANS[0];
-  const weekPlans = primaryPlan.roadmap;
+  const weekPlans = primaryPlan.segments;
   const currentWeekIndex = Math.min(
     weekPlans.length - 1,
-    Math.floor(state.completedWeeks.length)
+    Math.floor(state.completedSegments.length)
   );
   const currentWeek = weekPlans[currentWeekIndex] || weekPlans[0];
 
@@ -93,12 +93,12 @@ const curriculum = useAppState(s => s.curriculum);
     return options;
   };
 
-  // Determine current day of week index for consistency map (columns: durationWeeks, rows: 7 days)
-  // Let's draw a grid of durationWeeks x 7 days
+  // Determine current day of week index for consistency map (columns: duration, rows: 7 days)
+  // Let's draw a grid of duration x 7 days
   const renderHeatmap = () => {
     const cells = [];
-    const weekPlans = primaryPlan.roadmap;
-    const durationWeeks = primaryPlan.durationWeeks;
+    const weekPlans = primaryPlan.segments;
+    const duration = primaryPlan.duration;
 
     if (heatmapMode === "plan") {
       const activeUserPlan = state.userPlans?.find(up => up.planId === primaryPlanId);
@@ -112,7 +112,7 @@ const curriculum = useAppState(s => s.curriculum);
       const anchorDate = new Date(startDate);
       anchorDate.setDate(anchorDate.getDate() - alignmentOffset);
 
-      for (let dayOffset = 0; dayOffset < durationWeeks * 7; dayOffset++) {
+      for (let dayOffset = 0; dayOffset < duration * 7; dayOffset++) {
         const weekIndex = Math.floor(dayOffset / 7);
         const dayIndex = dayOffset % 7;
 
@@ -138,7 +138,7 @@ const curriculum = useAppState(s => s.curriculum);
         }
 
         // If week is completed, give it a baseline color
-        const isWeekCompleted = state.completedWeeks.includes(weekPlans[weekIndex]?.id);
+        const isWeekCompleted = state.completedSegments.includes(weekPlans[weekIndex]?.id);
 
         let colorClass = "bg-white/[0.02] border-white/[0.02]";
         if (isFuture) {
@@ -364,7 +364,7 @@ const curriculum = useAppState(s => s.curriculum);
           </div>
           <span>
             {heatmapMode === "plan" 
-              ? `Week ${durationWeeks} (End)` 
+              ? `Week ${duration} (End)` 
               : heatmapMode === "month"
               ? `${new Date(selectedMonth + "-02").toLocaleString("default", { month: "long" })} End`
               : "Today"
@@ -503,7 +503,7 @@ const curriculum = useAppState(s => s.curriculum);
               </div>
               <span className="text-3xl font-extrabold text-white font-mono">{overallCompletion}%</span>
               <p className="text-xs text-slate-500 mt-1 font-mono">
-                {state.completedWeeks.length} of {weekPlans.length} Weeks completed
+                {state.completedSegments.length} of {weekPlans.length} Weeks completed
               </p>
             </div>
             <div className="mt-4 relative z-10">
@@ -580,7 +580,7 @@ const curriculum = useAppState(s => s.curriculum);
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="space-y-1">
             <span className="text-[10px] font-mono uppercase text-accentPrimary font-semibold tracking-wider">
-              Current Week Goal
+              Current {primaryPlan.segmentType ? primaryPlan.segmentType.charAt(0).toUpperCase() + primaryPlan.segmentType.slice(1) : "Week"} Goal
             </span>
             <h3 className="text-lg font-bold text-white leading-tight">{currentWeek.title}</h3>
             <p className="text-sm text-slate-400">
@@ -588,7 +588,7 @@ const curriculum = useAppState(s => s.curriculum);
             </p>
           </div>
           <button
-            onClick={() => setActiveTab("roadmap")}
+            onClick={() => setActiveTab("segments")}
             className="flex items-center gap-1.5 text-xs text-accentPrimary font-semibold hover:underline bg-white/[0.02] border border-white/[0.04] px-3 py-1.5 rounded-lg"
           >
             Review Week Plan <ChevronRight className="w-3.5 h-3.5" />
@@ -888,7 +888,7 @@ const curriculum = useAppState(s => s.curriculum);
             {renderHeatmap()}
             <p className="text-[11px] text-slate-500 font-mono leading-relaxed mt-2">
               {heatmapMode === "plan" 
-                ? "Each grid column represents a roadmap week (Sunday-Saturday rows). Bright cells indicate a high number of habits ticked on that day. Complete your weeks to keep the momentum going!"
+                ? "Each grid column represents a segments week (Sunday-Saturday rows). Bright cells indicate a high number of habits ticked on that day. Complete your weeks to keep the momentum going!"
                 : heatmapMode === "month"
                 ? "Showing progress grid for the selected month. Empty cells represent adjacent months' buffer. Click highlighted cells to inspect daily stats."
                 : "Calendar view of daily habit checklists. Darker squares denote higher consistency. Inspect any active cell to view detailed solved problems logs."}

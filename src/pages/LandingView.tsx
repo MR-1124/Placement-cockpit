@@ -94,7 +94,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
     {
       title: "Core Dev Skill Matrix",
       icon: Layers,
-      desc: "Implement structured 5-tier roadmap checkpoints (Learn, Practice, Build, Deploy, Revise) for full-stack engineering proficiency.",
+      desc: "Implement structured 5-tier segments checkpoints (Learn, Practice, Build, Deploy, Revise) for full-stack engineering proficiency.",
       color: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
       shadow: "hover:shadow-[0_8px_30px_rgb(16,185,129,0.15)]"
     },

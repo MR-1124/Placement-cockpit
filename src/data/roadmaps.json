@@ -109,6 +109,29 @@
           }
         ]
       }
+    ],
+    "companySpecificAdvice": "Leadership Principles (LPs) are non-negotiable. Every behavioral question and system design question will map back to one of the 16 LPs. For technical, focus on scalable systems and data structures.",
+    "frequentlyAskedTopics": [
+      "Leadership Principles",
+      "System Design",
+      "Trees",
+      "Graphs"
+    ],
+    "recommendedDsaTags": [
+      "Amazon",
+      "Trees",
+      "Graphs"
+    ],
+    "coreSubjectsFocus": {
+      "OS": "Medium",
+      "DBMS": "High",
+      "Networks": "High"
+    },
+    "resources": [
+      {
+        "title": "Amazon Leadership Principles Complete Guide",
+        "url": "#"
+      }
     ]
   },
   {
@@ -210,6 +233,34 @@
           }
         ]
       }
+    ],
+    "companySpecificAdvice": "Focus heavily on Graph and Dynamic Programming problems. Ensure absolute clarity on time and space complexities. Google interviewers care deeply about how you arrive at the solution, not just the final code.",
+    "frequentlyAskedTopics": [
+      "Graphs",
+      "Dynamic Programming",
+      "Trees",
+      "Arrays",
+      "System Design"
+    ],
+    "recommendedDsaTags": [
+      "Google",
+      "Graphs",
+      "DP"
+    ],
+    "coreSubjectsFocus": {
+      "OS": "Medium",
+      "DBMS": "Medium",
+      "Networks": "Low"
+    },
+    "resources": [
+      {
+        "title": "Google Interview Preparation Guide",
+        "url": "#"
+      },
+      {
+        "title": "Top 50 Google Leetcode Problems",
+        "url": "#"
+      }
     ]
   },
   {
@@ -303,6 +354,34 @@
             "difficulty": "Medium"
           }
         ]
+      }
+    ],
+    "companySpecificAdvice": "Microsoft emphasizes string manipulation, arrays, and linked lists. They also value object-oriented design and system architecture principles. Be prepared for behavioral questions mapping to their core values.",
+    "frequentlyAskedTopics": [
+      "Strings",
+      "Arrays",
+      "Linked Lists",
+      "System Design",
+      "OOD"
+    ],
+    "recommendedDsaTags": [
+      "Microsoft",
+      "Strings",
+      "Arrays"
+    ],
+    "coreSubjectsFocus": {
+      "OS": "High",
+      "DBMS": "High",
+      "Networks": "Medium"
+    },
+    "resources": [
+      {
+        "title": "Microsoft Interview Experience Archive",
+        "url": "#"
+      },
+      {
+        "title": "OOD Principles for Microsoft",
+        "url": "#"
       }
     ]
   }

@@ -394,7 +394,7 @@ const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
     { id: "flashcards", name: "Flashcards", icon: Brain },
     { id: "resume", name: "Resume ATS", icon: FileText },
     { id: "plans", name: "Plans", icon: ClipboardList },
-    { id: "roadmap", name: primaryPlan.title, icon: Map },
+    { id: "segments", name: primaryPlan.title, icon: Map },
     { id: "dsa", name: "DSA Tracker", icon: Code2 },
     { id: "dev", name: "Full Stack", icon: Layers },
     { id: "ai", name: "AI Tracker", icon: Terminal },
@@ -427,7 +427,7 @@ const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
         );
       case "plans":
         return <PlansView />;
-      case "roadmap":
+      case "segments":
         return <RoadmapView />;
       case "dsa":
         return <DsaView />;
@@ -539,64 +539,73 @@ const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
         </nav>
 
         {/* Sidebar Footer Metrics card */}
-        <div className={`border-t border-white/[0.06] bg-white/[0.002] flex flex-col items-center justify-center transition-all ${collapsed ? "p-3 py-5 space-y-4" : "p-4 space-y-4"}`}>
+        <div className={`border-t border-white/[0.06] bg-black/20 flex flex-col items-center justify-center transition-all ${collapsed ? "py-4 gap-4" : "p-4 space-y-4"}`}>
           {collapsed ? (
-            <>
+            <div className="flex flex-col items-center gap-4 w-full">
               {/* Collapsed Level */}
-              <div className="group relative">
-                <div className="w-10 h-10 rounded-xl bg-black/40 border border-white/[0.06] shadow-inner flex flex-col items-center justify-center cursor-help hover:border-accentPrimary/50 transition-colors">
-                  <span className="text-[8px] font-mono text-slate-500 uppercase tracking-widest leading-none mb-0.5">Lvl</span>
-                  <span className="text-xs font-bold text-accentPrimary leading-none">{level}</span>
+              <div className="group relative w-full flex justify-center">
+                <div className="w-10 h-10 rounded-full bg-accentPrimary/10 border border-accentPrimary/20 flex flex-col items-center justify-center cursor-pointer hover:bg-accentPrimary/20 hover:scale-105 transition-all shadow-[0_0_10px_rgba(var(--color-accent-primary),0.1)]">
+                  <span className="text-[9px] font-bold text-accentPrimary leading-none">L{level}</span>
                 </div>
-                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3 py-2 bg-darkCard border border-white/10 rounded-lg text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 shadow-xl transition-all translate-x-2 group-hover:translate-x-0 flex flex-col gap-1">
-                  <span className="text-accentPrimary font-bold">Lvl {level}: {levelTitle}</span>
-                  <span className="text-slate-400 font-mono text-[10px]">{state.xp} XP / {level * 1000} XP</span>
-                  <div className="h-1 w-full bg-white/[0.04] rounded-full overflow-hidden mt-1">
-                    <div className="h-full bg-accentPrimary" style={{ width: `${xpProgress}%` }} />
+                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-4 px-3 py-2.5 bg-slate-900 border border-white/10 rounded-xl text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 shadow-2xl transition-all flex flex-col gap-1.5 min-w-[140px]">
+                  <div className="flex justify-between items-center">
+                    <span className="text-accentPrimary font-bold text-[11px] uppercase tracking-wider">Level {level}</span>
+                  </div>
+                  <span className="text-white text-[10px] truncate">{levelTitle}</span>
+                  <div className="flex justify-between text-[9px] text-slate-400 font-mono mt-1">
+                    <span>{state.xp} XP</span>
+                    <span>{level * 1000} XP</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-black rounded-full overflow-hidden border border-white/5">
+                    <div className="h-full bg-accentPrimary shadow-[0_0_8px_var(--accent-color)]" style={{ width: `${xpProgress}%` }} />
                   </div>
                 </div>
               </div>
               
               {/* Collapsed Streak */}
-              <div className="group relative">
-                <div className="w-10 h-10 rounded-xl bg-black/40 border border-white/[0.06] shadow-inner flex flex-col items-center justify-center cursor-help hover:border-amber-500/50 transition-colors">
-                  <span className="text-xs mb-0.5">🔥</span>
-                  <span className="text-[10px] font-bold text-amber-500 leading-none">{state.streak}</span>
+              <div className="group relative w-full flex justify-center">
+                <div className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/20 flex flex-col items-center justify-center cursor-pointer hover:bg-amber-500/20 hover:scale-105 transition-all shadow-[0_0_10px_rgba(245,158,11,0.1)]">
+                  <span className="text-xs mb-0.5 animate-pulse">🔥</span>
+                  <span className="text-[9px] font-bold text-amber-500 leading-none">{state.streak}</span>
                 </div>
-                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3 py-2 bg-darkCard border border-white/10 rounded-lg text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 shadow-xl transition-all translate-x-2 group-hover:translate-x-0 flex flex-col gap-1">
-                  <span className="text-amber-500 font-bold">Streak: {state.streak} Days</span>
-                  <span className="text-white font-mono text-[10px]">Readiness: {readinessScore}%</span>
-                  <div className="h-1 w-full bg-white/[0.04] rounded-full overflow-hidden mt-1">
-                    <div className="h-full bg-accentPrimary" style={{ width: `${readinessScore}%` }} />
+                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-4 px-3 py-2.5 bg-slate-900 border border-white/10 rounded-xl text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 shadow-2xl transition-all flex flex-col gap-1.5 min-w-[140px]">
+                  <span className="text-amber-500 font-bold text-[11px] uppercase tracking-wider">🔥 {state.streak} Day Streak</span>
+                  <span className="text-white text-[10px]">Readiness Score</span>
+                  <div className="flex justify-between text-[9px] text-slate-400 font-mono mt-1">
+                    <span>Score</span>
+                    <span className="text-white font-bold">{readinessScore}%</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-black rounded-full overflow-hidden border border-white/5">
+                    <div className="h-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" style={{ width: `${readinessScore}%` }} />
                   </div>
                 </div>
               </div>
-            </>
+            </div>
           ) : (
             <div className="w-full space-y-4">
               {/* Level Progress */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 group cursor-pointer">
                 <div className="flex justify-between items-center text-[10px] font-mono">
-                  <span className="text-accentPrimary font-bold uppercase tracking-wider truncate mr-2">Lvl {level}: {levelTitle}</span>
+                  <span className="text-accentPrimary font-bold uppercase tracking-wider truncate mr-2 group-hover:text-white transition-colors">Lvl {level}: {levelTitle}</span>
                   <span className="text-slate-500 shrink-0">{state.xp} XP</span>
                 </div>
-                <div className="h-1.5 w-full bg-white/[0.04] rounded-full overflow-hidden border border-white/[0.02] shadow-inner">
+                <div className="h-1.5 w-full bg-black/60 rounded-full overflow-hidden border border-white/[0.04] shadow-inner relative">
                   <div
-                    className="h-full bg-accentPrimary rounded-full transition-all duration-500 shadow-[0_0_10px_var(--accent-color)]"
+                    className="absolute inset-y-0 left-0 bg-accentPrimary rounded-full transition-all duration-500 shadow-[0_0_10px_var(--color-accent-primary)]"
                     style={{ width: `${xpProgress}%` }}
                   />
                 </div>
               </div>
 
               {/* Streak & Readiness */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 group cursor-pointer">
                 <div className="flex justify-between items-center text-[10px] font-mono text-slate-500">
-                  <span className="truncate">Streak: <span className="text-amber-500 font-bold">🔥 {state.streak}d</span></span>
-                  <span className="shrink-0 ml-2">Readiness: <span className="text-white font-bold">{readinessScore}%</span></span>
+                  <span className="truncate group-hover:text-amber-400 transition-colors">Streak: <span className="text-amber-500 font-bold">🔥 {state.streak}d</span></span>
+                  <span className="shrink-0 ml-2 group-hover:text-emerald-400 transition-colors">Readiness: <span className="text-white font-bold">{readinessScore}%</span></span>
                 </div>
-                <div className="h-1.5 w-full bg-white/[0.04] rounded-full overflow-hidden border border-white/[0.02] shadow-inner">
+                <div className="h-1.5 w-full bg-black/60 rounded-full overflow-hidden border border-white/[0.04] shadow-inner relative">
                   <div
-                    className="h-full bg-accentPrimary rounded-full transition-all duration-500 shadow-[0_0_10px_var(--accent-color)]"
+                    className="absolute inset-y-0 left-0 bg-emerald-500 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]"
                     style={{ width: `${readinessScore}%` }}
                   />
                 </div>
@@ -665,7 +674,7 @@ const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-14 bg-darkCard/80 border-t border-white/[0.06] backdrop-blur-md flex justify-around items-center px-2 z-20 select-none">
         {[
           { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          { id: "roadmap", label: "16-Week", icon: Map },
+          { id: "segments", label: "16-Week", icon: Map },
           { id: "dsa", label: "DSA", icon: Code2 },
           { id: "dev", label: "Full Stack", icon: Layers },
           { id: "interview", label: "Mock", icon: Speech }

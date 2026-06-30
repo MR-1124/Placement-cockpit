@@ -55,8 +55,8 @@ export const PlansView: React.FC = () => {
   // Calculate plan specific completion
   const getPlanCompletion = (plan: Plan) => {
     const followed = getFollowedPlan(plan.id);
-    if (!followed || followed.completedWeeks.length === 0) return 0;
-    return Math.round((followed.completedWeeks.length / plan.durationWeeks) * 100);
+    if (!followed || followed.completedSegments.length === 0) return 0;
+    return Math.round((followed.completedSegments.length / plan.duration) * 100);
   };
 
   const toggleWeek = (weekId: string) => {
@@ -74,14 +74,14 @@ export const PlansView: React.FC = () => {
     const matchesDifficulty = difficultyFilter === "All" || plan.difficulty === difficultyFilter;
 
     let matchesDuration = true;
-    if (durationFilter === "<6") matchesDuration = plan.durationWeeks < 6;
-    else if (durationFilter === "6-12") matchesDuration = plan.durationWeeks >= 6 && plan.durationWeeks <= 12;
-    else if (durationFilter === ">12") matchesDuration = plan.durationWeeks > 12;
+    if (durationFilter === "<6") matchesDuration = plan.duration < 6;
+    else if (durationFilter === "6-12") matchesDuration = plan.duration >= 6 && plan.duration <= 12;
+    else if (durationFilter === ">12") matchesDuration = plan.duration > 12;
 
     return matchesSearch && matchesCategory && matchesDifficulty && matchesDuration;
   }).sort((a, b) => {
-    if (sortBy === "shortest") return a.durationWeeks - b.durationWeeks;
-    if (sortBy === "longest") return b.durationWeeks - a.durationWeeks;
+    if (sortBy === "shortest") return a.duration - b.duration;
+    if (sortBy === "longest") return b.duration - a.duration;
     
     const diffWeights = { Easy: 1, Medium: 2, Hard: 3, Extreme: 4 };
     if (sortBy === "easiest") return diffWeights[a.difficulty] - diffWeights[b.difficulty];
@@ -113,7 +113,7 @@ export const PlansView: React.FC = () => {
             <div>
               <h1 className="text-3xl font-extrabold text-white tracking-tight">Placement Training Plans</h1>
               <p className="text-slate-400 text-sm mt-1">
-                Choose curriculum roadmaps optimized for different durations and target outcomes.
+                Choose curriculum segmentss optimized for different durations and target outcomes.
               </p>
             </div>
           </div>
@@ -258,7 +258,7 @@ export const PlansView: React.FC = () => {
                         <Clock className="w-3.5 h-3.5 text-slate-500" />
                         <div>
                           <span className="text-[9px] text-slate-500 block uppercase font-mono tracking-wider">Duration</span>
-                          <span className="text-xs font-semibold text-slate-200">{plan.durationWeeks} Wks</span>
+                          <span className="text-xs font-semibold text-slate-200">{plan.duration} Wks</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -340,7 +340,7 @@ export const PlansView: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-[10px] uppercase font-mono text-slate-500 tracking-wider">Duration</p>
-                      <p className="text-sm font-bold text-white">{selectedPlan.durationWeeks} Weeks</p>
+                      <p className="text-sm font-bold text-white">{selectedPlan.duration} Weeks</p>
                     </div>
                   </div>
                   
@@ -399,7 +399,7 @@ export const PlansView: React.FC = () => {
                         />
                       </div>
                       <p className="text-[10px] text-center mt-3 text-slate-500 font-mono">
-                        {followedSelectedPlan.completedWeeks.length} out of {selectedPlan.durationWeeks} weeks complete
+                        {followedSelectedPlan.completedSegments.length} out of {selectedPlan.duration} weeks complete
                       </p>
                     </div>
 
@@ -470,9 +470,9 @@ export const PlansView: React.FC = () => {
               {/* Vertical line connecting nodes */}
               <div className="absolute top-0 bottom-0 left-[15px] w-px bg-gradient-to-b from-accentPrimary/50 via-white/10 to-transparent" />
 
-              {selectedPlan.roadmap.map((week, idx) => {
+              {selectedPlan.segments.map((week, idx) => {
                 const isExpanded = expandedWeeks[week.id] !== false; // Default true
-                const isCompleted = followedSelectedPlan?.completedWeeks.includes(idx + 1);
+                const isCompleted = followedSelectedPlan?.completedSegments.includes(week.id);
 
                 return (
                   <div key={week.id} className="relative pl-12 group">
@@ -537,38 +537,27 @@ export const PlansView: React.FC = () => {
 
                               {/* Technical Targets */}
                               <div className="space-y-6">
-                                {week.dsaTopics && week.dsaTopics.length > 0 && (
-                                  <div>
-                                    <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Target DSA Topics</h5>
-                                    <div className="flex flex-wrap gap-2">
-                                      {week.dsaTopics.map(topic => (
-                                        <span key={topic} className="text-[11px] bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 px-3 py-1.5 rounded-lg font-medium shadow-sm">
-                                          {topic.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {week.devSkills && week.devSkills.length > 0 && (
-                                  <div>
-                                    <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Development Skills</h5>
-                                    <div className="flex flex-wrap gap-2">
-                                      {week.devSkills.map(skill => (
-                                        <span key={skill} className="text-[11px] bg-violet-500/10 text-violet-300 border border-violet-500/20 px-3 py-1.5 rounded-lg font-medium shadow-sm">
-                                          {skill}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {week.projectMilestone && week.projectMilestone !== "None" && (
-                                  <div className="bg-white/5 border border-white/10 rounded-xl p-4 shadow-inner">
-                                    <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                                      <Rocket className="w-3.5 h-3.5" /> Project Milestone
-                                    </h5>
-                                    <p className="text-sm text-slate-200">{week.projectMilestone}</p>
+                                {week.modules && week.modules.length > 0 && (
+                                  <div className="space-y-6">
+                                    {week.modules.map((mod: any, idx: number) => (
+                                      <div key={idx}>
+                                        <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">{mod.title}</h5>
+                                        {mod.type === "project" || mod.type === "reading" ? (
+                                          <div className="bg-white/5 border border-white/10 rounded-xl p-4 shadow-inner">
+                                            <p className="text-sm text-slate-200">{mod.description}</p>
+                                            {mod.customContent && <p className="text-xs text-slate-400 mt-2">{mod.customContent}</p>}
+                                          </div>
+                                        ) : (
+                                          <div className="flex flex-wrap items-start gap-2">
+                                            {mod.targetIds?.map((targetId: string) => (
+                                              <span key={targetId} className={`text-[11px] px-3 py-1.5 rounded-lg font-medium shadow-sm border ${mod.type === 'dsa' ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' : mod.type === 'aptitude' ? 'bg-amber-500/10 text-amber-300 border-amber-500/20' : mod.type === 'core' ? 'bg-blue-500/10 text-blue-300 border-blue-500/20' : 'bg-violet-500/10 text-violet-300 border-violet-500/20'}`}>
+                                                {targetId.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                                              </span>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
                                   </div>
                                 )}
                               </div>

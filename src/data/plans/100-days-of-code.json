@@ -1,0 +1,1222 @@
+{
+  "id": "100-days-of-code",
+  "title": "100 Days of Code",
+  "description": "Daily granular tracking of coding habits and small milestones.",
+  "difficulty": "Medium",
+  "tags": [
+    "daily",
+    "consistency"
+  ],
+  "duration": 100,
+  "durationType": "Days",
+  "category": "Sprint",
+  "recommendedFor": [
+    "Beginners",
+    "Everyone"
+  ],
+  "layoutType": "compact-list",
+  "segmentType": "day",
+  "segments": [
+    {
+      "id": "day-1",
+      "title": "Coding Challenge 1",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-2",
+      "title": "Coding Challenge 2",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-3",
+      "title": "Coding Challenge 3",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-4",
+      "title": "Coding Challenge 4",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-5",
+      "title": "Coding Challenge 5",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-6",
+      "title": "Coding Challenge 6",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-7",
+      "title": "Coding Challenge 7",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-8",
+      "title": "Coding Challenge 8",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-9",
+      "title": "Coding Challenge 9",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-10",
+      "title": "Coding Challenge 10",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-11",
+      "title": "Coding Challenge 11",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-12",
+      "title": "Coding Challenge 12",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-13",
+      "title": "Coding Challenge 13",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-14",
+      "title": "Coding Challenge 14",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-15",
+      "title": "Coding Challenge 15",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-16",
+      "title": "Coding Challenge 16",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-17",
+      "title": "Coding Challenge 17",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-18",
+      "title": "Coding Challenge 18",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-19",
+      "title": "Coding Challenge 19",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-20",
+      "title": "Coding Challenge 20",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-21",
+      "title": "Coding Challenge 21",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-22",
+      "title": "Coding Challenge 22",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-23",
+      "title": "Coding Challenge 23",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-24",
+      "title": "Coding Challenge 24",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-25",
+      "title": "Coding Challenge 25",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-26",
+      "title": "Coding Challenge 26",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-27",
+      "title": "Coding Challenge 27",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-28",
+      "title": "Coding Challenge 28",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-29",
+      "title": "Coding Challenge 29",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-30",
+      "title": "Coding Challenge 30",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-31",
+      "title": "Coding Challenge 31",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-32",
+      "title": "Coding Challenge 32",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-33",
+      "title": "Coding Challenge 33",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-34",
+      "title": "Coding Challenge 34",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-35",
+      "title": "Coding Challenge 35",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-36",
+      "title": "Coding Challenge 36",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-37",
+      "title": "Coding Challenge 37",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-38",
+      "title": "Coding Challenge 38",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-39",
+      "title": "Coding Challenge 39",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-40",
+      "title": "Coding Challenge 40",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-41",
+      "title": "Coding Challenge 41",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-42",
+      "title": "Coding Challenge 42",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-43",
+      "title": "Coding Challenge 43",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-44",
+      "title": "Coding Challenge 44",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-45",
+      "title": "Coding Challenge 45",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-46",
+      "title": "Coding Challenge 46",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-47",
+      "title": "Coding Challenge 47",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-48",
+      "title": "Coding Challenge 48",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-49",
+      "title": "Coding Challenge 49",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-50",
+      "title": "Coding Challenge 50",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-51",
+      "title": "Coding Challenge 51",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-52",
+      "title": "Coding Challenge 52",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-53",
+      "title": "Coding Challenge 53",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-54",
+      "title": "Coding Challenge 54",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-55",
+      "title": "Coding Challenge 55",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-56",
+      "title": "Coding Challenge 56",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-57",
+      "title": "Coding Challenge 57",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-58",
+      "title": "Coding Challenge 58",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-59",
+      "title": "Coding Challenge 59",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-60",
+      "title": "Coding Challenge 60",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-61",
+      "title": "Coding Challenge 61",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-62",
+      "title": "Coding Challenge 62",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-63",
+      "title": "Coding Challenge 63",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-64",
+      "title": "Coding Challenge 64",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-65",
+      "title": "Coding Challenge 65",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-66",
+      "title": "Coding Challenge 66",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-67",
+      "title": "Coding Challenge 67",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-68",
+      "title": "Coding Challenge 68",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-69",
+      "title": "Coding Challenge 69",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-70",
+      "title": "Coding Challenge 70",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-71",
+      "title": "Coding Challenge 71",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-72",
+      "title": "Coding Challenge 72",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-73",
+      "title": "Coding Challenge 73",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-74",
+      "title": "Coding Challenge 74",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-75",
+      "title": "Coding Challenge 75",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-76",
+      "title": "Coding Challenge 76",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-77",
+      "title": "Coding Challenge 77",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-78",
+      "title": "Coding Challenge 78",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-79",
+      "title": "Coding Challenge 79",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-80",
+      "title": "Coding Challenge 80",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-81",
+      "title": "Coding Challenge 81",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-82",
+      "title": "Coding Challenge 82",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-83",
+      "title": "Coding Challenge 83",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-84",
+      "title": "Coding Challenge 84",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-85",
+      "title": "Coding Challenge 85",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-86",
+      "title": "Coding Challenge 86",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-87",
+      "title": "Coding Challenge 87",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-88",
+      "title": "Coding Challenge 88",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-89",
+      "title": "Coding Challenge 89",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-90",
+      "title": "Coding Challenge 90",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-91",
+      "title": "Coding Challenge 91",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-92",
+      "title": "Coding Challenge 92",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-93",
+      "title": "Coding Challenge 93",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-94",
+      "title": "Coding Challenge 94",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-95",
+      "title": "Coding Challenge 95",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-96",
+      "title": "Coding Challenge 96",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-97",
+      "title": "Coding Challenge 97",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-98",
+      "title": "Coding Challenge 98",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-99",
+      "title": "Coding Challenge 99",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    },
+    {
+      "id": "day-100",
+      "title": "Coding Challenge 100",
+      "phase": "Challenge",
+      "focus": "Consistency",
+      "estimatedTime": "1 hr",
+      "goals": [
+        "Write code for 1 hour",
+        "Push to GitHub"
+      ],
+      "modules": []
+    }
+  ],
+  "estimatedHoursPerDay": "2"
+}

@@ -1,0 +1,708 @@
+{
+  "id": "16-week-mastery",
+  "title": "16 Week Mastery Plan",
+  "duration": 16,
+  "durationType": "Weeks",
+  "description": "Deep mastery of DSA + Full Stack. The complete curriculum optimized for comprehensive placement excellence.",
+  "difficulty": "Medium",
+  "tags": [
+    "DSA",
+    "Full Stack",
+    "Placement Prep"
+  ],
+  "estimatedHoursPerDay": "3\u20135 hours",
+  "category": "Mastery",
+  "recommendedFor": [
+    "Long-term placement prep",
+    "Pre-final year students"
+  ],
+  "segments": [
+    {
+      "id": "week-1",
+      "title": "Week 1: Array Fundamentals & Responsive Layouts",
+      "phase": "Foundation",
+      "focus": "Basic Array search/frequency counting + CSS & layout tools",
+      "goals": [
+        "Solve core Array-based problems",
+        "Master CSS Grid & Flexbox properties",
+        "Establish anti-vibe-coding logs"
+      ],
+      "estimatedTime": "15 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "arrays-hashing"
+          ],
+          "customContent": "Key Problems: dsa-1, dsa-2, dsa-3, dsa-3b, dsa-arrays-hashing-11, dsa-4, dsa-5, dsa-6, dsa-7, dsa-arrays-hashing-26, dsa-arrays-hashing-27, dsa-arrays-hashing-28, dsa-arrays-hashing-29, dsa-7b, dsa-7c, dsa-arrays-hashing-52"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-1",
+            "skill-2"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Design system dashboard mockups"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "LeetCode arrays basic concepts"
+        },
+        {
+          "id": "aptitude-basics-1",
+          "title": "Quantitative & Logical Aptitude",
+          "type": "aptitude",
+          "description": "Fundamental aptitude concepts for online assessments.",
+          "targetIds": [
+            "number_system",
+            "percentages",
+            "blood_relations"
+          ],
+          "customContent": "Start with basics: Number System, Percentages. Build a solid foundation for quantitative aptitude."
+        }
+      ]
+    },
+    {
+      "id": "week-2",
+      "title": "Week 2: Advanced Hashing & Core React Reactivity",
+      "phase": "Foundation",
+      "focus": "Dynamic Hashmaps + React functional components & hooks",
+      "goals": [
+        "Complete Medium Arrays problems",
+        "Master useState, useEffect, and custom hooks",
+        "Deploy a simple utility tool"
+      ],
+      "estimatedTime": "18 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "arrays-hashing"
+          ],
+          "customContent": "Key Problems: dsa-arrays-hashing-12, dsa-arrays-hashing-13, dsa-arrays-hashing-14, dsa-arrays-hashing-15, dsa-arrays-hashing-16, dsa-arrays-hashing-30, dsa-arrays-hashing-31, dsa-arrays-hashing-32, dsa-arrays-hashing-33, dsa-arrays-hashing-34, dsa-arrays-hashing-35, dsa-arrays-hashing-36, dsa-arrays-hashing-37, dsa-arrays-hashing-53, dsa-arrays-hashing-54, dsa-arrays-hashing-55"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-3"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Task log application build"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "State flows, useEffect cleanup functions"
+        },
+        {
+          "id": "aptitude-basics-2",
+          "title": "Quantitative & Logical Aptitude",
+          "type": "aptitude",
+          "description": "Fundamental aptitude concepts for online assessments.",
+          "targetIds": [
+            "profit_loss",
+            "time_and_work",
+            "syllogism"
+          ],
+          "customContent": "Learn shortcut tricks for Profit & Loss and Time & Work. Practice Syllogism Venn diagrams."
+        }
+      ]
+    },
+    {
+      "id": "week-3",
+      "title": "Week 3: Two Pointers Techniques & State Containers",
+      "phase": "Foundation",
+      "focus": "Two Pointers search optimization + Zustand stores",
+      "goals": [
+        "Solve standard Two Pointers problems",
+        "Initialize Zustand state sharing",
+        "Write clear documentation guidelines"
+      ],
+      "estimatedTime": "16 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "two-pointers"
+          ],
+          "customContent": "Key Problems: dsa-8, dsa-8b, dsa-8c, dsa-two-pointers-9, dsa-two-pointers-10, dsa-9, dsa-10, dsa-11, dsa-12b, dsa-two-pointers-15, dsa-two-pointers-16, dsa-two-pointers-17, dsa-two-pointers-18, dsa-12, dsa-two-pointers-28, dsa-two-pointers-30"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-4"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Global state integration on dashboard"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Arrays + Hashmap weak problem revision"
+        },
+        {
+          "id": "aptitude-basics-3",
+          "title": "Quantitative & Logical Aptitude",
+          "type": "aptitude",
+          "description": "Fundamental aptitude concepts for online assessments.",
+          "targetIds": [
+            "speed_distance",
+            "coding_decoding",
+            "data_interpretation"
+          ],
+          "customContent": "Focus on Data Interpretation graphs and tables. Master Speed, Distance, and Time."
+        }
+      ]
+    },
+    {
+      "id": "week-4",
+      "title": "Week 4: Sliding Window Boundaries & Routing Systems",
+      "phase": "Foundation",
+      "focus": "Index window optimization + Client router setup",
+      "goals": [
+        "Learn Sliding Window logic",
+        "Implement React Router or nested routers",
+        "Design modular sidebar dashboard"
+      ],
+      "estimatedTime": "20 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "sliding-window"
+          ],
+          "customContent": "Key Problems: dsa-13, dsa-sliding-window-8, dsa-sliding-window-9, dsa-sliding-window-19, dsa-sliding-window-25, dsa-13b, dsa-14, dsa-15, dsa-16, dsa-sliding-window-10, dsa-sliding-window-11, dsa-sliding-window-12, dsa-sliding-window-13, dsa-17, dsa-17b, dsa-sliding-window-28"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-5",
+            "skill-6"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Deploy portfolio site with dashboard"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "React state render diagnostics"
+        },
+        {
+          "id": "aptitude-basics-4",
+          "title": "Quantitative & Logical Aptitude",
+          "type": "aptitude",
+          "description": "Fundamental aptitude concepts for online assessments.",
+          "targetIds": [
+            "probability",
+            "permutations",
+            "puzzles"
+          ],
+          "customContent": "Advanced topics: P&C, Probability. Start solving company-specific puzzles (e.g., Infosys, TCS)."
+        }
+      ]
+    },
+    {
+      "id": "week-5",
+      "title": "Week 5: Linear Data Structures & Node Backend Servers",
+      "phase": "Core Mastery",
+      "focus": "Stacks, Queues + Express REST APIs",
+      "goals": [
+        "Solve Monotonic Stack problems",
+        "Spin up backend node services",
+        "Build robust custom REST middleware"
+      ],
+      "estimatedTime": "22 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "stack-queue"
+          ],
+          "customContent": "Key Problems: dsa-18, dsa-18b, dsa-stack-queue-8, dsa-stack-queue-27, dsa-stack-queue-28, dsa-19, dsa-20, dsa-21, dsa-22b, dsa-stack-queue-9, dsa-stack-queue-10, dsa-stack-queue-12, dsa-stack-queue-13, dsa-22, dsa-stack-queue-11, dsa-stack-queue-15"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-7"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Express API with JWT integration"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Two Pointers + Sliding Window problems"
+        }
+      ]
+    },
+    {
+      "id": "week-6",
+      "title": "Week 6: Binary Search Bounds & Identity Protocols",
+      "phase": "Core Mastery",
+      "focus": "Divide-and-conquer + JWT Authentication",
+      "goals": [
+        "Solve Rotated Array searches",
+        "Enforce auth cookies and tokens in backend",
+        "Validate payload models with Zod"
+      ],
+      "estimatedTime": "20 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "binary-search"
+          ],
+          "customContent": "Key Problems: dsa-23, dsa-23b, dsa-binary-search-9, dsa-binary-search-10, dsa-binary-search-11, dsa-24, dsa-25, dsa-26, dsa-27, dsa-binary-search-12, dsa-binary-search-13, dsa-binary-search-14, dsa-binary-search-15, dsa-28, dsa-28b, dsa-binary-search-16"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-8",
+            "skill-10"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Complete signup, logins, auth pipelines"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Monotonic stack templates"
+        }
+      ]
+    },
+    {
+      "id": "week-7",
+      "title": "Week 7: Node Pointer Navigation & Relational Modeling",
+      "phase": "Core Mastery",
+      "focus": "Linked Lists + PostgreSQL schema normalization",
+      "goals": [
+        "Solve list cycle, reversal, and merge logic",
+        "Design normalized Postgres table columns",
+        "Formulate complex queries"
+      ],
+      "estimatedTime": "18 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "linked-list"
+          ],
+          "customContent": "Key Problems: dsa-29, dsa-30, dsa-30b, dsa-linked-list-9, dsa-linked-list-10, dsa-31, dsa-32, dsa-33, dsa-linked-list-15, dsa-linked-list-16, dsa-linked-list-17, dsa-linked-list-18, dsa-linked-list-19, dsa-34, dsa-34b, dsa-linked-list-33"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-13"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Connect DB to authentication schema"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Binary search algorithms"
+        }
+      ]
+    },
+    {
+      "id": "week-8",
+      "title": "Week 8: Document Stores & Schema Compilers",
+      "phase": "Core Mastery",
+      "focus": "NoSQL DB models + Prisma ORM migrations",
+      "goals": [
+        "Establish MongoDB document links",
+        "Integrate Prisma or Mongoose models",
+        "Build generic CRUD backend resolvers"
+      ],
+      "estimatedTime": "20 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "linked-list"
+          ],
+          "customContent": "Key Problems: dsa-linked-list-11, dsa-linked-list-12, dsa-linked-list-13, dsa-linked-list-14, dsa-linked-list-38, dsa-linked-list-20, dsa-linked-list-21, dsa-linked-list-22, dsa-linked-list-23, dsa-linked-list-24, dsa-linked-list-25, dsa-linked-list-26, dsa-linked-list-27, dsa-linked-list-36, dsa-linked-list-28, dsa-linked-list-29"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-14",
+            "skill-15"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Dual DB backup schema mapping"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Linked list algorithms"
+        }
+      ]
+    },
+    {
+      "id": "week-9",
+      "title": "Week 9: Hierarchical Traversals & Event Sockets",
+      "phase": "Advanced Topics",
+      "focus": "Trees, BSTs + WebSockets realtime channels",
+      "goals": [
+        "Master Tree depth & traversal recursion",
+        "Build server-client socket event hubs",
+        "Optimize rendering for socket streams"
+      ],
+      "estimatedTime": "24 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "trees"
+          ],
+          "customContent": "Key Problems: dsa-35, dsa-36, dsa-37, dsa-trees-9, dsa-trees-10, dsa-38, dsa-39, dsa-40, dsa-trees-12, dsa-trees-13, dsa-trees-14, dsa-trees-21, dsa-trees-22, dsa-41, dsa-41b, dsa-trees-45"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-9"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Realtime messaging widget build"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "SQL Joins and index profiles"
+        }
+      ]
+    },
+    {
+      "id": "week-10",
+      "title": "Week 10: State Search Space & Caching Layers",
+      "phase": "Advanced Topics",
+      "focus": "Backtracking algorithms + Redis caches",
+      "goals": [
+        "Formulate combinations and word grids",
+        "Cache SQL results in Redis stores",
+        "Implement rate-limiting client limits"
+      ],
+      "estimatedTime": "22 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "backtracking",
+            "heaps"
+          ],
+          "customContent": "Key Problems: dsa-45c, dsa-backtracking-36, dsa-backtracking-37, dsa-46, dsa-47, dsa-48, dsa-49, dsa-50, dsa-42, dsa-43, dsa-44, dsa-44b, dsa-heaps-7, dsa-heaps-8, dsa-45, dsa-45b"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-11",
+            "skill-16"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Redis caching wrapper logic setup"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Tree recursive paradigms"
+        }
+      ]
+    },
+    {
+      "id": "week-11",
+      "title": "Week 11: Graph Structures & Repository Control",
+      "phase": "Advanced Topics",
+      "focus": "DFS, BFS, Cycle check + Git branching strategies",
+      "goals": [
+        "Solve island counting & course prerequisites",
+        "Handle rebase conflicts on Git branches",
+        "Construct automated CI workflow files"
+      ],
+      "estimatedTime": "24 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "graphs"
+          ],
+          "customContent": "Key Problems: dsa-50c, dsa-graphs-9, dsa-51, dsa-52, dsa-53, dsa-54, dsa-55, dsa-graphs-10, dsa-graphs-11, dsa-graphs-12, dsa-graphs-13, dsa-graphs-14, dsa-graphs-15, dsa-56, dsa-56b, dsa-graphs-19"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-19",
+            "skill-22"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Continuous testing workflow scripts"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Backtracking recursion state limits"
+        }
+      ]
+    },
+    {
+      "id": "week-12",
+      "title": "Week 12: Graph Path Algorithms & Orchestration Containers",
+      "phase": "Advanced Topics",
+      "focus": "Dijkstra/Prim algorithms + Docker isolation layers",
+      "goals": [
+        "Solve weighted paths in graph systems",
+        "Construct Dockerfile scripts for services",
+        "Docker compose local cluster stack"
+      ],
+      "estimatedTime": "25 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "advanced-graphs"
+          ],
+          "customContent": "Key Problems: dsa-59, dsa-58, dsa-58b, dsa-advanced-graphs-7, dsa-advanced-graphs-8, dsa-advanced-graphs-10, dsa-advanced-graphs-11, dsa-advanced-graphs-12, dsa-advanced-graphs-13, dsa-advanced-graphs-14, dsa-advanced-graphs-15, dsa-advanced-graphs-17, dsa-advanced-graphs-18, dsa-57, dsa-60, dsa-advanced-graphs-6"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-20"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Dockerized full-stack service runs local"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Graph components"
+        }
+      ]
+    },
+    {
+      "id": "week-13",
+      "title": "Week 13: Dynamic Optimization & Production Hosting",
+      "phase": "Placement Ready",
+      "focus": "1D Dynamic Programming + Production hosting setups",
+      "goals": [
+        "Solve climbing stairs, house robber variations",
+        "Deploy backend instances on Render or AWS",
+        "Establish CDN endpoints"
+      ],
+      "estimatedTime": "24 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "dynamic-programming"
+          ],
+          "customContent": "Key Problems: dsa-61, dsa-62, dsa-dynamic-programming-17, dsa-dynamic-programming-18, dsa-dynamic-programming-19, dsa-63, dsa-64, dsa-65, dsa-66, dsa-66c, dsa-dynamic-programming-9, dsa-dynamic-programming-10, dsa-dynamic-programming-11, dsa-66b, dsa-dynamic-programming-13, dsa-dynamic-programming-14"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-21",
+            "skill-23"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Live deployment on secure domain"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Docker compose setups"
+        }
+      ]
+    },
+    {
+      "id": "week-14",
+      "title": "Week 14: Subproblem Tables & Integration Pipelines",
+      "phase": "Placement Ready",
+      "focus": "2D DP optimization + GitHub Action deployments",
+      "goals": [
+        "Solve Knapsack grids & sub-sequences",
+        "Configure CD pipelines from repository to hosting server",
+        "Run automated unit test checks"
+      ],
+      "estimatedTime": "22 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "dynamic-programming-2d",
+            "greedy"
+          ],
+          "customContent": "Key Problems: dsa-dynamic-programming-2d-40, dsa-66d, dsa-67, dsa-68, dsa-69, dsa-71, dsa-71b, dsa-dynamic-programming-2d-8, dsa-71c, dsa-greedy-8, dsa-greedy-9, dsa-greedy-10, dsa-72, dsa-73, dsa-74, dsa-75"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-12",
+            "skill-18"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "CD deployment pipeline live test"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "1D DP patterns"
+        }
+      ]
+    },
+    {
+      "id": "week-15",
+      "title": "Week 15: Mock Interrogations & Resume Building",
+      "phase": "Placement Ready",
+      "focus": "Comprehensive review + Pitch sheets optimization",
+      "goals": [
+        "Write complete pitch sheets for projects",
+        "Perform dry-runs of database replication questions",
+        "Practice system design"
+      ],
+      "estimatedTime": "20 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "bit-manipulation"
+          ],
+          "customContent": "Key Problems: dsa-76, dsa-77, dsa-78, dsa-79, dsa-79c, dsa-79b, dsa-79d, dsa-bit-manipulation-17, dsa-bit-manipulation-18, dsa-bit-manipulation-19, dsa-bit-manipulation-20, dsa-bit-manipulation-21, dsa-bit-manipulation-22, dsa-bit-manipulation-30, dsa-bit-manipulation-31, dsa-bit-manipulation-32"
+        },
+        {
+          "type": "dev",
+          "title": "Development Skills",
+          "targetIds": [
+            "skill-17",
+            "skill-24"
+          ]
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "Review ready checklist items"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Dynamic programming structures"
+        }
+      ]
+    },
+    {
+      "id": "week-16",
+      "title": "Week 16: Placement Drive Execution & Mixed Capstone",
+      "phase": "Placement Ready",
+      "focus": "Mixed Capstone DSA + Live placement drives & mock tests",
+      "goals": [
+        "Solve the final Mixed Capstone revision problems",
+        "Execute online mock assessments",
+        "Review weak tags daily & optimize resume pitch"
+      ],
+      "estimatedTime": "20 hours",
+      "modules": [
+        {
+          "type": "dsa",
+          "title": "Data Structures & Algorithms",
+          "targetIds": [
+            "arrays-hashing",
+            "two-pointers",
+            "stack-queue",
+            "bit-manipulation",
+            "trees",
+            "heaps",
+            "backtracking",
+            "graphs",
+            "greedy",
+            "dynamic-programming"
+          ],
+          "customContent": "Key Problems: dsa-trees-11, dsa-arrays-hashing-18, dsa-two-pointers-11, dsa-stack-queue-29, dsa-bit-manipulation-10, dsa-arrays-hashing-43, dsa-stack-queue-18, dsa-trees-24, dsa-heaps-10, dsa-backtracking-9, dsa-graphs-16, dsa-greedy-19, dsa-dynamic-programming-15, dsa-heaps-9, dsa-backtracking-23, dsa-75c"
+        },
+        {
+          "type": "project",
+          "title": "Project Milestone",
+          "description": "All milestones reviewed & portfolio pitch frozen"
+        },
+        {
+          "type": "reading",
+          "title": "Revision Focus",
+          "description": "Final sweep of weak problems"
+        }
+      ]
+    }
+  ],
+  "layoutType": "timeline",
+  "segmentType": "week"
+}

@@ -1,0 +1,60 @@
+{
+  "id": "3-month-crash-course",
+  "title": "3 Phase Sprint",
+  "description": "High level phase tracking.",
+  "difficulty": "Hard",
+  "tags": [
+    "phases",
+    "sprint"
+  ],
+  "duration": 3,
+  "durationType": "Phases",
+  "category": "Mastery",
+  "recommendedFor": [
+    "Advanced"
+  ],
+  "layoutType": "grid",
+  "segmentType": "phase",
+  "segments": [
+    {
+      "id": "phase-1",
+      "title": "Foundation Phase",
+      "phase": "Phase 1",
+      "focus": "Basic Data Structures",
+      "estimatedTime": "1 Month",
+      "goals": [
+        "Arrays",
+        "Strings",
+        "Linked Lists"
+      ],
+      "modules": []
+    },
+    {
+      "id": "phase-2",
+      "title": "Core Algorithm Phase",
+      "phase": "Phase 2",
+      "focus": "Algorithmic thinking",
+      "estimatedTime": "1 Month",
+      "goals": [
+        "Trees",
+        "Graphs",
+        "DP"
+      ],
+      "modules": []
+    },
+    {
+      "id": "phase-3",
+      "title": "System Design Phase",
+      "phase": "Phase 3",
+      "focus": "Scalable systems",
+      "estimatedTime": "1 Month",
+      "goals": [
+        "Load Balancers",
+        "Databases",
+        "Caching"
+      ],
+      "modules": []
+    }
+  ],
+  "estimatedHoursPerDay": "2"
+}
