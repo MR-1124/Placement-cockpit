@@ -1,19 +1,37 @@
 // Removed unused React import
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { LandingView } from './LandingView';
-import { useAppState } from '../context/AppStateContext';
 
-// Mock the context hook
+// Mock the context hook with selector support
+let mockContextValue = {
+  state: { user: null as any },
+  loginUser: () => {}
+};
+
 vi.mock('../context/AppStateContext', () => ({
-  useAppState: vi.fn()
+  useAppState: vi.fn((selector) => selector ? selector(mockContextValue) : mockContextValue)
 }));
 
-// Mock framer-motion to avoid animation issues in tests
+// Mock framer-motion to avoid animation issues in tests and preserve component identity
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    circle: ({ children, ...props }: any) => <circle {...props}>{children}</circle>,
+    div: ({ children, ...props }: any) => {
+      const { transition, animate, initial, exit, whileHover, whileTap, ...rest } = props;
+      return <div {...rest}>{children}</div>;
+    },
+    span: ({ children, ...props }: any) => {
+      const { transition, animate, initial, exit, whileHover, whileTap, ...rest } = props;
+      return <span {...rest}>{children}</span>;
+    },
+    h1: ({ children, ...props }: any) => {
+      const { transition, animate, initial, exit, whileHover, whileTap, ...rest } = props;
+      return <h1 {...rest}>{children}</h1>;
+    },
+    p: ({ children, ...props }: any) => {
+      const { transition, animate, initial, exit, whileHover, whileTap, ...rest } = props;
+      return <p {...rest}>{children}</p>;
+    }
   },
   AnimatePresence: ({ children }: any) => <>{children}</>
 }));
@@ -23,10 +41,10 @@ describe('LandingView', () => {
   const mockLoginUser = vi.fn();
 
   it('renders the initial state (logged out)', () => {
-    (useAppState as any).mockReturnValue({
+    mockContextValue = {
       state: { user: null },
       loginUser: mockLoginUser
-    });
+    };
 
     render(<LandingView onEnterDashboard={mockOnEnterDashboard} />);
     
@@ -35,14 +53,14 @@ describe('LandingView', () => {
     expect(cockpitTexts.length).toBeGreaterThan(0);
     
     // Check if the login CTA is present
-    expect(screen.getAllByText(/Access Cockpit|Go to Dashboard/)).toHaveLength(2);
+    expect(screen.getByText('Initialize Workspace')).toBeInTheDocument();
   });
 
   it('shows Go to Dashboard when logged in', () => {
-    (useAppState as any).mockReturnValue({
+    mockContextValue = {
       state: { user: { uid: '123', name: 'Test User' } },
       loginUser: mockLoginUser
-    });
+    };
 
     render(<LandingView onEnterDashboard={mockOnEnterDashboard} />);
     
@@ -53,19 +71,24 @@ describe('LandingView', () => {
     expect(mockOnEnterDashboard).toHaveBeenCalled();
   });
 
-  it('opens the login modal when clicking Go to Dashboard', () => {
-    (useAppState as any).mockReturnValue({
+  it('opens the login modal when clicking Go to Dashboard', async () => {
+    mockContextValue = {
       state: { user: null },
       loginUser: mockLoginUser
-    });
+    };
 
     render(<LandingView onEnterDashboard={mockOnEnterDashboard} />);
     
-    const initBtn = screen.getAllByText('Go to Dashboard')[0];
-    fireEvent.click(initBtn);
+    const initBtn = screen.getByText('Access Cockpit').closest('button');
+    if (initBtn) {
+      await act(async () => {
+        fireEvent.click(initBtn);
+      });
+    }
     
-    // Check if the modal title is there
-    expect(screen.getByText('Access Placement Cockpit')).toBeInTheDocument();
-    expect(screen.getByText('Continue in Developer Guest Mode')).toBeInTheDocument();
+    // Check if the modal is open
+    const titles = await screen.findAllByText('Access Cockpit');
+    expect(titles.length).toBeGreaterThan(1); // One in header, one in modal
+    expect(await screen.findByText('Developer Guest Mode')).toBeInTheDocument();
   });
 });

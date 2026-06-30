@@ -5,7 +5,13 @@ import { auth, db, hasFirebaseKeys } from "../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Loader2, AlertTriangle, AlertCircle, Info } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { DsaTopic, DevCategory, UserPlan, Plan, Badge } from "../data/curriculum";
+import type { UserPlan } from "../data/curriculum";
+import type { AppState, SerializedProgress, AppContextType } from "./AppStateTypes";
+import { SCHEMA_VERSION, serializeState, deserializeState, calculateReadinessScore, getLevelInfo } from "./stateMigrations";
+import { checkAndUnlockBadges } from "./badgeEngine";
+
+// Export context-specific types for backwards compatibility
+export type { AppState, SerializedProgress, AppContextType };
 
 // Arch Debt #13 fix: import all domain types from centralised types file.
 import type {
@@ -59,451 +65,16 @@ export type {
 // All domain interfaces are now in src/types/AppTypes.ts (Arch Debt #13).
 // They are imported above and re-exported for backwards compatibility.
 
-
-const SCHEMA_VERSION = 1;
-
-interface AppState {
-  version: number;
-  isLoadingUser: boolean;
-  user: UserProfile | null;
-  completedSegments: string[];
-  dsaTopics: DsaTopic[];
-  devCategories: DevCategory[];
-  projects: Project[];
-  completedSkills: string[];
-  aiLogs: AiLog[];
-  dailyHabits: DailyHabitState;
-  customTasks: CustomTask[];
-  weeklyGoals?: WeeklyGoal[];
-  habitHistory: HistoryItem[];
-  notes: Note[];
-  settings: AppSettings;
-  streak: number;
-  lastActiveDate: string;
-  unlockedBadges: string[];
-  xp: number;
-  dailyChallenge?: DailyChallenge;
-  sessionNvidiaKey?: string;
-
-  chatSessions?: Record<string, ChatSession>;
-  currentSessionId?: string;
-  userPlans?: UserPlan[];
-  primaryPlanId?: string;
-  mockInterviews?: MockInterviewReport[];
-  activeInterviewSession?: ActiveInterviewSession | null;
-  flashcards?: Flashcard[];
-  customDecks?: FlashcardDeck[];
-  flashcardHistory?: FlashcardSession[];
-  activeRoadmaps?: CompanyRoadmap[];
-  atsReports?: AtsReport[];
-}
-
-export interface AppContextType {
-  state: AppState;
-  curriculum: {
-    DEFAULT_DSA_TOPICS: DsaTopic[];
-    DEFAULT_DEV_CATEGORIES: DevCategory[];
-    DEFAULT_BADGES: Badge[];
-    ALL_PLANS: Plan[];
-  };
-  overallCompletion: number;
-  dsaCompletion: number;
-  devCompletion: number;
-  aiDependencyScore: number;
-  readinessScore: number;
-  projectCount: number;
-  revisionCompletion: number;
-  level: number;
-  xpProgress: number;
-  levelTitle: string;
-  loginUser: (user: UserProfile) => void;
-  logoutUser: () => void;
-  updateUserProfile: (profile: Partial<UserProfile>) => void;
-  toggleWeek: (weekId: string) => void;
-  toggleDsaProblem: (topicId: string, problemId: string) => void;
-  updateDsaNotes: (topicId: string, problemId: string, notes: string) => void;
-  toggleDsaWeak: (topicId: string, problemId: string) => void;
-  scheduleRevision: (topicId: string, problemId: string, interval: number) => void;
-  updateDsaMastery: (topicId: string, mastery: "Beginner" | "Intermediate" | "Master") => void;
-  updateDsaComplexity: (topicId: string, problemId: string, timeComplexity: string, spaceComplexity: string) => void;
-  incrementDsaSubmissions: (topicId: string, problemId: string) => void;
-  updateDevSkill: (skillId: string, field: "learned" | "practiced" | "built" | "deployed" | "revised") => void;
-  addAiLog: (log: Omit<AiLog, "id" | "date">) => void;
-  toggleHabit: (key: keyof DailyHabitState) => void;
-  addCustomTask: (name: string) => void;
-  toggleCustomTask: (id: string) => void;
-  deleteCustomTask: (id: string) => void;
-  addWeeklyGoal: (text: string) => void;
-  toggleWeeklyGoal: (id: string) => void;
-  deleteWeeklyGoal: (id: string) => void;
-  addProject: (project: Omit<Project, "id">) => void;
-  updateProject: (project: Project) => void;
-  deleteProject: (id: string) => void;
-  addChatMessage: (role: "user" | "assistant", content: string) => void;
-  openChatWithPrompt: (prompt: string) => void;
-  clearChatHistory: () => void;
-  toggleSkill: (skillId: string) => void;
-  createNewSession: (title?: string) => void;
-  setActiveSession: (sessionId: string) => void;
-  deleteSession: (sessionId: string) => void;
-  togglePinSession: (sessionId: string) => void;
-  renameSession: (sessionId: string, title: string) => void;
-  updateSessionSystemPrompt: (sessionId: string, prompt: string) => void;
-  branchSession: (sessionId: string) => void;
-  removeLastAssistantMessage: () => void;
-  addNote: (note: Omit<Note, "id" | "updatedAt">) => void;
-  updateNote: (note: Note) => void;
-  deleteNote: (id: string) => void;
-  updateSettings: (settings: Partial<AppSettings>) => void;
-  resetAllData: () => void;
-  seedMockData: () => void;
-  followPlan: (planId: string) => void;
-  pausePlan: (planId: string) => void;
-  unfollowPlan: (planId: string) => void;
-  setPrimaryPlan: (planId: string) => void;
-  togglePlanWeek: (planId: string, segmentId: string) => void;
-  togglePlanTask: (planId: string, taskKey: string) => void;
-  confirmAction: (options: ConfirmationOptions) => void;
-  startInterviewSession: (topic: string, difficulty: "Easy" | "Medium" | "Hard", personality: "Helpful Mentor" | "Quiet Observer" | "Strict Interviewer", problemDescription: string, resumeText?: string, resumeFileName?: string) => void;
-  updateInterviewSession: (timeLeft: number, code: string, language: string, chatHistory: ChatMessage[], currentPhase: "intro" | "dsa" | "core" | "puzzles" | "hr" | "evaluating", subPhaseStatus?: string) => void;
-  addInterviewChatMessage: (role: "user" | "assistant", content: string) => void;
-  endInterviewSession: (completed: boolean, report?: MockInterviewReport) => void;
-  deleteMockInterviewReport: (id: string) => void;
-  completeDailyChallenge: () => void;
-  refreshDailyChallenge: () => void;
-  setSessionNvidiaKey: (key: string) => void;
-  updateFlashcardReview: (flashcardId: string, easeFactor: number, interval: number, nextReviewDate: string, repetition: number) => void;
-  enrollCompanyRoadmap: (segments: CompanyRoadmap) => void;
-  updateRoadmapProgress: (segmentsId: string, milestoneId: string, completed: boolean) => void;
-  importFlashcards: (deck: FlashcardDeck, cards: Flashcard[]) => void;
-  addCustomDeck: (deck: FlashcardDeck) => void;
-  deleteCustomDeck: (deckId: string) => void;
-  addFlashcards: (_deckId: string, cards: Flashcard[]) => void;
-  deleteFlashcard: (cardId: string) => void;
-  updateFlashcard: (cardId: string, updates: Partial<Flashcard>) => void;
-  saveFlashcardSession: (session: FlashcardSession) => void;
-
-  saveAtsReport: (report: AtsReport) => void;
-}
-
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-interface SerializedProgress {
-  version?: number;
-  user?: UserProfile;
-  completedSegments: string[];
-  dsaProblems: {
-    [problemId: string]: {
-      isCompleted?: boolean;
-      isWeak?: boolean;
-      notes?: string;
-      lastSolved?: string;
-      revisionInterval?: number;
-      nextRevisionDate?: string;
-      timeComplexity?: string;
-      spaceComplexity?: string;
-      submissions?: number;
-    };
-  };
-  dsaTopicMastery: {
-    [topicId: string]: "Beginner" | "Intermediate" | "Master";
-  };
-  devSkills: {
-    [skillId: string]: {
-      learned?: boolean;
-      practiced?: boolean;
-      built?: boolean;
-      deployed?: boolean;
-      revised?: boolean;
-    };
-  };
-  projects: Project[];
-  completedSkills: string[];
-  aiLogs: AiLog[];
-  dailyHabits: DailyHabitState;
-  customTasks: CustomTask[];
-  weeklyGoals?: WeeklyGoal[];
-  habitHistory: HistoryItem[];
-  notes: Note[];
-  settings: AppSettings;
-  streak: number;
-  lastActiveDate: string;
-  unlockedBadges: string[];
-  xp: number;
-  chatSessions?: Record<string, ChatSession>;
-  currentSessionId?: string;
-  profile?: {
-    name: string;
-    email: string;
-    avatar: string;
-    targetCompanies: string[];
-    linkedinUrl: string;
-    githubUrl: string;
-    resumeLink: string;
-    cohort: string;
-    savedIntro?: string;
-    /** Arch Debt #16: persisted resume for re-use across sessions */
-    resumeText?: string;
-    resumeFileName?: string;
-  };
-  userPlans?: UserPlan[];
-  primaryPlanId?: string;
-  mockInterviews?: MockInterviewReport[];
-  activeInterviewSession?: ActiveInterviewSession | null;
-  flashcards?: Flashcard[];
-  customDecks?: FlashcardDeck[];
-  flashcardHistory?: FlashcardSession[];
-  activeRoadmaps?: CompanyRoadmap[];
-  atsReports?: AtsReport[];
-}
-
-const serializeState = (state: AppState): SerializedProgress => {
-  const dsaProblems: SerializedProgress["dsaProblems"] = {};
-  const dsaTopicMastery: SerializedProgress["dsaTopicMastery"] = {};
-
-  state.dsaTopics.forEach(topic => {
-    if (topic.mastery) {
-      dsaTopicMastery[topic.id] = topic.mastery;
-    }
-    topic.problems.forEach(prob => {
-      if (
-        prob.isCompleted ||
-        prob.isWeak ||
-        prob.notes ||
-        prob.lastSolved ||
-        prob.revisionInterval ||
-        prob.nextRevisionDate ||
-        prob.timeComplexity ||
-        prob.spaceComplexity ||
-        (prob as any).submissions
-      ) {
-        dsaProblems[prob.id] = {
-          ...(prob.isCompleted && { isCompleted: true }),
-          ...(prob.isWeak && { isWeak: true }),
-          ...(prob.notes && { notes: prob.notes }),
-          ...(prob.lastSolved && { lastSolved: prob.lastSolved }),
-          ...(prob.revisionInterval !== undefined && { revisionInterval: prob.revisionInterval }),
-          ...(prob.nextRevisionDate && { nextRevisionDate: prob.nextRevisionDate }),
-          ...(prob.timeComplexity && { timeComplexity: prob.timeComplexity }),
-          ...(prob.spaceComplexity && { spaceComplexity: prob.spaceComplexity }),
-          ...((prob as any).submissions && { submissions: (prob as any).submissions })
-        };
-      }
-    });
-  });
-
-  const devSkills: SerializedProgress["devSkills"] = {};
-  state.devCategories.forEach(cat => {
-    cat.skills.forEach(skill => {
-      if (skill.learned || skill.practiced || skill.built || skill.deployed || skill.revised) {
-        devSkills[skill.id] = {
-          ...(skill.learned && { learned: true }),
-          ...(skill.practiced && { practiced: true }),
-          ...(skill.built && { built: true }),
-          ...(skill.deployed && { deployed: true }),
-          ...(skill.revised && { revised: true })
-        };
-      }
-    });
-  });
-
-  return {
-    version: state.version,
-    user: state.user || undefined,
-    completedSegments: state.completedSegments || [],
-    dsaProblems,
-    dsaTopicMastery,
-    devSkills,
-    projects: state.projects || [],
-      completedSkills: state.completedSkills || [],
-    aiLogs: state.aiLogs || [],
-    dailyHabits: state.dailyHabits,
-    customTasks: state.customTasks || [],
-    habitHistory: state.habitHistory || [],
-    notes: state.notes || [],
-    settings: state.settings,
-    streak: state.streak || 0,
-    lastActiveDate: state.lastActiveDate,
-    unlockedBadges: state.unlockedBadges || [],
-    xp: state.xp || 0,
-    chatSessions: state.chatSessions || {},
-    currentSessionId: state.currentSessionId || "default-session",
-    userPlans: state.userPlans || [],
-    primaryPlanId: state.primaryPlanId || "16-week-mastery",
-    mockInterviews: state.mockInterviews || [],
-    activeInterviewSession: state.activeInterviewSession || null,
-    profile: state.user ? {
-      name: state.user.name,
-      email: state.user.email,
-      avatar: state.user.avatar,
-      targetCompanies: state.user.targetCompanies || [],
-      linkedinUrl: state.user.linkedinUrl || "",
-      githubUrl: state.user.githubUrl || "",
-      resumeLink: state.user.resumeLink || "",
-      cohort: state.user.cohort || "",
-      savedIntro: state.user.savedIntro || "",
-      // Arch Debt #16: persist resume to profile
-      resumeText: state.user.resumeText || "",
-      resumeFileName: state.user.resumeFileName || ""
-    } : undefined,
-    flashcards: state.flashcards || [],
-    customDecks: state.customDecks || [],
-    flashcardHistory: state.flashcardHistory || [],
-    activeRoadmaps: state.activeRoadmaps || [],
-    atsReports: state.atsReports || []
-  };
-};
-
-const deserializeState = (serialized: Partial<SerializedProgress>, curriculum: any): AppState => {
-  const dsaTopics = curriculum.DEFAULT_DSA_TOPICS.map((defaultTopic: DsaTopic) => {
-    const mastery = serialized.dsaTopicMastery?.[defaultTopic.id] || defaultTopic.mastery;
-    const problems = defaultTopic.problems.map(defaultProb => {
-      const savedProb = serialized.dsaProblems?.[defaultProb.id];
-      if (!savedProb) return defaultProb;
-      return {
-        ...defaultProb,
-        isCompleted: savedProb.isCompleted ?? defaultProb.isCompleted,
-        isWeak: savedProb.isWeak ?? defaultProb.isWeak,
-        notes: savedProb.notes ?? defaultProb.notes,
-        lastSolved: savedProb.lastSolved ?? defaultProb.lastSolved,
-        revisionInterval: savedProb.revisionInterval ?? defaultProb.revisionInterval,
-        nextRevisionDate: savedProb.nextRevisionDate ?? defaultProb.nextRevisionDate,
-        timeComplexity: savedProb.timeComplexity ?? defaultProb.timeComplexity,
-        spaceComplexity: savedProb.spaceComplexity ?? defaultProb.spaceComplexity,
-        submissions: savedProb.submissions ?? 0
-      };
-    });
-    return {
-      ...defaultTopic,
-      mastery,
-      problems
-    };
-  });
-
-  const devCategories = curriculum.DEFAULT_DEV_CATEGORIES.map((defaultCat: DevCategory) => {
-    const skills = defaultCat.skills.map(defaultSkill => {
-      const savedSkill = serialized.devSkills?.[defaultSkill.id];
-      if (!savedSkill) return defaultSkill;
-      return {
-        ...defaultSkill,
-        learned: savedSkill.learned ?? defaultSkill.learned,
-        practiced: savedSkill.practiced ?? defaultSkill.practiced,
-        built: savedSkill.built ?? defaultSkill.built,
-        deployed: savedSkill.deployed ?? defaultSkill.deployed,
-        revised: savedSkill.revised ?? defaultSkill.revised
-      };
-    });
-    return {
-      ...defaultCat,
-      skills
-    };
-  });
-
-  return {
-    isLoadingUser: false,
-    version: serialized.version || SCHEMA_VERSION,
-    user: serialized.user || null,
-    completedSegments: serialized.completedSegments || [],
-    dsaTopics,
-    devCategories,
-    projects: serialized.projects || [],
-      completedSkills: serialized.completedSkills || [],
-    aiLogs: serialized.aiLogs || [],
-    dailyHabits: serialized.dailyHabits || {
-      solveDsa: false,
-      reviseOld: false,
-      buildFeature: false,
-      avoidAi: false,
-      pushGithub: false,
-      readDoc: false
-    },
-    customTasks: serialized.customTasks || [],
-    habitHistory: serialized.habitHistory || [],
-    notes: serialized.notes || [],
-    settings: {
-      accentColor: serialized.settings?.accentColor ?? "violet",
-      compactUi: serialized.settings?.compactUi ?? false,
-      reminderFrequency: serialized.settings?.reminderFrequency ?? "weekly",
-      showSections: serialized.settings?.showSections ?? {
-        dashboard: true,
-        segments: true,
-        dsa: true,
-        dev: true,
-        ai: true,
-        habits: true,
-        projects: true,
-        revision: true,
-        notes: true,
-        badges: true
-      },
-      nvidiaApiKey: serialized.settings?.nvidiaApiKey ?? "",
-      nvidiaModelName: serialized.settings?.nvidiaModelName ?? "meta/llama-3.1-70b-instruct",
-      nvidiaInterviewerModelName: serialized.settings?.nvidiaInterviewerModelName
-    },
-    streak: serialized.streak || 0,
-    lastActiveDate: serialized.lastActiveDate || getTodayString(),
-    unlockedBadges: serialized.unlockedBadges || [],
-    xp: serialized.xp || 0,
-    chatSessions: serialized.chatSessions || {
-      "default-session": {
-        id: "default-session",
-        title: "Placement Chat Room",
-        messages: [],
-        createdAt: new Date().toLocaleDateString(),
-        isPinned: false
-      }
-    },
-    currentSessionId: serialized.currentSessionId || "default-session",
-    userPlans: (serialized.userPlans || []).map((up: any) => ({
-      ...up,
-      completedSegments: up.completedSegments !== undefined ? up.completedSegments : (up.completedWeeks ? up.completedWeeks.map((w: any) => String(w)) : [])
-    })),
-    primaryPlanId: serialized.primaryPlanId || "16-week-mastery",
-    mockInterviews: serialized.mockInterviews || [],
-    activeInterviewSession: serialized.activeInterviewSession || null,
-    flashcards: serialized.flashcards || [],
-    customDecks: serialized.customDecks || [],
-    flashcardHistory: serialized.flashcardHistory || [],
-    activeRoadmaps: serialized.activeRoadmaps || [],
-    atsReports: serialized.atsReports || []
-  };
-};
-
-const calculateReadinessScore = (
-  dsaCompletion: number,
-  devCompletion: number,
-  projectCompletionPercentage: number,
-  streak: number,
-  aiDependencyScore: number,
-  aiLogsCount: number
-): number => {
-  const dsaContribution = dsaCompletion * 0.35;
-  const devContribution = devCompletion * 0.30;
-  const projectContribution = projectCompletionPercentage * 0.25;
-  const streakContribution = Math.min(10, streak) * 10 * 0.10;
-
-  const aiPenalty = aiLogsCount > 0 ? (aiDependencyScore * 0.15) : 0;
-
-  return Math.min(100, Math.max(0, Math.round(dsaContribution + devContribution + projectContribution + streakContribution - aiPenalty)));
-};
-
-const getLevelInfo = (totalXp: number) => {
-  let level = Math.floor(0.5 + Math.sqrt(0.25 + totalXp / 100));
-  if (level < 1) level = 1;
-
-  const xpForCurrentLevel = 100 * level * (level - 1);
-  const xpForNextLevel = 100 * (level + 1) * level;
-  const xpInCurrentLevel = totalXp - xpForCurrentLevel;
-  const xpRequiredForNextLevel = xpForNextLevel - xpForCurrentLevel;
-
-  const xpProgress = xpRequiredForNextLevel > 0
-    ? Math.min(100, Math.round((xpInCurrentLevel / xpRequiredForNextLevel) * 100))
-    : 100;
-
-  return { level, xpProgress };
-};
-
 const STORAGE_KEY = "placement_cockpit_state";
+
+export const generateId = () => {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+};
 
 const getTodayString = () => {
   const d = new Date();
@@ -514,6 +85,42 @@ const getYesterdayString = () => {
   const d = new Date();
   d.setDate(d.getDate() - 1);
   return d.toISOString().split("T")[0];
+};
+
+const applyDayTransition = (state: AppState, today: string, yesterday: string): AppState => {
+  if (!state.lastActiveDate || state.lastActiveDate === today) return state;
+
+  const completedCount = Object.values(state.dailyHabits || {}).filter(Boolean).length;
+  const historyItem: HistoryItem = {
+    date: state.lastActiveDate,
+    habitsCompleted: completedCount
+  };
+
+  const filteredHistory = (state.habitHistory || []).filter(h => h.date !== state.lastActiveDate);
+
+  let streak = state.streak || 0;
+  if (state.lastActiveDate === yesterday) {
+    // Keep streak
+  } else {
+    // Reset streak
+    streak = 0;
+  }
+
+  return {
+    ...state,
+    habitHistory: [...filteredHistory, historyItem],
+    dailyHabits: {
+      solveDsa: false,
+      reviseOld: false,
+      buildFeature: false,
+      avoidAi: false,
+      pushGithub: false,
+      readDoc: false
+    },
+    customTasks: (state.customTasks || []).filter(t => !t.isCompleted),
+    streak,
+    lastActiveDate: today
+  };
 };
 
 const getInitialState = (curriculum: any): AppState => ({
@@ -567,7 +174,7 @@ const getInitialState = (curriculum: any): AppState => ({
       id: "default-session",
       title: "Placement Chat Room",
       messages: [],
-      createdAt: new Date().toLocaleDateString(),
+      createdAt: getTodayString(),
       isPinned: false
     }
   },
@@ -690,7 +297,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
               id: "default-session",
               title: "Placement Chat Room",
               messages: (updatedState as any).chatMessages || [],
-              createdAt: new Date().toLocaleDateString(),
+              createdAt: getTodayString(),
               isPinned: false
             }
           };
@@ -733,43 +340,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
           ];
         }
 
-        if (parsed.lastActiveDate !== today) {
-          // It's a new day, save yesterday's habit count to history
-          if (parsed.lastActiveDate) {
-            const completedCount = Object.values(parsed.dailyHabits).filter(Boolean).length;
-            const historyItem: HistoryItem = {
-              date: parsed.lastActiveDate,
-              habitsCompleted: completedCount
-            };
-            
-            // Avoid duplicate history items
-            const filteredHistory = parsed.habitHistory.filter(h => h.date !== parsed.lastActiveDate);
-            updatedState.habitHistory = [...filteredHistory, historyItem];
-          }
-
-          // Reset habits for today
-          updatedState.dailyHabits = {
-            solveDsa: false,
-            reviseOld: false,
-            buildFeature: false,
-            avoidAi: false,
-            pushGithub: false,
-            readDoc: false
-          };
-          
-          // Clear yesterday's completed custom tasks, keep uncompleted ones
-          updatedState.customTasks = parsed.customTasks.filter(t => !t.isCompleted);
-
-          // Streak check
-          if (parsed.lastActiveDate === yesterday) {
-            // Active yesterday, keep streak
-          } else if (parsed.lastActiveDate !== "") {
-            // Broke the streak (gap of more than 1 day)
-            updatedState.streak = 0;
-          }
-          
-          updatedState.lastActiveDate = today;
-        }
+        updatedState = applyDayTransition(updatedState, today, yesterday);
 
         return updatedState;
       } catch (e) {
@@ -864,42 +435,8 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
   useEffect(() => {
     const checkDateTransition = () => {
       const today = getTodayString();
-      setState(prev => {
-        if (!prev.lastActiveDate || prev.lastActiveDate === today) return prev;
-
-        const yesterday = getYesterdayString();
-        const completedCount = Object.values(prev.dailyHabits).filter(Boolean).length;
-        const historyItem: HistoryItem = {
-          date: prev.lastActiveDate,
-          habitsCompleted: completedCount
-        };
-
-        const filteredHistory = prev.habitHistory.filter(h => h.date !== prev.lastActiveDate);
-
-        let updatedStreak = prev.streak;
-        if (prev.lastActiveDate === yesterday) {
-          // Keep streak
-        } else {
-          // Reset streak
-          updatedStreak = 0;
-        }
-
-        return {
-          ...prev,
-          habitHistory: [...filteredHistory, historyItem],
-          dailyHabits: {
-            solveDsa: false,
-            reviseOld: false,
-            buildFeature: false,
-            avoidAi: false,
-            pushGithub: false,
-            readDoc: false
-          },
-          customTasks: prev.customTasks.filter(t => !t.isCompleted),
-          streak: updatedStreak,
-          lastActiveDate: today
-        };
-      });
+      const yesterday = getYesterdayString();
+      setState(prev => applyDayTransition(prev, today, yesterday));
     };
 
     checkDateTransition();
@@ -1047,7 +584,6 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         const serialized = serializeState(state);
         const userDocRef = doc(db, "users", state.user!.uid);
         await setDoc(userDocRef, serialized);
-        console.log("Firestore state saved successfully");
       } catch (err) {
         console.error("Failed to save state to Firestore:", err);
       }
@@ -1094,134 +630,13 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     });
   };
 
-  // Dynamic Badge Unlocking Engine
-  const checkAndUnlockBadges = (updatedState: AppState) => {
-    let freshlyUnlocked: string[] = [];
 
-    // 1. Calculate values
-    const dsaSolvedCount = updatedState.dsaTopics.reduce(
-      (acc, topic) => acc + topic.problems.filter(p => p.isCompleted).length,
-      0
-    );
-
-    const devMasteredCount = updatedState.devCategories.reduce(
-      (acc, cat) =>
-        acc + cat.skills.filter(s => s.learned && s.practiced && s.built && s.deployed && s.revised).length,
-      0
-    );
-
-    const logCount = updatedState.aiLogs.length;
-    const avgAiPercent = logCount > 0
-      ? updatedState.aiLogs.reduce((acc, l) => acc + l.aiPercentage, 0) / logCount
-      : 100;
-
-    const zeroCopyLogs = updatedState.aiLogs.filter(l => l.aiPercentage === 0).length;
-
-    // Revision items completed
-    const totalRevisionsSolved = updatedState.dsaTopics.reduce((acc, topic) => {
-      return acc + topic.problems.filter(p => p.lastSolved && p.revisionInterval && p.revisionInterval > 0).length;
-    }, 0);
-
-    // Dynamic readiness calculation
-    const dsaTotal = updatedState.dsaTopics.reduce((acc, t) => acc + t.problems.length, 0);
-    const dsaComp = dsaTotal > 0 ? (dsaSolvedCount / dsaTotal) * 100 : 0;
-
-    const devTotalSkills = updatedState.devCategories.reduce((acc, c) => acc + c.skills.length, 0);
-    const devCompletedActions = updatedState.devCategories.reduce((acc, c) => {
-      return acc + c.skills.reduce((sum, s) => {
-        let sc = 0;
-        if (s.learned) sc++;
-        if (s.practiced) sc++;
-        if (s.built) sc++;
-        if (s.deployed) sc++;
-        if (s.revised) sc++;
-        return sum + sc;
-      }, 0);
-    }, 0);
-    const devComp = devTotalSkills > 0 ? (devCompletedActions / (devTotalSkills * 5)) * 100 : 0;
-
-    const projComp = updatedState.projects.length > 0
-      ? (updatedState.projects.reduce((acc, p) => acc + p.completion, 0) / (updatedState.projects.length * 100)) * 100
-      : 0;
-
-    const readinessScore = calculateReadinessScore(
-      dsaComp,
-      devComp,
-      projComp,
-      updatedState.streak,
-      avgAiPercent,
-      logCount
-    );
-
-    const hasFullStackProject = updatedState.projects.some(p => p.completion === 100);
-
-    curriculum.DEFAULT_BADGES.forEach((badge: Badge) => {
-      if (updatedState.unlockedBadges.includes(badge.id)) return;
-
-      let passes = false;
-      // Evaluate requirement string manually
-      switch (badge.id) {
-        case "badge-1": // dsaCount >= 10
-          passes = dsaSolvedCount >= 10;
-          break;
-        case "badge-2": // dsaCount >= 40
-          passes = dsaSolvedCount >= 40;
-          break;
-        case "badge-3": // devCount >= 5
-          passes = devMasteredCount >= 5;
-          break;
-        case "badge-4": // devCount >= 12
-          passes = devMasteredCount >= 12;
-          break;
-        case "badge-5": // avgAiPercent <= 20 && logCount >= 3
-          passes = avgAiPercent <= 20 && logCount >= 3;
-          break;
-        case "badge-6": // zeroCopyLogs >= 5
-          passes = zeroCopyLogs >= 5;
-          break;
-        case "badge-7": // streak >= 7
-          passes = updatedState.streak >= 7;
-          break;
-        case "badge-8": // revisionCount >= 10
-          passes = totalRevisionsSolved >= 10;
-          break;
-        case "badge-9": // readinessScore >= 85
-          passes = readinessScore >= 85;
-          break;
-      }
-
-      if (passes) {
-        freshlyUnlocked.push(badge.id);
-      }
-    });
-
-    if (hasFullStackProject && dsaSolvedCount >= 10 && readinessScore >= 60 && !updatedState.unlockedBadges.includes("pioneer")) {
-      freshlyUnlocked.push("pioneer");
-    }
-
-    if (freshlyUnlocked.length > 0) {
-      // Trigger Confetti!
-      confetti({
-        particleCount: 150,
-        spread: 80,
-        origin: { y: 0.6 },
-        colors: ["#8b5cf6", "#10b981", "#f59e0b", "#f43f5e", "#3b82f6"]
-      });
-      
-      return {
-        ...updatedState,
-        unlockedBadges: [...updatedState.unlockedBadges, ...freshlyUnlocked]
-      };
-    }
-
-    return updatedState;
-  };
 
   // Helper to safely wrap updates, checking badges and streaks
   const updateState = (updater: (prev: AppState) => AppState) => {
     setState(prev => {
       const next = updater(prev);
-      return checkAndUnlockBadges(next);
+      return checkAndUnlockBadges(next, curriculum);
     });
   };
 
@@ -1547,7 +962,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       const existingIndex = prev.aiLogs.findIndex(l => l.date === today);
 
       const newLog: AiLog = {
-        id: existingIndex >= 0 ? prev.aiLogs[existingIndex].id : Math.random().toString(36).substring(7),
+        id: existingIndex >= 0 ? prev.aiLogs[existingIndex].id : generateId(),
         date: today,
         ...logData
       };
@@ -1601,7 +1016,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
   const addCustomTask = (name: string) => {
     updateState(prev => {
       const newTask: CustomTask = {
-        id: Math.random().toString(36).substring(7),
+        id: generateId(),
         name,
         isCompleted: false
       };
@@ -1631,7 +1046,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
   const addWeeklyGoal = (text: string) => {
     updateState(prev => {
       const newGoal: WeeklyGoal = {
-        id: Math.random().toString(36).substring(7),
+        id: generateId(),
         text,
         isCompleted: false
       };
@@ -1658,7 +1073,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
   const addProject = (projectData: Omit<Project, "id">) => {
     updateState(prev => {
       const newProject: Project = {
-        id: Math.random().toString(36).substring(7),
+        id: generateId(),
         ...projectData
       };
       return { ...prev, projects: [...prev.projects, newProject] };
@@ -1686,7 +1101,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
   const addChatMessage = (role: "user" | "assistant", content: string) => {
     updateState(prev => {
       const newMsg: ChatMessage = {
-        id: Math.random().toString(36).substring(7),
+        id: generateId(),
         role,
         content,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
@@ -1695,7 +1110,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       const chatSessions: Record<string, ChatSession> = prev.chatSessions || {};
       const activeSession = chatSessions[activeId] || {
         id: activeId, title: "Placement Chat Room", messages: [],
-        createdAt: new Date().toLocaleDateString(), isPinned: false
+        createdAt: getTodayString(), isPinned: false
       };
       const title = activeSession.messages.length === 0 && role === "user"
         ? (content.length > 30 ? content.slice(0, 30) + "..." : content)
@@ -1730,10 +1145,10 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
   const createNewSession = (title?: string) => {
     updateState(prev => {
       const newSession: ChatSession = {
-        id: Math.random().toString(36).substring(7),
+        id: generateId(),
         title: title || "New Chat Session",
         messages: [],
-        createdAt: new Date().toLocaleDateString(),
+        createdAt: getTodayString(),
         isPinned: false
       };
       return {
@@ -1764,7 +1179,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
           id: "default-session",
           title: "Placement Chat Room",
           messages: [],
-          createdAt: new Date().toLocaleDateString(),
+          createdAt: getTodayString(),
           isPinned: false
         };
         chatSessions["default-session"] = defaultSession;
@@ -1815,9 +1230,9 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       
       const newSession: ChatSession = {
         ...sessionToBranch,
-        id: Math.random().toString(36).substring(7),
+        id: generateId(),
         title: `${sessionToBranch.title} (Fork)`,
-        createdAt: new Date().toLocaleDateString()
+        createdAt: getTodayString()
       };
 
       return {
@@ -1847,7 +1262,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
   const addNote = (noteData: Omit<Note, "id" | "updatedAt">) => {
     updateState(prev => {
       const newNote: Note = {
-        id: Math.random().toString(36).substring(7),
+        id: generateId(),
         updatedAt: new Date().toLocaleString(),
         ...noteData
       };

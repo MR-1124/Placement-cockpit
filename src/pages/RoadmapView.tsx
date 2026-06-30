@@ -18,6 +18,7 @@ export const RoadmapView: React.FC = () => {
   }
 
   const segments = fullPlan.segments || [];
+  const dynamicPhases = ["All", ...Array.from(new Set(segments.map((s: any) => s.phase).filter(Boolean)))];
 
   const toggleExpand = (segmentId: string) => {
     setExpandedWeeks(prev => ({ ...prev, [segmentId]: !prev[segmentId] }));
@@ -113,7 +114,7 @@ export const RoadmapView: React.FC = () => {
         </div>
 
         <div className="flex gap-1 bg-white/[0.02] border border-white/[0.04] p-1 rounded-xl w-full sm:w-auto overflow-x-auto">
-          {["All", "Foundation", "Core Mastery", "Advanced Topics", "Placement Ready"].map(phase => (
+          {dynamicPhases.map(phase => (
             <button
               key={phase}
               onClick={() => setActivePhaseFilter(phase)}
