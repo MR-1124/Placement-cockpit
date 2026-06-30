@@ -454,7 +454,10 @@ const deserializeState = (serialized: Partial<SerializedProgress>, curriculum: a
       }
     },
     currentSessionId: serialized.currentSessionId || "default-session",
-    userPlans: serialized.userPlans || [],
+    userPlans: (serialized.userPlans || []).map((up: any) => ({
+      ...up,
+      completedSegments: up.completedSegments !== undefined ? up.completedSegments : (up.completedWeeks ? up.completedWeeks.map((w: any) => String(w)) : [])
+    })),
     primaryPlanId: serialized.primaryPlanId || "16-week-mastery",
     mockInterviews: serialized.mockInterviews || [],
     activeInterviewSession: serialized.activeInterviewSession || null,
