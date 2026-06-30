@@ -248,12 +248,15 @@ export interface RoadmapMilestone {
   type: "dsa" | "system_design" | "core" | "project" | "behavioral";
   isCompleted: boolean;
   links?: { title: string; url: string }[];
+  priority?: "Must-Do" | "Recommended" | "Optional";
+  difficulty?: "Easy" | "Medium" | "Hard";
 }
 
 export interface RoadmapPhase {
   id: string;
   name: string;
   description: string;
+  estimatedTime?: string;
   milestones: RoadmapMilestone[];
 }
 
@@ -266,6 +269,10 @@ export interface CompanyRoadmap {
   phases: RoadmapPhase[];
   isEnrolled: boolean;
   progress: number;
+  difficulty?: "Easy" | "Medium" | "Hard" | "Extreme";
+  estimatedTime?: string;
+  interviewRounds?: string[];
+  tips?: string[];
 }
 
 export interface AtsReport {
