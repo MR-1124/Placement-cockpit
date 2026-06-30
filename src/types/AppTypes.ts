@@ -248,6 +248,7 @@ export interface RoadmapMilestone {
   type: "dsa" | "system_design" | "core" | "project" | "behavioral";
   isCompleted: boolean;
   links?: { title: string; url: string }[];
+  questions?: string[];
   priority?: "Must-Do" | "Recommended" | "Optional";
   difficulty?: "Easy" | "Medium" | "Hard";
 }

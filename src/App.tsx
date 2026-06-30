@@ -413,7 +413,7 @@ const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
   const renderView = () => {
     switch (activeTab) {
       case "companies":
-        return <CompanyRoadmapsView />;
+        return <CompanyRoadmapsView setActiveTab={setActiveTab} />;
       case "flashcards":
         return <FlashcardsView />;
       case "resume":

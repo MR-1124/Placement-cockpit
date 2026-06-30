@@ -6,7 +6,8 @@ import roadmapsData from "../data/roadmaps.json";
 import type { CompanyRoadmap } from "../types/AppTypes";
 import { 
   Map, ArrowRight, CheckCircle, Code2, Users, Layers, MessageSquare, 
-  Clock, Lightbulb, GitCommit, ChevronDown, ChevronUp, Bot, ExternalLink, PlayCircle
+  Clock, Lightbulb, GitCommit, ChevronDown, ChevronUp, Bot, ExternalLink, PlayCircle,
+  HelpCircle, Target
 } from "lucide-react";
 
 const typeIcons = {
@@ -17,7 +18,11 @@ const typeIcons = {
   project: MessageSquare
 };
 
-export const CompanyRoadmapsView: React.FC = () => {
+interface CompanyRoadmapsViewProps {
+  setActiveTab?: (tab: string) => void;
+}
+
+export const CompanyRoadmapsView: React.FC<CompanyRoadmapsViewProps> = ({ setActiveTab }) => {
   const { state, enrollCompanyRoadmap, updateRoadmapProgress } = useAppState();
   
   // Base raw roadmaps from JSON
@@ -42,14 +47,26 @@ export const CompanyRoadmapsView: React.FC = () => {
     setExpandedPhases(prev => ({ ...prev, [phaseId]: !prev[phaseId] }));
   };
 
+  const handleAskMentor = () => {
+    if (setActiveTab) setActiveTab("aichat");
+  };
+
+  const handleStartMock = () => {
+    if (setActiveTab) setActiveTab("interview");
+  };
+
+  const handleSolveQuestions = () => {
+    if (setActiveTab) setActiveTab("dsa");
+  };
+
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-6xl mx-auto space-y-8">
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-6xl mx-auto space-y-8 pb-20">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/[0.06] pb-6">
         <div>
           <span className="text-xs uppercase font-mono tracking-widest text-slate-500">Target Preparation</span>
           <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">Company Roadmaps</h1>
           <p className="text-sm text-slate-400 mt-1">
-            Follow customized preparation paths tailored for top tech giants.
+            Follow customized, extremely detailed preparation paths tailored for top tech giants.
           </p>
         </div>
       </div>
@@ -184,7 +201,7 @@ export const CompanyRoadmapsView: React.FC = () => {
                 </div>
               )}
               
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-4">
                 {!selectedRoadmap.isEnrolled ? (
                   <button
                     onClick={() => enrollCompanyRoadmap({ ...selectedRoadmap, isEnrolled: true, progress: 0 })}
@@ -193,7 +210,7 @@ export const CompanyRoadmapsView: React.FC = () => {
                     Enroll in Track
                   </button>
                 ) : (
-                  <div className="flex-1 w-full bg-black/40 border border-white/[0.06] shadow-inner p-4 rounded-xl flex items-center gap-6">
+                  <div className="flex-1 w-full bg-black/40 border border-white/[0.06] shadow-inner p-4 rounded-xl flex items-center gap-6 min-w-[200px]">
                     <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-2 shrink-0">
                       <CheckCircle className="w-4 h-4" /> Track Active
                     </span>
@@ -210,7 +227,7 @@ export const CompanyRoadmapsView: React.FC = () => {
                 )}
 
                 <button 
-                  onClick={() => alert('Navigate to Chat')}
+                  onClick={handleAskMentor}
                   className="px-4 py-3 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] hover:border-white/[0.15] text-slate-300 font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 group shrink-0"
                 >
                   <Bot className="w-4 h-4 text-accentPrimary group-hover:scale-110 transition-transform" /> Ask Mentor
@@ -301,7 +318,7 @@ export const CompanyRoadmapsView: React.FC = () => {
                                     {milestone.isCompleted && <CheckCircle className="w-4 h-4" />}
                                   </button>
                                   
-                                  <div className="flex-1">
+                                  <div className="flex-1 w-full min-w-0">
                                     <div className="flex flex-wrap items-center gap-3 mb-2">
                                       <div className="flex items-center gap-2">
                                         <Icon className="w-4 h-4 text-accentPrimary" />
@@ -327,6 +344,29 @@ export const CompanyRoadmapsView: React.FC = () => {
                                     </div>
                                     <p className="text-sm text-slate-400 leading-relaxed max-w-3xl mb-4">{milestone.description}</p>
                                     
+                                    {/* Questions Section */}
+                                    {milestone.questions && milestone.questions.length > 0 && (
+                                      <div className="mb-4 bg-black/40 border border-white/[0.05] rounded-xl p-4 shadow-inner">
+                                        <h5 className="text-xs font-bold text-slate-300 mb-3 flex items-center gap-2">
+                                          <HelpCircle className="w-4 h-4 text-accentPrimary" />
+                                          Target Problems
+                                        </h5>
+                                        <div className="flex flex-wrap gap-2 mb-3">
+                                          {milestone.questions.map((q, qIdx) => (
+                                            <span key={qIdx} className="text-[10px] bg-white/[0.05] text-slate-300 border border-white/[0.1] px-2 py-1 rounded flex items-center gap-1.5">
+                                              <Target className="w-3 h-3 text-slate-500" /> {q}
+                                            </span>
+                                          ))}
+                                        </div>
+                                        <button 
+                                          onClick={handleSolveQuestions}
+                                          className="text-[10px] font-bold text-white bg-accentPrimary/20 hover:bg-accentPrimary/30 border border-accentPrimary/30 px-3 py-1.5 rounded-md transition-colors flex items-center gap-1"
+                                        >
+                                          Solve in DSA Tracker &rarr;
+                                        </button>
+                                      </div>
+                                    )}
+
                                     {/* Action Links & Tools */}
                                     <div className="flex flex-wrap items-center gap-3 mt-2">
                                       {milestone.links?.map(link => (
@@ -336,8 +376,11 @@ export const CompanyRoadmapsView: React.FC = () => {
                                       ))}
 
                                       {(milestone.type === 'dsa' || milestone.type === 'system_design' || milestone.type === 'behavioral') && (
-                                        <button className="text-xs font-bold text-white bg-white/5 hover:bg-white/10 px-3 py-1 rounded-md border border-white/10 shadow-sm flex items-center gap-1.5 transition-colors">
-                                          <PlayCircle className="w-3.5 h-3.5 text-accentPrimary" /> Start Mock
+                                        <button 
+                                          onClick={handleStartMock}
+                                          className="text-xs font-bold text-white bg-white/5 hover:bg-white/10 px-3 py-1 rounded-md border border-white/10 shadow-sm flex items-center gap-1.5 transition-colors"
+                                        >
+                                          <PlayCircle className="w-3.5 h-3.5 text-accentPrimary" /> Start Mock Interview
                                         </button>
                                       )}
                                     </div>
