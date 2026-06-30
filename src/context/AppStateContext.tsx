@@ -626,6 +626,14 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         updatedState.atsReports = updatedState.atsReports || [];
         updatedState.projects = updatedState.projects || [];
         updatedState.userPlans = updatedState.userPlans || [];
+        // Ensure each userPlan has completedSegments
+        updatedState.userPlans = updatedState.userPlans.map((up: any) => {
+          if (up.completedSegments === undefined) {
+             // Migrate from old completedWeeks if it exists
+             up.completedSegments = up.completedWeeks ? up.completedWeeks.map((w: any) => String(w)) : [];
+          }
+          return up;
+        });
         const lastUser = localStorage.getItem("last_logged_in_user");
         if (lastUser) {
           try {
