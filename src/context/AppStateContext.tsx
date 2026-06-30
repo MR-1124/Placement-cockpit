@@ -619,6 +619,13 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         const today = getTodayString();
         const yesterday = getYesterdayString();
         let updatedState = { ...parsed };
+        // Ensure all top-level arrays exist to prevent length crashes
+        updatedState.completedSegments = updatedState.completedSegments || [];
+        updatedState.completedSkills = updatedState.completedSkills || [];
+        updatedState.activeRoadmaps = updatedState.activeRoadmaps || [];
+        updatedState.atsReports = updatedState.atsReports || [];
+        updatedState.projects = updatedState.projects || [];
+        updatedState.userPlans = updatedState.userPlans || [];
         const lastUser = localStorage.getItem("last_logged_in_user");
         if (lastUser) {
           try {
