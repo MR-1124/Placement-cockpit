@@ -520,7 +520,7 @@ const getInitialState = (curriculum: any): AppState => ({
   version: SCHEMA_VERSION,
   isLoadingUser: true,
   user: null,
-  completedSegments: [] as string[] as string[] as string[],
+  completedSegments: [] as string[],
   dsaTopics: curriculum.DEFAULT_DSA_TOPICS,
   devCategories: curriculum.DEFAULT_DEV_CATEGORIES,
   projects: [],
@@ -579,7 +579,7 @@ const getInitialState = (curriculum: any): AppState => ({
       primary: true,
       startedAt: new Date().toISOString(),
       paused: false,
-      completedSegments: [] as string[] as string[] as string[],
+      completedSegments: [] as string[],
       customProgress: {}
     }
   ],
@@ -818,7 +818,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
           primary: true,
           startedAt: new Date().toISOString(),
           paused: false,
-          completedSegments: [] as string[] as string[] as string[],
+          completedSegments: [] as string[],
           customProgress: {}
         }
       ],
@@ -2117,7 +2117,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         primary: false,
         startedAt: new Date().toISOString(),
         paused: false,
-        completedSegments: [] as string[] as string[] as string[],
+        completedSegments: [] as string[],
         customProgress: {}
       };
 
@@ -2179,7 +2179,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
           primary: false,
           startedAt: new Date().toISOString(),
           paused: false,
-          completedSegments: [] as string[] as string[] as string[],
+          completedSegments: [] as string[],
           customProgress: {}
         });
       }
@@ -2204,9 +2204,11 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
   const togglePlanWeek = (planId: string, segmentId: string) => {
     updateState(prev => {
+      const targetUserPlan = (prev.userPlans || []).find(up => up.planId === planId);
+      const isCompleted = targetUserPlan?.completedSegments.includes(segmentId) ?? false;
+
       const userPlans = (prev.userPlans || []).map(up => {
         if (up.planId !== planId) return up;
-        const isCompleted = up.completedSegments.includes(segmentId);
         const completedSegments = isCompleted
           ? up.completedSegments.filter((w: string) => w !== segmentId)
           : [...up.completedSegments, segmentId];
@@ -2217,6 +2219,22 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       if (prev.primaryPlanId === planId) {
         const primaryPlanCompletedWeeks = userPlans.find(up => up.planId === planId)?.completedSegments || [];
         completedSegments = primaryPlanCompletedWeeks;
+      }
+
+      if (!isCompleted) {
+        // Week/Segment completed confetti!
+        confetti({
+          particleCount: 80,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 }
+        });
+        confetti({
+          particleCount: 80,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 }
+        });
       }
 
       return {
@@ -2445,7 +2463,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
 
   const saveAtsReport = (report: AtsReport) => {
-    setState(prev => {
+    updateState(prev => {
       const currentReports = prev.atsReports || [];
       return {
         ...prev,
@@ -2480,11 +2498,11 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
 
   const addCustomDeck = (deck: FlashcardDeck) => {
-    setState(prev => ({ ...prev, customDecks: [...(prev.customDecks || []), deck] }));
+    updateState(prev => ({ ...prev, customDecks: [...(prev.customDecks || []), deck] }));
   };
 
   const deleteCustomDeck = (deckId: string) => {
-    setState(prev => ({
+    updateState(prev => ({
       ...prev,
       customDecks: (prev.customDecks || []).filter(d => d.id !== deckId),
       flashcards: (prev.flashcards || []).filter(c => c.deckId !== deckId)
@@ -2492,28 +2510,28 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
   };
 
   const addFlashcards = (_deckId: string, cards: Flashcard[]) => {
-    setState(prev => ({
+    updateState(prev => ({
       ...prev,
       flashcards: [...(prev.flashcards || []), ...cards]
     }));
   };
 
   const deleteFlashcard = (cardId: string) => {
-    setState(prev => ({
+    updateState(prev => ({
       ...prev,
       flashcards: (prev.flashcards || []).filter(c => c.id !== cardId)
     }));
   };
 
   const updateFlashcard = (cardId: string, updates: Partial<Flashcard>) => {
-    setState(prev => ({
+    updateState(prev => ({
       ...prev,
       flashcards: (prev.flashcards || []).map(c => c.id === cardId ? { ...c, ...updates } : c)
     }));
   };
 
   const saveFlashcardSession = (session: FlashcardSession) => {
-    setState(prev => ({
+    updateState(prev => ({
       ...prev,
       flashcardHistory: [session, ...(prev.flashcardHistory || [])]
     }));
@@ -2569,7 +2587,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         addChatMessage,
         openChatWithPrompt,
         clearChatHistory,
-          toggleSkill,
+        toggleSkill,
         createNewSession,
         setActiveSession,
         deleteSession,

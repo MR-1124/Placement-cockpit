@@ -74,7 +74,7 @@ export interface Plan {
   id: string;
   title: string;
   duration: number;
-  durationType: "Days" | "Weeks" | "Months";
+  durationType: "Days" | "Weeks" | "Months" | "Phases";
   description: string;
   difficulty: "Easy" | "Medium" | "Hard" | "Extreme";
   estimatedHoursPerDay: string;

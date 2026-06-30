@@ -55,12 +55,23 @@ export const PlansView: React.FC = () => {
   // Calculate plan specific completion
   const getPlanCompletion = (plan: Plan) => {
     const followed = getFollowedPlan(plan.id);
-    if (!followed || followed.completedSegments.length === 0) return 0;
-    return Math.round((followed.completedSegments.length / plan.duration) * 100);
+    if (!followed || !followed.completedSegments || followed.completedSegments.length === 0) return 0;
+    const totalSegments = plan.segments?.length || plan.duration || 1;
+    return Math.min(100, Math.round((followed.completedSegments.length / totalSegments) * 100));
   };
 
   const toggleWeek = (weekId: string) => {
     setExpandedWeeks(prev => ({ ...prev, [weekId]: !prev[weekId] }));
+  };
+
+  const getDurationInWeeks = (plan: Plan) => {
+    if (plan.durationType === "Days") return plan.duration / 7;
+    if (plan.durationType === "Months") return plan.duration * 4;
+    if (plan.durationType === "Phases") {
+      if (plan.id === "3-month-crash-course") return 12;
+      return plan.duration * 4;
+    }
+    return plan.duration;
   };
 
   // Filter and Sort plans
@@ -73,15 +84,18 @@ export const PlansView: React.FC = () => {
     const matchesCategory = categoryFilter === "All" || plan.category === categoryFilter;
     const matchesDifficulty = difficultyFilter === "All" || plan.difficulty === difficultyFilter;
 
+    const durationInWeeks = getDurationInWeeks(plan);
     let matchesDuration = true;
-    if (durationFilter === "<6") matchesDuration = plan.duration < 6;
-    else if (durationFilter === "6-12") matchesDuration = plan.duration >= 6 && plan.duration <= 12;
-    else if (durationFilter === ">12") matchesDuration = plan.duration > 12;
+    if (durationFilter === "<6") matchesDuration = durationInWeeks < 6;
+    else if (durationFilter === "6-12") matchesDuration = durationInWeeks >= 6 && durationInWeeks <= 12;
+    else if (durationFilter === ">12") matchesDuration = durationInWeeks > 12;
 
     return matchesSearch && matchesCategory && matchesDifficulty && matchesDuration;
   }).sort((a, b) => {
-    if (sortBy === "shortest") return a.duration - b.duration;
-    if (sortBy === "longest") return b.duration - a.duration;
+    const durA = getDurationInWeeks(a);
+    const durB = getDurationInWeeks(b);
+    if (sortBy === "shortest") return durA - durB;
+    if (sortBy === "longest") return durB - durA;
     
     const diffWeights = { Easy: 1, Medium: 2, Hard: 3, Extreme: 4 };
     if (sortBy === "easiest") return diffWeights[a.difficulty] - diffWeights[b.difficulty];
@@ -113,7 +127,7 @@ export const PlansView: React.FC = () => {
             <div>
               <h1 className="text-3xl font-extrabold text-white tracking-tight">Placement Training Plans</h1>
               <p className="text-slate-400 text-sm mt-1">
-                Choose curriculum segmentss optimized for different durations and target outcomes.
+                Choose curriculum segments optimized for different durations and target outcomes.
               </p>
             </div>
           </div>
