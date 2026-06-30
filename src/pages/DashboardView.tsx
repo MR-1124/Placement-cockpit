@@ -59,9 +59,13 @@ const curriculum = useAppState(s => s.curriculum);
   const primaryPlanId = state.primaryPlanId || "16-week-mastery";
   const primaryPlan = ALL_PLANS.find(p => p.id === primaryPlanId) || ALL_PLANS[0];
   const weekPlans = primaryPlan.segments;
+  // BUG-C3 fix: read from primary userPlan's completedSegments (authoritative source)
+  // not from legacy state.completedSegments which can be stale or out-of-sync
+  const primaryUserPlan = (state.userPlans || []).find(up => up.planId === primaryPlanId) || (state.userPlans || [])[0];
+  const primaryCompletedSegments = primaryUserPlan?.completedSegments || state.completedSegments || [];
   const currentWeekIndex = Math.min(
     weekPlans.length - 1,
-    Math.floor(state.completedSegments.length)
+    primaryCompletedSegments.length
   );
   const currentWeek = weekPlans[currentWeekIndex] || weekPlans[0];
 
@@ -137,8 +141,8 @@ const curriculum = useAppState(s => s.curriculum);
           }
         }
 
-        // If week is completed, give it a baseline color
-        const isWeekCompleted = state.completedSegments.includes(weekPlans[weekIndex]?.id);
+        // If week is completed, give it a baseline color — use primaryCompletedSegments (BUG-C3 fix)
+        const isWeekCompleted = primaryCompletedSegments.includes(weekPlans[weekIndex]?.id);
 
         let colorClass = "bg-white/[0.02] border-white/[0.02]";
         if (isFuture) {

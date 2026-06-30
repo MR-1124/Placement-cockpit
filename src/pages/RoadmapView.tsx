@@ -24,10 +24,12 @@ export const RoadmapView: React.FC = () => {
   };
 
   const getSegmentStatus = (segment: PlanSegment, index: number) => {
-    if (primaryPlan.completedSegments.includes(segment.id)) return "completed";
+    const completedSegs = primaryPlan.completedSegments || [];
+    // BUG-C2 fix: guard completedSegments against undefined before .includes()
+    if (completedSegs.includes(segment.id)) return "completed";
     
     const firstUncompletedIndex = segments.findIndex(
-      (s: PlanSegment) => !primaryPlan.completedSegments.includes(s.id)
+      (s: PlanSegment) => !completedSegs.includes(s.id)
     );
     if (index === firstUncompletedIndex || (firstUncompletedIndex === -1 && index === 0)) {
       return "active";
@@ -82,7 +84,7 @@ export const RoadmapView: React.FC = () => {
       }
     });
 
-    if (totalItems === 0) return primaryPlan.completedSegments.includes(segment.id) ? 100 : 0;
+    if (totalItems === 0) return (primaryPlan.completedSegments || []).includes(segment.id) ? 100 : 0;
     return Math.round((completedItems / totalItems) * 100);
   };
 

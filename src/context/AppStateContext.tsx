@@ -1286,9 +1286,10 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
   const primaryPlanId = state.primaryPlanId || "16-week-mastery";
   const primaryPlan = curriculum.ALL_PLANS.find((p: any) => p.id === primaryPlanId) || curriculum.ALL_PLANS[0];
-  const overallCompletion = Math.round(
-    (state.completedSegments.length / primaryPlan.segments.length) * 100
-  );
+  // BUG-C1 fix: guard against zero-length segments to prevent divide-by-zero crash
+  const overallCompletion = primaryPlan?.segments?.length
+    ? Math.min(100, Math.round((state.completedSegments.length / primaryPlan.segments.length) * 100))
+    : 0;
 
   // Dynamic level progression system (RPG-style)
   const { level, xpProgress } = getLevelInfo(state.xp);
@@ -2080,9 +2081,18 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         }
       ];
 
+      // BUG-C5 fix: also update the primary userPlan's completedSegments so plan page shows correct progress
+      const updatedUserPlans = (prev.userPlans || []).map((up: any) => {
+        if (up.planId === (prev.primaryPlanId || "16-week-mastery")) {
+          return { ...up, completedSegments };
+        }
+        return up;
+      });
+
       return {
         ...prev,
         completedSegments,
+        userPlans: updatedUserPlans,
         dsaTopics,
         devCategories,
         projects,
@@ -2145,7 +2155,8 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       }));
 
       const primaryPlanCompletedWeeks = updatedUserPlans.find(up => up.planId === primaryPlanId)?.completedSegments || [];
-      const completedSegments = primaryPlanCompletedWeeks.map((w: string) => `week-${w}`);
+      // BUG-C4 fix: segment IDs are already "week-1", "week-2" etc. — do NOT add another "week-" prefix
+      const completedSegments = primaryPlanCompletedWeeks;
 
       return {
         ...prev,
@@ -2179,7 +2190,8 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       }));
 
       const primaryPlanCompletedWeeks = updatedUserPlans.find(up => up.planId === planId)?.completedSegments || [];
-      const completedSegments = primaryPlanCompletedWeeks.map((w: string) => `week-${w}`);
+      // BUG-C4 fix: segment IDs are already correct — do NOT add "week-" prefix
+      const completedSegments = primaryPlanCompletedWeeks;
 
       return {
         ...prev,
