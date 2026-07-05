@@ -47,6 +47,9 @@ export interface BaseAppState {
   flashcardHistory?: FlashcardSession[];
   activeRoadmaps?: CompanyRoadmap[];
   atsReports?: AtsReport[];
+  devPlanEnrolled?: boolean;
+  devPlanTargetDate?: string;
+  devPlanActiveSkillId?: string | null;
 }
 
 export interface AppState extends BaseAppState {
@@ -188,4 +191,6 @@ export interface AppContextType {
   saveFlashcardSession: (session: FlashcardSession) => void;
 
   saveAtsReport: (report: AtsReport) => void;
+  enrollInDevPlan: (enrolled: boolean, targetDate?: string) => void;
+  setDevPlanActiveSkillId: (skillId: string | null) => void;
 }

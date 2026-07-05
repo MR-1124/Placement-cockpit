@@ -99,7 +99,10 @@ export const serializeState = (state: AppState): SerializedProgress => {
     customDecks: state.customDecks || [],
     flashcardHistory: state.flashcardHistory || [],
     activeRoadmaps: state.activeRoadmaps || [],
-    atsReports: state.atsReports || []
+    atsReports: state.atsReports || [],
+    devPlanEnrolled: state.devPlanEnrolled || false,
+    devPlanTargetDate: state.devPlanTargetDate || "",
+    devPlanActiveSkillId: state.devPlanActiveSkillId || null
   };
 };
 
@@ -213,7 +216,10 @@ export const deserializeState = (serialized: Partial<SerializedProgress>, curric
     customDecks: serialized.customDecks || [],
     flashcardHistory: serialized.flashcardHistory || [],
     activeRoadmaps: serialized.activeRoadmaps || [],
-    atsReports: serialized.atsReports || []
+    atsReports: serialized.atsReports || [],
+    devPlanEnrolled: serialized.devPlanEnrolled || false,
+    devPlanTargetDate: serialized.devPlanTargetDate || "",
+    devPlanActiveSkillId: serialized.devPlanActiveSkillId || null
   };
 };
 

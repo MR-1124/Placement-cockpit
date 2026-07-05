@@ -196,7 +196,10 @@ const getInitialState = (curriculum: any): AppState => ({
   customDecks: [],
   flashcardHistory: [],
   activeRoadmaps: [],
-  atsReports: []
+  atsReports: [],
+  devPlanEnrolled: false,
+  devPlanTargetDate: "",
+  devPlanActiveSkillId: null
 });
 
 const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: any }> = ({ children, curriculum }) => {
@@ -1882,6 +1885,21 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     });
   };
 
+  const enrollInDevPlan = (enrolled: boolean, targetDate?: string) => {
+    updateState(prev => ({
+      ...prev,
+      devPlanEnrolled: enrolled,
+      devPlanTargetDate: targetDate || ""
+    }));
+  };
+
+  const setDevPlanActiveSkillId = (skillId: string | null) => {
+    updateState(prev => ({
+      ...prev,
+      devPlanActiveSkillId: skillId
+    }));
+  };
+
   const updateRoadmapProgress = (roadmapId: string, milestoneId: string, completed: boolean) => {
     updateState(prev => {
       const activeRoadmaps = prev.activeRoadmaps || [];
@@ -2030,6 +2048,8 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         updateFlashcardReview,
         enrollCompanyRoadmap,
         updateRoadmapProgress,
+        enrollInDevPlan,
+        setDevPlanActiveSkillId,
 
         importFlashcards,
         addCustomDeck,
