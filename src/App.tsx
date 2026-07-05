@@ -465,7 +465,7 @@ const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
       case "skilltree":
         return <SkillTreeView />;
       case "dev":
-        return <DevView />;
+        return <DevView setActiveTab={setActiveTab} />;
       case "ai":
         return <AiTrackerView />;
       case "aichat":

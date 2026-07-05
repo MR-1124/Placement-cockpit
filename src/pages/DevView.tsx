@@ -1,16 +1,594 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import React, { useState } from "react";
 import { useAppState } from "../context/AppStateContext";
 import { GlassCard, ProgressBar } from "../components/Common";
-import type { DevCategory } from "../data/curriculum";
+import type { DevCategory, DevSkill } from "../data/curriculum";
 import {
   Compass,
   BookOpen,
   Code2,
   Hammer,
   Globe,
-  RefreshCw
+  RefreshCw,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  Play,
+  GraduationCap
 } from "lucide-react";
+
+interface DevViewProps {
+  setActiveTab?: (tabId: string) => void;
+}
+
+// ----------------------------------------------------
+// Core educational resource data mapping
+// ----------------------------------------------------
+const SKILL_GUIDES: Record<string, {
+  guide: string;
+  sandbox: string;
+  gotchas: string;
+}> = {
+  "skill-1": {
+    guide: "Semantic HTML defines the meaning and purpose of elements (e.g. `<main>`, `<article>`, `<nav>`) rather than just raw styles/containers (like generic `<div>`). This structure improves search engine crawling, page outline readability, and screen reader parsing.",
+    sandbox: "```html\n<!-- BAD: generic div tags -->\n<div class=\"navigation-bar\">\n  <div class=\"link\">Home</div>\n</div>\n\n<!-- GOOD: semantic navigation -->\n<nav aria-label=\"Main\">\n  <ul>\n    <li><a href=\"/home\">Home</a></li>\n  </ul>\n</nav>\n```",
+    gotchas: "Never use bold `<b>` or italic `<i>` elements for structural formatting weight; always prefer semantic emphasis elements `<strong>` or `<em>` for screen readers."
+  },
+  "skill-2": {
+    guide: "Tailwind CSS v4 introduces a CSS-first configuration model using standard CSS directives (`@theme`). It uses utility class mappings (`flex`, `grid`, responsive suffixes `md:`) to style layouts directly without writing separate stylesheets.",
+    sandbox: "```html\n<!-- Responsive glass grid layout -->\n<div class=\"grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-white/[0.02] border border-white/[0.06] rounded-2xl\">\n  <div class=\"p-4 bg-slate-900/50 rounded-xl\">Item 1</div>\n  <div class=\"p-4 bg-slate-900/50 rounded-xl\">Item 2</div>\n  <div class=\"p-4 bg-slate-900/50 rounded-xl\">Item 3</div>\n</div>\n```",
+    gotchas: "Do not construct dynamic class templates such as `bg-${color}-500` because the compiler searches files statically. Always use static class names or absolute inline style overrides."
+  },
+  "skill-3": {
+    guide: "React components are pure functions rendering UI based on state and properties. Hooks (`useState`, `useEffect`) manage reactivity. React 18+ groups multiple state updates together (batching) to avoid excessive renders.",
+    sandbox: "```tsx\n// Counter component with effect dependency\nimport React, { useState, useEffect } from 'react';\n\nexport const Counter = () => {\n  const [count, setCount] = useState(0);\n\n  useEffect(() => {\n    document.title = `Count: ${count}`;\n  }, [count]);\n\n  return (\n    <button onClick={() => setCount(prev => prev + 1)}>\n      Increment: {count}\n    </button>\n  );\n};\n```",
+    gotchas: "Never invoke hooks inside code conditionals or loops. Doing so breaks React's runtime hook call ordering checklist."
+  },
+  "skill-4": {
+    guide: "Zustand is a lightweight, boilerplate-free state manager. It defines hooks that allow subscribing components to automatically re-render only when the selected properties change.",
+    sandbox: "```typescript\nimport { create } from 'zustand';\n\ninterface AppState {\n  xp: number;\n  addXp: (amount: number) => void;\n}\n\nexport const useAppStore = create<AppState>((set) => ({\n  xp: 0,\n  addXp: (amount) => set((state) => ({ xp: state.xp + amount })),\n}));\n```",
+    gotchas: "Do not mutate state directly inside store setters. Always perform immutable object destructuring updates like `{ ...state, value }`."
+  },
+  "skill-7": {
+    guide: "Express.js builds web servers using sequential request/response pipelines called middleware. Request payloads flow through routes, parsing bodies and throwing error payloads appropriately.",
+    sandbox: "```javascript\nconst express = require('express');\nconst app = express();\n\napp.use(express.json()); // body-parsing middleware\n\napp.get('/api/health', (req, res) => {\n  res.status(200).json({ status: 'ok' });\n});\n```",
+    gotchas: "Ensure error-handling middleware has precisely four arguments: `(err, req, res, next)`. Missing arguments will cause Express to treat it as standard middleware."
+  },
+  "skill-8": {
+    guide: "Secure web applications store sensitive tokens inside HTTP-only cookies (`httpOnly: true`) rather than localStorage, stopping scripting engines (XSS) from hijacking credentials.",
+    sandbox: "```javascript\n// Cookie delivery setup in Express\nres.cookie('token', token, {\n  httpOnly: true,\n  secure: process.env.NODE_ENV === 'production',\n  sameSite: 'strict',\n  maxAge: 3600000\n});\n```",
+    gotchas: "If `sameSite` is set to `none` for cross-site access, cookies require the `secure` flag, meaning they will fail to send over plain HTTP channels."
+  },
+  "skill-13": {
+    guide: "SQL databases use normalization (1NF, 2NF, 3NF) to eliminate data redundancies. Indexing strategies (like B-Trees) enable rapid column queries, speeding up record lookups.",
+    sandbox: "```sql\n-- Create indices for high-frequency search constraints\nCREATE INDEX idx_user_cohort_email \nON users (cohort, email);\n\n-- Structured JOIN fetch query\nSELECT users.name, plans.title \nFROM users \nJOIN plans ON users.primary_plan_id = plans.id;\n```",
+    gotchas: "Avoid adding indices to write-heavy tables without consideration. Every index slows down insert and update speeds due to index tree rebuilding."
+  },
+  "skill-20": {
+    guide: "Docker packages code and dependencies into isolated container bundles. Multi-stage compilation files optimize image sizes by excluding heavy build SDK compilers from final production runtimes.",
+    sandbox: "```dockerfile\n# Stage 1: Build\nFROM node:18-alpine AS builder\nWORKDIR /app\nCOPY package*.json ./\nRUN npm install\nCOPY . .\nRUN npm run build\n\n# Stage 2: Production Run\nFROM node:18-alpine\nWORKDIR /app\nCOPY --from=builder /app/dist ./dist\nRUN npm install --only=production\nCMD [\"node\", \"dist/index.js\"]\n```",
+    gotchas: "Do not run applications inside containers as the root user. Configure a custom user ID block to protect the host machine from security exploits."
+  }
+};
+
+// ----------------------------------------------------
+// Quiz datasets for conceptual check-ins
+// ----------------------------------------------------
+interface QuizQuestion {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+}
+
+const SKILL_QUIZZES: Record<string, QuizQuestion[]> = {
+  "skill-1": [
+    {
+      question: "Which HTML5 element represents self-contained content that could be syndicatable (e.g. blog cards)?",
+      options: ["<section>", "<article>", "<div>", "<nav>"],
+      correctIndex: 1,
+      explanation: "<article> is designed for standalone, independent syndicatable segments of code."
+    },
+    {
+      question: "What is the primary role of semantic HTML elements?",
+      options: ["Styling visual elements", "Making page loads faster", "Improving SEO and Accessibility", "Restricting script scopes"],
+      correctIndex: 2,
+      explanation: "Semantic elements communicate structure to search engines and assistant screens, improving crawling indices and page readability."
+    }
+  ],
+  "skill-2": [
+    {
+      question: "In Tailwind CSS v4, how are configurations, themes, and screens customized?",
+      options: ["Inside tailwind.config.js", "Using custom React properties", "Directly in style attributes", "Using native CSS theme custom properties in stylesheets"],
+      correctIndex: 3,
+      explanation: "Tailwind v4 shifts configurations to standard CSS `@theme` variables, accelerating compiling and reducing build dependencies."
+    }
+  ],
+  "skill-3": [
+    {
+      question: "What is React state batching?",
+      options: ["Splitting components into files", "Combining state updates inside handlers to trigger a single re-render", "Updating context variables asynchronously", "Running state logic on background threads"],
+      correctIndex: 1,
+      explanation: "React batches state modifications inside event listener frames, making updates perform once to prevent visual flashes."
+    }
+  ],
+  "skill-4": [
+    {
+      question: "How does Zustand prevent unnecessary component updates?",
+      options: ["By wrapping everything in Context Providers", "By selectors that trigger updates only when targeted properties change", "By utilizing virtual DOM comparisons", "By using service worker caches"],
+      correctIndex: 1,
+      explanation: "Zustand uses component hooks and selectors like `useStore(s => s.value)` to ensure the component only updates when the specific slice modifies."
+    }
+  ],
+  "skill-7": [
+    {
+      question: "In Express.js, what distinguishes error-handling middleware from standard route middleware?",
+      options: ["It returns JSON payloads instead of HTML", "It is loaded at the top of route chains", "It accepts precisely four arguments: (err, req, res, next)", "It runs inside WebWorker scripts"],
+      correctIndex: 2,
+      explanation: "Express reads function lengths; error middleware MUST have exactly 4 arguments to block errors and avoid execution flow skips."
+    }
+  ],
+  "skill-8": [
+    {
+      question: "Why should session JWT credentials be stored in HttpOnly cookies?",
+      options: ["To speed up API headers processing", "To stop client-side scripts (XSS) from access/theft", "To sync variables across subdomain caches", "To allow mobile apps to read them natively"],
+      correctIndex: 1,
+      explanation: "Cookies marked HttpOnly are shielded from JS scripts (`document.cookie`), preventing security breaches through cross-site scripting."
+    }
+  ]
+};
+
+// Generic generator for unpopulated guides
+const getFallbackGuide = (skill: DevSkill) => {
+  return {
+    guide: `Comprehensive outline for: **${skill.name}**. This skill covers core principles, syntax implementations, and engineering patterns. Click on 'Explain with AI' to start a guided tutor session.`,
+    sandbox: `\`\`\`typescript\n// Code outline for ${skill.name}\nfunction initialize() {\n  console.log("Exploring ${skill.name} pattern...");\n}\n\`\`\``,
+    gotchas: "Always profile resource footprints and load factors. Verify fallback behaviors and error boundaries on network failure states."
+  };
+};
+
+// Generic generator for unpopulated quizzes
+const getFallbackQuiz = (skill: DevSkill): QuizQuestion[] => {
+  return [
+    {
+      question: `What is a primary rule or concern when implementing ${skill.name}?`,
+      options: [
+        "Keeping code clean and modularized",
+        "Deploying everything to local dev machines only",
+        "Avoiding styling variables completely",
+        "Using complex nested loops wherever possible"
+      ],
+      correctIndex: 0,
+      explanation: "Clean and modularized code ensures readability, maintainability, and stable scaling over time."
+    }
+  ];
+};
+
+export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
+  const state = useAppState(s => s.state);
+  const updateDevSkill = useAppState(s => s.updateDevSkill);
+  const addChatMessage = useAppState(s => s.addChatMessage);
+
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>("All");
+  const [openSkillDrawerId, setOpenSkillDrawerId] = useState<string | null>(null);
+  const [drawerTab, setDrawerTab] = useState<"guide" | "sandbox" | "gotchas" | "faqs" | "quiz">("guide");
+
+  // Quiz active execution state
+  const [quizQuestionIdx, setQuizQuestionIdx] = useState<number>(0);
+  const [quizSelectedOption, setQuizSelectedOption] = useState<number | null>(null);
+  const [quizSubmitted, setQuizSubmitted] = useState<boolean>(false);
+  const [quizScore, setQuizScore] = useState<number>(0);
+
+  const toggleSkillDrawer = (skillId: string) => {
+    if (openSkillDrawerId === skillId) {
+      setOpenSkillDrawerId(null);
+    } else {
+      setOpenSkillDrawerId(skillId);
+      setDrawerTab("guide");
+      resetQuizState();
+    }
+  };
+
+  const resetQuizState = () => {
+    setQuizQuestionIdx(0);
+    setQuizSelectedOption(null);
+    setQuizSubmitted(false);
+    setQuizScore(0);
+  };
+
+  const handleQuizAnswer = (_question: QuizQuestion, optionIdx: number) => {
+    if (quizSubmitted) return;
+    setQuizSelectedOption(optionIdx);
+  };
+
+  const submitQuizQuestion = (question: QuizQuestion) => {
+    if (quizSelectedOption === null || quizSubmitted) return;
+    setQuizSubmitted(true);
+
+    const correct = quizSelectedOption === question.correctIndex;
+    if (correct) {
+      setQuizScore(prev => prev + 1);
+    }
+  };
+
+  const nextQuizQuestion = () => {
+    setQuizSelectedOption(null);
+    setQuizSubmitted(false);
+    setQuizQuestionIdx(prev => prev + 1);
+  };
+
+  const getCategoryProgress = (category: DevCategory) => {
+    const totalPossiblePoints = category.skills.length * 5; // 5 stages per skill
+    let earnedPoints = 0;
+    category.skills.forEach(skill => {
+      if (skill.learned) earnedPoints++;
+      if (skill.practiced) earnedPoints++;
+      if (skill.built) earnedPoints++;
+      if (skill.deployed) earnedPoints++;
+      if (skill.revised) earnedPoints++;
+    });
+
+    if (totalPossiblePoints === 0) return 0;
+    return Math.round((earnedPoints / totalPossiblePoints) * 100);
+  };
+
+  const handleExplainWithAi = (skill: DevSkill) => {
+    const promptMessage = `Explain this topic in detail with real-world context and interactive examples:\n\nTopic: **${skill.name}**\nDescription: ${skill.description}\n\nPlease detail the conceptual theory, a practical code sandbox example, typical systems pitfalls/gotchas, and how to verify it works in production.`;
+    addChatMessage("user", promptMessage);
+    if (setActiveTab) {
+      setActiveTab("aichat");
+    }
+  };
+
+  const filteredCategories = state.devCategories.filter(cat => {
+    return activeCategoryFilter === "All" || cat.name === activeCategoryFilter;
+  });
+
+  // Level partition helper (partition 6 items into Core, Intermediate, Advanced)
+  const getProgressiveLevel = (idx: number) => {
+    if (idx < 2) return { name: "Level 1: Core Fundamentals", color: "text-blue-400 bg-blue-500/10 border-blue-500/20" };
+    if (idx < 4) return { name: "Level 2: Intermediate Architecture", color: "text-amber-400 bg-amber-500/10 border-amber-500/20" };
+    return { name: "Level 3: Advanced Systems & Scaling", color: "text-purple-400 bg-purple-500/10 border-purple-500/20" };
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6">
+      
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/[0.06] pb-6">
+        <div>
+          <span className="text-xs uppercase font-mono tracking-widest text-slate-500">Skills Grid</span>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">Full Stack Competency Board</h1>
+          <p className="text-sm text-slate-400 mt-1">
+            Audit your capability checklist. Track engineering competency from theoretical study to production deployment.
+          </p>
+        </div>
+      </div>
+
+      {/* Category filters */}
+      <div className="flex gap-1 bg-white/[0.02] border border-white/[0.04] p-1 rounded-xl w-full sm:w-auto overflow-x-auto">
+        {["All", "Frontend", "Backend", "Database", "Systems & Deployment"].map(catName => (
+          <button
+            key={catName}
+            onClick={() => setActiveCategoryFilter(catName)}
+            className={`px-4 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+              activeCategoryFilter === catName
+                ? "bg-white/[0.08] text-white shadow-sm border border-white/[0.04]"
+                : "text-slate-500 hover:text-slate-300 hover:bg-white/[0.02] border border-transparent"
+            }`}
+          >
+            {catName}
+          </button>
+        ))}
+      </div>
+
+      {/* Categories Grid */}
+      <div className="space-y-8">
+        {filteredCategories.map(cat => {
+          const progress = getCategoryProgress(cat);
+
+          // Group skills by their level mappings
+          const coreSkills = cat.skills.filter((_, idx) => idx < 2);
+          const interSkills = cat.skills.filter((_, idx) => idx >= 2 && idx < 4);
+          const advSkills = cat.skills.filter((_, idx) => idx >= 4);
+
+          const skillLevels = [
+            { levelInfo: getProgressiveLevel(0), skills: coreSkills },
+            { levelInfo: getProgressiveLevel(2), skills: interSkills },
+            { levelInfo: getProgressiveLevel(4), skills: advSkills }
+          ];
+
+          return (
+            <div key={cat.id} className="space-y-6">
+              {/* Category label and overall progress bar */}
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-white/[0.04] pb-3">
+                <h3 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                  <Compass className="w-5 h-5 text-accentPrimary" /> {cat.name} Stack
+                </h3>
+                <div className="flex items-center gap-3 w-full sm:w-64">
+                  <div className="flex-1">
+                    <ProgressBar percentage={progress} height={4} colorClass="bg-emerald-500" />
+                  </div>
+                  <span className="text-xs font-bold font-mono text-slate-400 w-8 text-right">
+                    {progress}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Levels Container */}
+              <div className="space-y-6 pl-2">
+                {skillLevels.map(({ levelInfo, skills }) => (
+                  <div key={levelInfo.name} className="space-y-3">
+                    {/* Level Label */}
+                    <div className="flex items-center gap-2">
+                      <div className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold tracking-wider uppercase border ${levelInfo.color}`}>
+                        {levelInfo.name}
+                      </div>
+                      <div className="flex-1 h-px bg-white/[0.04]" />
+                    </div>
+
+                    {/* Level Skills Cards Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {skills.map(skill => {
+                        let checkedCount = 0;
+                        if (skill.learned) checkedCount++;
+                        if (skill.practiced) checkedCount++;
+                        if (skill.built) checkedCount++;
+                        if (skill.deployed) checkedCount++;
+                        if (skill.revised) checkedCount++;
+
+                        const customGuide = SKILL_GUIDES[skill.id] || getFallbackGuide(skill);
+                        const customQuiz = SKILL_QUIZZES[skill.id] || getFallbackQuiz(skill);
+
+                        const drawerOpen = openSkillDrawerId === skill.id;
+
+                        return (
+                          <GlassCard key={skill.id} className="flex flex-col justify-between p-5 space-y-4 relative group hover:border-white/[0.08] transition-all overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-[0.02] group-hover:opacity-[0.04] transition-opacity pointer-events-none">
+                              <Code2 className="w-24 h-24 text-accentPrimary" />
+                            </div>
+
+                            <div className="relative z-10 space-y-4">
+                              {/* Card Title & Progress Pill */}
+                              <div className="space-y-1">
+                                <div className="flex justify-between items-start">
+                                  <span className="text-xs font-semibold text-slate-200">{skill.name}</span>
+                                  <span className="text-[9px] font-mono text-slate-500 uppercase">
+                                    {checkedCount}/5 complete
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-slate-400 leading-relaxed">{skill.description}</p>
+                              </div>
+
+                              {/* Interaction Stage Checkbox Pills */}
+                              <div className="grid grid-cols-5 gap-1.5 pt-1">
+                                {[
+                                  { key: "learned", label: "Study", icon: BookOpen, tooltip: "Read articles/docs" },
+                                  { key: "practiced", label: "Code", icon: Code2, tooltip: "Practiced simple scripts" },
+                                  { key: "built", label: "Build", icon: Hammer, tooltip: "Integrated into feature" },
+                                  { key: "deployed", label: "Deploy", icon: Globe, tooltip: "Uploaded to production" },
+                                  { key: "revised", label: "Review", icon: RefreshCw, tooltip: "Spaced check review" }
+                                ].map(stage => {
+                                  const IconComponent = stage.icon;
+                                  const active = (skill as any)[stage.key];
+
+                                  return (
+                                    <button
+                                      key={stage.key}
+                                      onClick={() => updateDevSkill(skill.id, stage.key as any)}
+                                      title={`${stage.tooltip}: Click to toggle`}
+                                      className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg border text-center transition-all hover:scale-[1.02] active:scale-95 cursor-pointer ${
+                                        active
+                                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-sm"
+                                          : "bg-white/[0.005] border-white/[0.04] text-slate-500 hover:text-slate-400 hover:bg-white/[0.01]"
+                                      }`}
+                                    >
+                                      <IconComponent className="w-3.5 h-3.5 mb-1" />
+                                      <span className="text-[9px] font-medium leading-none">{stage.label}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+
+                              {/* Action Row: Explain with AI & Toggle Guides drawer */}
+                              <div className="flex justify-between items-center border-t border-white/[0.04] pt-3">
+                                <button
+                                  onClick={() => handleExplainWithAi(skill)}
+                                  className="flex items-center gap-1.5 px-2.5 py-1 bg-accentPrimary/10 border border-accentPrimary/20 hover:bg-accentPrimary/20 hover:scale-105 rounded-md text-[10px] text-accentPrimary font-semibold tracking-wide transition-all cursor-pointer"
+                                >
+                                  <Sparkles className="w-3 h-3" />
+                                  <span>Explain with AI</span>
+                                </button>
+
+                                <button
+                                  onClick={() => toggleSkillDrawer(skill.id)}
+                                  className="text-[10px] text-slate-400 hover:text-white transition-colors font-semibold flex items-center gap-1 cursor-pointer"
+                                >
+                                  <span>{drawerOpen ? "Hide resources" : "Show Guides & Quiz"}</span>
+                                  {drawerOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                </button>
+                              </div>
+
+                              {/* Rich Guides & Quizzes Drawer */}
+                              <AnimatePresence>
+                                {drawerOpen && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="overflow-hidden bg-black/40 border border-white/[0.04] rounded-lg mt-3 p-3 space-y-3"
+                                  >
+                                    {/* Drawer Tabs */}
+                                    <div className="flex border-b border-white/[0.06] pb-1 gap-2 overflow-x-auto">
+                                      {[
+                                        { id: "guide", label: "Guide" },
+                                        { id: "sandbox", label: "Sandbox" },
+                                        { id: "gotchas", label: "Gotchas" },
+                                        { id: "faqs", label: "FAQs" },
+                                        { id: "quiz", label: "Quiz" }
+                                      ].map(tab => (
+                                        <button
+                                          key={tab.id}
+                                          onClick={() => setDrawerTab(tab.id as any)}
+                                          className={`text-[9px] font-bold uppercase tracking-wider pb-1 px-1.5 transition-colors cursor-pointer border-b ${
+                                            drawerTab === tab.id
+                                              ? "border-accentPrimary text-white"
+                                              : "border-transparent text-slate-500 hover:text-slate-300"
+                                          }`}
+                                        >
+                                          {tab.label}
+                                        </button>
+                                      ))}
+                                    </div>
+
+                                    {/* Drawer Tab Content */}
+                                    <div className="text-[10px] text-slate-300 max-h-[220px] overflow-y-auto custom-scrollbar pr-1 pt-1">
+                                      {drawerTab === "guide" && (
+                                        <p className="leading-relaxed whitespace-pre-wrap">{customGuide.guide}</p>
+                                      )}
+
+                                      {drawerTab === "sandbox" && (
+                                        <div className="bg-black/30 rounded border border-white/[0.04] p-2 font-mono text-[9px] text-emerald-400 overflow-x-auto whitespace-pre-wrap">
+                                          {customGuide.sandbox}
+                                        </div>
+                                      )}
+
+                                      {drawerTab === "gotchas" && (
+                                        <div className="flex gap-2 items-start bg-amber-500/5 border border-amber-500/20 text-amber-400 rounded-lg p-2.5">
+                                          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                                          <p className="leading-normal">{customGuide.gotchas}</p>
+                                        </div>
+                                      )}
+
+                                      {drawerTab === "faqs" && (
+                                        <div className="space-y-3">
+                                          {((SKILL_FAQS[skill.id] || [{ q: "What is the primary usage pattern?", a: skill.description }])).map((faq, i) => (
+                                            <div key={i} className="space-y-1">
+                                              <span className="font-bold text-accentPrimary font-mono block">Q: {faq.q}</span>
+                                              <span className="text-slate-400 block">{faq.a}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+
+                                      {drawerTab === "quiz" && (
+                                        <div className="space-y-3">
+                                          {quizQuestionIdx < customQuiz.length ? (
+                                            // Active Question Frame
+                                            <div className="space-y-3">
+                                              <div className="flex justify-between items-center text-[8px] font-mono text-slate-500">
+                                                <span>QUESTION {quizQuestionIdx + 1} OF {customQuiz.length}</span>
+                                                <span>SCORE: {quizScore}/{customQuiz.length}</span>
+                                              </div>
+                                              
+                                              <p className="font-bold text-white leading-relaxed">{customQuiz[quizQuestionIdx].question}</p>
+                                              
+                                              <div className="space-y-2">
+                                                {customQuiz[quizQuestionIdx].options.map((option, optIdx) => {
+                                                  let optionStyle = "border-white/[0.06] text-slate-300 bg-white/[0.005] hover:bg-white/[0.02]";
+                                                  
+                                                  if (quizSubmitted) {
+                                                    if (optIdx === customQuiz[quizQuestionIdx].correctIndex) {
+                                                      optionStyle = "border-emerald-500/30 text-emerald-400 bg-emerald-500/5";
+                                                    } else if (optIdx === quizSelectedOption) {
+                                                      optionStyle = "border-red-500/30 text-red-400 bg-red-500/5";
+                                                    }
+                                                  } else if (optIdx === quizSelectedOption) {
+                                                    optionStyle = "border-accentPrimary/40 text-accentPrimary bg-accentPrimary/5";
+                                                  }
+
+                                                  return (
+                                                    <button
+                                                      key={optIdx}
+                                                      onClick={() => handleQuizAnswer(customQuiz[quizQuestionIdx], optIdx)}
+                                                      disabled={quizSubmitted}
+                                                      className={`w-full flex items-start gap-2.5 text-left p-2.5 rounded-lg border text-[10px] transition-all cursor-pointer ${optionStyle}`}
+                                                    >
+                                                      <span className="font-bold font-mono text-slate-500 shrink-0">{String.fromCharCode(65 + optIdx)}.</span>
+                                                      <span className="leading-tight">{option}</span>
+                                                    </button>
+                                                  );
+                                                })}
+                                              </div>
+
+                                              {/* Action / Explanation segment */}
+                                              {quizSubmitted ? (
+                                                <div className="space-y-2 border-t border-white/[0.06] pt-3">
+                                                  <div className="flex items-center gap-1.5">
+                                                    {quizSelectedOption === customQuiz[quizQuestionIdx].correctIndex ? (
+                                                      <span className="text-emerald-400 font-bold flex items-center gap-1 text-[9px] uppercase"><CheckCircle2 className="w-3 h-3" /> Correct!</span>
+                                                    ) : (
+                                                      <span className="text-red-400 font-bold flex items-center gap-1 text-[9px] uppercase"><XCircle className="w-3 h-3" /> Incorrect</span>
+                                                    )}
+                                                  </div>
+                                                  <p className="text-slate-400 text-[9px] leading-relaxed italic">{customQuiz[quizQuestionIdx].explanation}</p>
+                                                  
+                                                  <button
+                                                    onClick={() => quizQuestionIdx + 1 < customQuiz.length ? nextQuizQuestion() : setQuizQuestionIdx(prev => prev + 1)}
+                                                    className="w-full flex justify-center items-center gap-1.5 py-2 mt-2 bg-white/[0.08] hover:bg-white/[0.12] rounded-lg font-bold text-white transition-all cursor-pointer"
+                                                  >
+                                                    <span>{quizQuestionIdx + 1 < customQuiz.length ? "Next Question" : "Complete Quiz"}</span>
+                                                    <ChevronDown className="w-3 h-3 -rotate-90" />
+                                                  </button>
+                                                </div>
+                                              ) : (
+                                                <button
+                                                  onClick={() => submitQuizQuestion(customQuiz[quizQuestionIdx])}
+                                                  disabled={quizSelectedOption === null}
+                                                  className={`w-full flex justify-center items-center py-2 bg-emerald-500 hover:bg-emerald-600 font-bold text-white rounded-lg transition-all cursor-pointer ${
+                                                    quizSelectedOption === null ? "opacity-40 pointer-events-none" : ""
+                                                  }`}
+                                                >
+                                                  <Play className="w-3 h-3 mr-1.5 fill-current" />
+                                                  <span>Submit Answer</span>
+                                                </button>
+                                              )}
+                                            </div>
+                                          ) : (
+                                            // Quiz Completion Frame
+                                            <div className="flex flex-col items-center justify-center py-6 text-center space-y-3">
+                                              <GraduationCap className="w-8 h-8 text-accentPrimary" />
+                                              <div className="space-y-1">
+                                                <h4 className="font-bold text-white">Quiz Completed!</h4>
+                                                <p className="text-[9px] text-slate-400">You scored {quizScore} out of {customQuiz.length} correctly.</p>
+                                              </div>
+                                              <button
+                                                onClick={resetQuizState}
+                                                className="px-4 py-1.5 bg-accentPrimary/10 border border-accentPrimary/20 hover:bg-accentPrimary/20 rounded-md text-[10px] text-accentPrimary font-semibold transition-all cursor-pointer"
+                                              >
+                                                Restart Quiz
+                                              </button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          </GlassCard>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+};
 
 const SKILL_FAQS: Record<string, { q: string; a: string }[]> = {
   "skill-1": [
@@ -133,182 +711,4 @@ const SKILL_FAQS: Record<string, { q: string; a: string }[]> = {
     { q: "Explain CDNs vs cache databases (like Redis).", a: "CDNs cache static assets (HTML/CSS/JS) at edge servers near clients. Redis caches dynamic database query values inside the backend server stack." },
     { q: "What is the role of a message queue in system design?", a: "Message queues (like RabbitMQ/Kafka) decouple high-latency tasks (e.g. emailing, transcoding). Publishers enqueue jobs, and background workers process them asynchronously without blocking user requests." }
   ]
-};
-
-export const DevView: React.FC = () => {
-  const state = useAppState(s => s.state);
-const updateDevSkill = useAppState(s => s.updateDevSkill);
-
-  const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>("All");
-  const [openFaqIds, setOpenFaqIds] = useState<Record<string, boolean>>({});
-
-  const toggleFaq = (skillId: string) => {
-    setOpenFaqIds(prev => ({ ...prev, [skillId]: !prev[skillId] }));
-  };
-
-  const getCategoryProgress = (category: DevCategory) => {
-    const totalPossiblePoints = category.skills.length * 5; // 5 checkboxes per skill
-    let earnedPoints = 0;
-    category.skills.forEach(skill => {
-      if (skill.learned) earnedPoints++;
-      if (skill.practiced) earnedPoints++;
-      if (skill.built) earnedPoints++;
-      if (skill.deployed) earnedPoints++;
-      if (skill.revised) earnedPoints++;
-    });
-
-    if (totalPossiblePoints === 0) return 0;
-    return Math.round((earnedPoints / totalPossiblePoints) * 100);
-  };
-
-  const filteredCategories = state.devCategories.filter(cat => {
-    return activeCategoryFilter === "All" || cat.name === activeCategoryFilter;
-  });
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/[0.06] pb-6">
-        <div>
-          <span className="text-xs uppercase font-mono tracking-widest text-slate-500">Skills Grid</span>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">Full Stack Competency Board</h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Audit your capability checklist. Track engineering competency from theoretical study to production deployment.
-          </p>
-        </div>
-      </div>
-
-      {/* Category filters */}
-      <div className="flex gap-1 bg-white/[0.02] border border-white/[0.04] p-1 rounded-xl w-full sm:w-auto overflow-x-auto">
-        {["All", "Frontend", "Backend", "Database", "Systems & Deployment"].map(catName => (
-          <button
-            key={catName}
-            onClick={() => setActiveCategoryFilter(catName)}
-            className={`px-4 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-              activeCategoryFilter === catName
-                ? "bg-white/[0.08] text-white shadow-sm border border-white/[0.04]"
-                : "text-slate-500 hover:text-slate-300 hover:bg-white/[0.02] border border-transparent"
-            }`}
-          >
-            {catName}
-          </button>
-        ))}
-      </div>
-
-      {/* Categories Grid */}
-      <div className="space-y-8">
-        {filteredCategories.map(cat => {
-          const progress = getCategoryProgress(cat);
-
-          return (
-            <div key={cat.id} className="space-y-4">
-              {/* Category label and overall progress bar */}
-              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-                <div>
-                  <h3 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-                    <Compass className="w-5 h-5 text-accentPrimary" /> {cat.name} Stack
-                  </h3>
-                </div>
-                <div className="flex items-center gap-3 w-full sm:w-64">
-                  <div className="flex-1">
-                    <ProgressBar percentage={progress} height={4} colorClass="bg-emerald-500" />
-                  </div>
-                  <span className="text-xs font-bold font-mono text-slate-400 w-8 text-right">
-                    {progress}%
-                  </span>
-                </div>
-              </div>
-
-              {/* Skills cards within category */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {cat.skills.map(skill => {
-                  // Calculate points completed for this skill
-                  let checkedCount = 0;
-                  if (skill.learned) checkedCount++;
-                  if (skill.practiced) checkedCount++;
-                  if (skill.built) checkedCount++;
-                  if (skill.deployed) checkedCount++;
-                  if (skill.revised) checkedCount++;
-
-                  return (
-                    <GlassCard key={skill.id} className="flex flex-col justify-between p-5 space-y-4 relative group hover:border-white/[0.1] transition-all overflow-hidden">
-                      <div className="absolute top-0 right-0 p-4 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity pointer-events-none">
-                        <Code2 className="w-24 h-24 text-accentPrimary" />
-                      </div>
-                      <div className="relative z-10 space-y-4">
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-start">
-                          <span className="text-xs font-semibold text-slate-200">{skill.name}</span>
-                          <span className="text-[9px] font-mono text-slate-500 uppercase">
-                            {checkedCount}/5 complete
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-400 leading-relaxed">{skill.description}</p>
-                      </div>
-
-                      {/* Interaction Stage Pills */}
-                      <div className="grid grid-cols-5 gap-1.5 pt-1">
-                        {[
-                          { key: "learned", label: "Study", icon: BookOpen, tooltip: "Read articles/docs" },
-                          { key: "practiced", label: "Code", icon: Code2, tooltip: "Practiced simple scripts" },
-                          { key: "built", label: "Build", icon: Hammer, tooltip: "Integrated into feature" },
-                          { key: "deployed", label: "Deploy", icon: Globe, tooltip: "Uploaded to production" },
-                          { key: "revised", label: "Review", icon: RefreshCw, tooltip: "Spaced check review" }
-                        ].map(stage => {
-                          const IconComponent = stage.icon;
-                          const active = (skill as any)[stage.key];
-
-                          return (
-                            <button
-                              key={stage.key}
-                              onClick={() => updateDevSkill(skill.id, stage.key as any)}
-                              title={`${stage.tooltip}: Click to toggle`}
-                              className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg border text-center transition-all hover:scale-[1.02] active:scale-95 cursor-pointer ${
-                                active
-                                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-sm"
-                                  : "bg-white/[0.005] border-white/[0.04] text-slate-500 hover:text-slate-400 hover:bg-white/[0.01]"
-                              }`}
-                            >
-                              <IconComponent className="w-3.5 h-3.5 mb-1" />
-                              <span className="text-[9px] font-medium leading-none">{stage.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* FAQ Drawer Trigger & Drawer */}
-                      <div className="border-t border-white/[0.04] pt-3 space-y-2">
-                        <button
-                          onClick={() => toggleFaq(skill.id)}
-                          className="text-[10px] text-slate-500 hover:text-accentPrimary transition-colors font-mono flex items-center gap-1 cursor-pointer"
-                        >
-                          {openFaqIds[skill.id] ? "Hide Interview FAQs" : "Show Interview FAQs"}
-                        </button>
-
-                        {openFaqIds[skill.id] && (
-                          <div className="bg-black/40 shadow-inner border border-white/[0.04] rounded-lg p-3 space-y-3 text-[10px] max-h-[200px] overflow-y-auto">
-                            {SKILL_FAQS[skill.id]?.map((faq, i) => (
-                              <div key={i} className="space-y-1">
-                                <span className="font-bold text-accentPrimary font-mono block">Q: {faq.q}</span>
-                                <span className="text-slate-400 block">{faq.a}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    </GlassCard>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </motion.div>
-  );
 };
