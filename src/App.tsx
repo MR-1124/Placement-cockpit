@@ -391,27 +391,54 @@ const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
   const primaryPlanId = state.primaryPlanId || "16-week-mastery";
   const primaryPlan = curriculum.ALL_PLANS.find((p: any) => p.id === primaryPlanId) || curriculum.ALL_PLANS[0];
 
-  const navigationItems = [
-    { id: "dashboard", name: "Dashboard", icon: LayoutDashboard },
-    { id: "companies", name: "Company Roadmaps", icon: Briefcase },
-    { id: "flashcards", name: "Flashcards", icon: Brain },
-    { id: "resume", name: "Resume ATS", icon: FileText },
-    { id: "plans", name: "Plans", icon: ClipboardList },
-    { id: "segments", name: primaryPlan.title, icon: Map },
-    { id: "dsa", name: "DSA Tracker", icon: Code2 },
-    { id: "skilltree", name: "DSA Skill Tree", icon: GitFork },
-    { id: "dev", name: "Full Stack", icon: Layers },
-    { id: "ai", name: "AI Tracker", icon: Terminal },
-    { id: "aichat", name: "AI Mentor", icon: MessageSquare },
-    { id: "interview", name: "Mock Interview", icon: Speech },
-    { id: "projects", name: "Projects", icon: FolderGit2 },
-    { id: "revision", name: "Revision Plan", icon: CalendarRange },
-    { id: "notes", name: "Notebook", icon: StickyNote },
-    { id: "badges", name: "Badges", icon: Trophy },
-    { id: "feedback", name: "Feedback", icon: MessageCircleHeart },
-    { id: "profile", name: "My Profile", icon: User },
-    { id: "settings", name: "Settings", icon: Settings }
+  const navigationCategories = [
+    {
+      title: "Launchpad",
+      items: [
+        { id: "dashboard", name: "Dashboard", icon: LayoutDashboard },
+        { id: "plans", name: "Plans", icon: ClipboardList },
+        { id: "segments", name: primaryPlan.title, icon: Map }
+      ]
+    },
+    {
+      title: "Coding Mastery",
+      items: [
+        { id: "dsa", name: "DSA Tracker", icon: Code2 },
+        { id: "skilltree", name: "DSA Skill Tree", icon: GitFork },
+        { id: "dev", name: "Full Stack", icon: Layers },
+        { id: "projects", name: "Projects", icon: FolderGit2 }
+      ]
+    },
+    {
+      title: "AI Prep Engine",
+      items: [
+        { id: "aichat", name: "AI Mentor", icon: MessageSquare },
+        { id: "interview", name: "Mock Interview", icon: Speech },
+        { id: "resume", name: "Resume ATS", icon: FileText },
+        { id: "ai", name: "AI Tracker", icon: Terminal }
+      ]
+    },
+    {
+      title: "Study Toolkit",
+      items: [
+        { id: "companies", name: "Company Roadmaps", icon: Briefcase },
+        { id: "flashcards", name: "Flashcards", icon: Brain },
+        { id: "revision", name: "Revision Plan", icon: CalendarRange },
+        { id: "notes", name: "Notebook", icon: StickyNote }
+      ]
+    },
+    {
+      title: "Account & System",
+      items: [
+        { id: "badges", name: "Badges", icon: Trophy },
+        { id: "profile", name: "My Profile", icon: User },
+        { id: "settings", name: "Settings", icon: Settings },
+        { id: "feedback", name: "Feedback", icon: MessageCircleHeart }
+      ]
+    }
   ];
+
+  const navigationItems = navigationCategories.flatMap(c => c.items);
 
   // Helper to resolve currently active page view
   const renderView = () => {
@@ -508,38 +535,57 @@ const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
         </div>
 
         {/* Sidebar Nav Items */}
-        <nav className={`flex-1 py-6 space-y-1 overflow-y-auto overflow-x-hidden ${collapsed ? "px-2" : "px-4"}`}>
-          {navigationItems.map(item => {
-            const Icon = item.icon;
-            const active = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`group relative w-full flex items-center ${collapsed ? "justify-center" : "gap-3"} px-3 py-2.5 rounded-lg text-xs font-semibold tracking-wide transition-all border ${
-                  active
-                    ? "bg-accentPrimary/5 border-accentPrimary/20 text-white"
-                    : "bg-transparent border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/[0.01]"
-                }`}
-              >
-                {collapsed && active && (
-                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r bg-accentPrimary shadow-[0_0_8px_var(--accent-color)]" />
-                )}
-                <Icon className={`w-4 h-4 shrink-0 ${active ? "text-accentPrimary" : "text-slate-500"}`} />
-                {!collapsed && <span className="truncate">{item.name}</span>}
-                
-                {/* Tooltip for Collapsed Mode */}
-                {collapsed && (
-                  <div className="absolute left-full ml-4 px-2 py-1 bg-darkCard border border-white/10 rounded text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 transition-opacity">
-                    {item.name}
-                  </div>
-                )}
+        <nav className={`flex-1 py-4 space-y-4 overflow-y-auto overflow-x-hidden custom-scrollbar ${collapsed ? "px-2" : "px-4"}`}>
+          {navigationCategories.map((category, catIdx) => {
+            const hasVisibleItems = category.items.length > 0;
+            if (!hasVisibleItems) return null;
 
-                {/* Active Indicator LED (Expanded Mode) */}
-                {!collapsed && active && (
-                  <div className="w-1 h-1 rounded-full bg-accentPrimary ml-auto shadow-[0_0_8px_var(--accent-color)]" />
-                )}
-              </button>
+            return (
+              <div key={category.title} className="space-y-1">
+                {/* Category Header */}
+                {!collapsed ? (
+                  <div className="text-[10px] font-bold font-mono tracking-widest text-slate-500 uppercase px-3 pt-3 pb-1 select-none pointer-events-none">
+                    {category.title}
+                  </div>
+                ) : catIdx > 0 ? (
+                  <div className="h-px bg-white/[0.04] my-2 mx-1 select-none pointer-events-none" />
+                ) : null}
+
+                {/* Category items */}
+                {category.items.map(item => {
+                  const Icon = item.icon;
+                  const active = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveTab(item.id)}
+                      className={`group relative w-full flex items-center ${collapsed ? "justify-center" : "gap-3"} px-3 py-2.5 rounded-lg text-xs font-semibold tracking-wide transition-all border ${
+                        active
+                          ? "bg-accentPrimary/5 border-accentPrimary/20 text-white"
+                          : "bg-transparent border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/[0.01]"
+                      }`}
+                    >
+                      {collapsed && active && (
+                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r bg-accentPrimary shadow-[0_0_8px_var(--accent-color)]" />
+                      )}
+                      <Icon className={`w-4 h-4 shrink-0 ${active ? "text-accentPrimary" : "text-slate-500"}`} />
+                      {!collapsed && <span className="truncate">{item.name}</span>}
+                      
+                      {/* Tooltip for Collapsed Mode */}
+                      {collapsed && (
+                        <div className="absolute left-full ml-4 px-2 py-1 bg-darkCard border border-white/10 rounded text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 transition-opacity">
+                          {item.name}
+                        </div>
+                      )}
+
+                      {/* Active Indicator LED (Expanded Mode) */}
+                      {!collapsed && active && (
+                        <div className="w-1 h-1 rounded-full bg-accentPrimary ml-auto shadow-[0_0_8px_var(--accent-color)]" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             );
           })}
         </nav>
