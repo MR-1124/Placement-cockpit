@@ -17,6 +17,7 @@ const FlashcardsView = React.lazy(() => import("./pages/FlashcardsView").then(mo
 const CompanyRoadmapsView = React.lazy(() => import("./pages/CompanyRoadmapsView").then(module => ({ default: module.CompanyRoadmapsView })));
 const ResumeGraderView = React.lazy(() => import("./pages/ResumeGraderView").then(module => ({ default: module.ResumeGraderView })));
 const FeedbackView = React.lazy(() => import("./pages/FeedbackView").then(module => ({ default: module.FeedbackView })));
+const SkillTreeView = React.lazy(() => import("./pages/SkillTreeView").then(module => ({ default: module.SkillTreeView })));
 
 import { DashboardView } from "./pages/DashboardView";
 import { RoadmapView } from "./pages/RoadmapView";
@@ -36,6 +37,8 @@ import {
   Terminal,
   FolderGit2,
   CalendarRange,
+  GitFork,
+
   StickyNote,
   Trophy,
   Settings,
@@ -396,6 +399,7 @@ const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
     { id: "plans", name: "Plans", icon: ClipboardList },
     { id: "segments", name: primaryPlan.title, icon: Map },
     { id: "dsa", name: "DSA Tracker", icon: Code2 },
+    { id: "skilltree", name: "DSA Skill Tree", icon: GitFork },
     { id: "dev", name: "Full Stack", icon: Layers },
     { id: "ai", name: "AI Tracker", icon: Terminal },
     { id: "aichat", name: "AI Mentor", icon: MessageSquare },
@@ -431,6 +435,8 @@ const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
         return <RoadmapView />;
       case "dsa":
         return <DsaView />;
+      case "skilltree":
+        return <SkillTreeView />;
       case "dev":
         return <DevView />;
       case "ai":

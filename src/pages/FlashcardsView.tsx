@@ -9,12 +9,13 @@ import {
   Network, Cpu, Sparkles, Trash2, Zap, History, RotateCcw, Award
 } from "lucide-react";
 import flashcardsData from "../data/flashcards.json";
-import type { Flashcard, FlashcardDeck, FlashcardSession } from "../types/AppTypes";
+import type { Flashcard, FlashcardDeck, FlashcardSession, FlashcardIconName } from "../types/AppTypes";
 
-const IconMap: Record<string, any> = {
+const IconMap: Record<FlashcardIconName, any> = {
   Cpu: Cpu,
   Database: Database,
   Network: Network,
+  Brain: Brain
 };
 
 export const FlashcardsView: React.FC = () => {

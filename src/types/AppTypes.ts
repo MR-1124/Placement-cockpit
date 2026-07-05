@@ -231,12 +231,14 @@ export interface FlashcardSession {
   easyCount: number;
 }
 
+export type FlashcardIconName = "Cpu" | "Database" | "Network" | "Brain";
+
 export interface FlashcardDeck {
   id: string;
   name: string;
   description: string;
   color: string;
-  icon: string; // Lucide icon name
+  icon: FlashcardIconName;
 }
 
 // ─── Company Roadmaps ────────────────────────────────────────────────────────

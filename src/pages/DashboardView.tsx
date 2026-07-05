@@ -62,7 +62,7 @@ const curriculum = useAppState(s => s.curriculum);
   // BUG-C3 fix: read from primary userPlan's completedSegments (authoritative source)
   // not from legacy state.completedSegments which can be stale or out-of-sync
   const primaryUserPlan = (state.userPlans || []).find(up => up.planId === primaryPlanId) || (state.userPlans || [])[0];
-  const primaryCompletedSegments = primaryUserPlan?.completedSegments || state.completedSegments || [];
+  const primaryCompletedSegments = primaryUserPlan?.completedSegments || [];
   const currentWeekIndex = Math.min(
     weekPlans.length - 1,
     primaryCompletedSegments.length
@@ -518,7 +518,7 @@ const curriculum = useAppState(s => s.curriculum);
               </div>
               <span className="text-3xl font-extrabold text-white font-mono">{overallCompletion}%</span>
               <p className="text-xs text-slate-500 mt-1 font-mono">
-                {state.completedSegments.length} of {weekPlans.length} Weeks completed
+                {primaryCompletedSegments.length} of {weekPlans.length} Weeks completed
               </p>
             </div>
             <div className="mt-4 relative z-10">

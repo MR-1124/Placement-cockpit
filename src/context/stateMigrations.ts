@@ -61,7 +61,6 @@ export const serializeState = (state: AppState): SerializedProgress => {
   return {
     version: state.version,
     user: state.user || undefined,
-    completedSegments: state.completedSegments || [],
     dsaProblems,
     dsaTopicMastery,
     devSkills,
@@ -153,7 +152,6 @@ export const deserializeState = (serialized: Partial<SerializedProgress>, curric
     isLoadingUser: false,
     version: serialized.version || SCHEMA_VERSION,
     user: serialized.user || null,
-    completedSegments: serialized.completedSegments || [],
     dsaTopics,
     devCategories,
     projects: serialized.projects || [],

@@ -127,7 +127,6 @@ const getInitialState = (curriculum: any): AppState => ({
   version: SCHEMA_VERSION,
   isLoadingUser: true,
   user: null,
-  completedSegments: [] as string[],
   dsaTopics: curriculum.DEFAULT_DSA_TOPICS,
   devCategories: curriculum.DEFAULT_DEV_CATEGORIES,
   projects: [],
@@ -230,7 +229,6 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         const yesterday = getYesterdayString();
         let updatedState = { ...parsed };
         // Ensure all top-level arrays exist to prevent length crashes
-        updatedState.completedSegments = updatedState.completedSegments || [];
         updatedState.completedSkills = updatedState.completedSkills || [];
         updatedState.activeRoadmaps = updatedState.activeRoadmaps || [];
         updatedState.atsReports = updatedState.atsReports || [];
@@ -325,7 +323,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         }
 
         if (updatedState.userPlans === undefined || updatedState.userPlans.length === 0) {
-          const migratedCompletedWeeks: string[] = parsed.completedSegments || [];
+          const migratedCompletedWeeks: string[] = (parsed as any).completedSegments || [];
 
           updatedState.userPlans = [
             {
@@ -716,9 +714,11 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
   const primaryPlanId = state.primaryPlanId || "16-week-mastery";
   const primaryPlan = curriculum.ALL_PLANS.find((p: any) => p.id === primaryPlanId) || curriculum.ALL_PLANS[0];
+  const primaryUserPlan = (state.userPlans || []).find((up: any) => up.planId === primaryPlanId);
+  const primaryCompletedSegments = primaryUserPlan?.completedSegments || [];
   // BUG-C1 fix: guard against zero-length segments to prevent divide-by-zero crash
   const overallCompletion = primaryPlan?.segments?.length
-    ? Math.min(100, Math.round((state.completedSegments.length / primaryPlan.segments.length) * 100))
+    ? Math.min(100, Math.round((primaryCompletedSegments.length / primaryPlan.segments.length) * 100))
     : 0;
 
   // Dynamic level progression system (RPG-style)
@@ -751,8 +751,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         return { ...up, completedSegments: completedSegmentsList };
       });
 
-      const updatedPrimaryPlan = updatedUserPlans.find(up => up.planId === primaryPlanId);
-      const primaryPlanCompletedWeeksStr = updatedPrimaryPlan?.completedSegments || [];
+
 
       if (!isCompleted) {
         // Week completed confetti!
@@ -772,8 +771,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
       return {
         ...prev,
-        userPlans: updatedUserPlans,
-        completedSegments: primaryPlanCompletedWeeksStr
+        userPlans: updatedUserPlans
       };
     });
   };
@@ -1521,7 +1519,6 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
       return {
         ...prev,
-        completedSegments,
         userPlans: updatedUserPlans,
         dsaTopics,
         devCategories,
@@ -1584,15 +1581,10 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         primary: up.planId === primaryPlanId
       }));
 
-      const primaryPlanCompletedWeeks = updatedUserPlans.find(up => up.planId === primaryPlanId)?.completedSegments || [];
-      // BUG-C4 fix: segment IDs are already "week-1", "week-2" etc. — do NOT add another "week-" prefix
-      const completedSegments = primaryPlanCompletedWeeks;
-
       return {
         ...prev,
         userPlans: updatedUserPlans,
-        primaryPlanId,
-        completedSegments
+        primaryPlanId
       };
     });
   };
@@ -1619,15 +1611,10 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         primary: up.planId === planId
       }));
 
-      const primaryPlanCompletedWeeks = updatedUserPlans.find(up => up.planId === planId)?.completedSegments || [];
-      // BUG-C4 fix: segment IDs are already correct — do NOT add "week-" prefix
-      const completedSegments = primaryPlanCompletedWeeks;
-
       return {
         ...prev,
         userPlans: updatedUserPlans,
-        primaryPlanId: planId,
-        completedSegments
+        primaryPlanId: planId
       };
     });
   };
@@ -1644,12 +1631,6 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
           : [...up.completedSegments, segmentId];
         return { ...up, completedSegments };
       });
-
-      let completedSegments = prev.completedSegments;
-      if (prev.primaryPlanId === planId) {
-        const primaryPlanCompletedWeeks = userPlans.find(up => up.planId === planId)?.completedSegments || [];
-        completedSegments = primaryPlanCompletedWeeks;
-      }
 
       if (!isCompleted) {
         // Week/Segment completed confetti!
@@ -1669,8 +1650,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
       return {
         ...prev,
-        userPlans,
-        completedSegments
+        userPlans
       };
     });
   };
@@ -1883,11 +1863,11 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     });
   };
 
-  const enrollCompanyRoadmap = (segments: CompanyRoadmap) => {
+  const enrollCompanyRoadmap = (roadmap: CompanyRoadmap) => {
     updateState(prev => {
-      const segmentss = prev.activeRoadmaps || [];
-      if (segmentss.some(r => r.id === segments.id)) return prev;
-      return { ...prev, activeRoadmaps: [...segmentss, segments] };
+      const activeRoadmaps = prev.activeRoadmaps || [];
+      if (activeRoadmaps.some(r => r.id === roadmap.id)) return prev;
+      return { ...prev, activeRoadmaps: [...activeRoadmaps, roadmap] };
     });
   };
 
@@ -1902,11 +1882,11 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     });
   };
 
-  const updateRoadmapProgress = (segmentsId: string, milestoneId: string, completed: boolean) => {
+  const updateRoadmapProgress = (roadmapId: string, milestoneId: string, completed: boolean) => {
     updateState(prev => {
-      const segmentss = prev.activeRoadmaps || [];
-      const updated = segmentss.map(r => {
-        if (r.id !== segmentsId) return r;
+      const activeRoadmaps = prev.activeRoadmaps || [];
+      const updated = activeRoadmaps.map(r => {
+        if (r.id !== roadmapId) return r;
         const newPhases = r.phases.map(p => ({
           ...p,
           milestones: p.milestones.map(m => m.id === milestoneId ? { ...m, isCompleted: completed } : m)

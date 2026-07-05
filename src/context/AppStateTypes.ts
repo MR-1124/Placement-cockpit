@@ -22,13 +22,7 @@ import type {
   AtsReport
 } from "../types/AppTypes";
 
-export interface AppState {
-  version: number;
-  isLoadingUser: boolean;
-  user: UserProfile | null;
-  completedSegments: string[];
-  dsaTopics: DsaTopic[];
-  devCategories: DevCategory[];
+export interface BaseAppState {
   projects: Project[];
   completedSkills: string[];
   aiLogs: AiLog[];
@@ -42,9 +36,6 @@ export interface AppState {
   lastActiveDate: string;
   unlockedBadges: string[];
   xp: number;
-  dailyChallenge?: DailyChallenge;
-  sessionNvidiaKey?: string;
-
   chatSessions?: Record<string, ChatSession>;
   currentSessionId?: string;
   userPlans?: UserPlan[];
@@ -58,10 +49,19 @@ export interface AppState {
   atsReports?: AtsReport[];
 }
 
-export interface SerializedProgress {
+export interface AppState extends BaseAppState {
+  version: number;
+  isLoadingUser: boolean;
+  user: UserProfile | null;
+  dsaTopics: DsaTopic[];
+  devCategories: DevCategory[];
+  dailyChallenge?: DailyChallenge;
+  sessionNvidiaKey?: string;
+}
+
+export interface SerializedProgress extends Partial<BaseAppState> {
   version?: number;
   user?: UserProfile;
-  completedSegments: string[];
   dsaProblems: {
     [problemId: string]: {
       isCompleted?: boolean;
@@ -87,21 +87,6 @@ export interface SerializedProgress {
       revised?: boolean;
     };
   };
-  projects: Project[];
-  completedSkills: string[];
-  aiLogs: AiLog[];
-  dailyHabits: DailyHabitState;
-  customTasks: CustomTask[];
-  weeklyGoals?: WeeklyGoal[];
-  habitHistory: HistoryItem[];
-  notes: Note[];
-  settings: AppSettings;
-  streak: number;
-  lastActiveDate: string;
-  unlockedBadges: string[];
-  xp: number;
-  chatSessions?: Record<string, ChatSession>;
-  currentSessionId?: string;
   profile?: {
     name: string;
     email: string;
@@ -115,15 +100,6 @@ export interface SerializedProgress {
     resumeText?: string;
     resumeFileName?: string;
   };
-  userPlans?: UserPlan[];
-  primaryPlanId?: string;
-  mockInterviews?: MockInterviewReport[];
-  activeInterviewSession?: ActiveInterviewSession | null;
-  flashcards?: Flashcard[];
-  customDecks?: FlashcardDeck[];
-  flashcardHistory?: FlashcardSession[];
-  activeRoadmaps?: CompanyRoadmap[];
-  atsReports?: AtsReport[];
 }
 
 export interface AppContextType {
@@ -201,8 +177,8 @@ export interface AppContextType {
   refreshDailyChallenge: () => void;
   setSessionNvidiaKey: (key: string) => void;
   updateFlashcardReview: (flashcardId: string, easeFactor: number, interval: number, nextReviewDate: string, repetition: number) => void;
-  enrollCompanyRoadmap: (segments: CompanyRoadmap) => void;
-  updateRoadmapProgress: (segmentsId: string, milestoneId: string, completed: boolean) => void;
+  enrollCompanyRoadmap: (roadmap: CompanyRoadmap) => void;
+  updateRoadmapProgress: (roadmapId: string, milestoneId: string, completed: boolean) => void;
   importFlashcards: (deck: FlashcardDeck, cards: Flashcard[]) => void;
   addCustomDeck: (deck: FlashcardDeck) => void;
   deleteCustomDeck: (deckId: string) => void;
