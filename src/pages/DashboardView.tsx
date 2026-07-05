@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useAppState } from "../context/AppStateContext";
 import type { DailyHabitState } from "../context/AppStateContext";
@@ -99,7 +99,7 @@ const curriculum = useAppState(s => s.curriculum);
 
   // Determine current day of week index for consistency map (columns: duration, rows: 7 days)
   // Let's draw a grid of duration x 7 days
-  const renderHeatmap = () => {
+  const renderedHeatmap = useMemo(() => {
     const cells = [];
     const weekPlans = primaryPlan.segments;
     const duration = primaryPlan.duration;
@@ -377,7 +377,18 @@ const curriculum = useAppState(s => s.curriculum);
         </div>
       </div>
     );
-  };
+  }, [
+    heatmapMode,
+    primaryPlan,
+    primaryPlanId,
+    state.userPlans,
+    state.lastActiveDate,
+    state.dailyHabits,
+    state.habitHistory,
+    primaryCompletedSegments,
+    selectedMonth,
+    today
+  ]);
 
   const getAiZone = (score: number) => {
     if (score < 25) return { name: "Healthy", color: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5" };
@@ -889,7 +900,7 @@ const curriculum = useAppState(s => s.curriculum);
                 <span className="text-[10px] font-mono text-slate-500 uppercase hidden md:inline">{primaryPlan.title}</span>
               </div>
             </div>
-            {renderHeatmap()}
+             {renderedHeatmap}
             <p className="text-[11px] text-slate-500 font-mono leading-relaxed mt-2">
               {heatmapMode === "plan" 
                 ? "Each grid column represents a segments week (Sunday-Saturday rows). Bright cells indicate a high number of habits ticked on that day. Complete your weeks to keep the momentum going!"

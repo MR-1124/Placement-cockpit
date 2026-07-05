@@ -444,17 +444,27 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     return () => clearInterval(interval);
   }, []);
 
-  // Save state to localStorage whenever it changes
+  // Save state to localStorage whenever it changes (debounced to avoid blocking render)
   useEffect(() => {
-    const stateToSave = {
-      ...state,
-      chatSessions: state.chatSessions || {},
-      settings: {
-        ...state.settings,
-        nvidiaApiKey: state.settings.nvidiaApiKey ? btoa(state.settings.nvidiaApiKey) : ""
-      }
+    const saveState = () => {
+      const stateToSave = {
+        ...state,
+        chatSessions: state.chatSessions || {},
+        settings: {
+          ...state.settings,
+          nvidiaApiKey: state.settings.nvidiaApiKey ? btoa(state.settings.nvidiaApiKey) : ""
+        }
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+
+    const handler = setTimeout(saveState, 1000);
+
+    const handleBeforeUnload = () => {
+      saveState();
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
     // Apply theme variable to document root
     const root = document.documentElement;
     let colorValue = "#8b5cf6"; // violet
@@ -466,6 +476,11 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
     root.style.setProperty("--accent-color", colorValue);
     root.style.setProperty("--accent-rgb", rgbValue);
+
+    return () => {
+      clearTimeout(handler);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
   }, [state]);
 
   // Listen to Firebase Auth state changes
@@ -636,7 +651,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
   const updateState = (updater: (prev: AppState) => AppState) => {
     setState(prev => {
       const next = updater(prev);
-      return checkAndUnlockBadges(next, curriculum);
+      return checkAndUnlockBadges(next, curriculum, prev);
     });
   };
 

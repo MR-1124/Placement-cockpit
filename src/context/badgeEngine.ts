@@ -3,7 +3,25 @@ import type { AppState } from "./AppStateTypes";
 import type { Badge } from "../data/curriculum";
 import { calculateReadinessScore } from "./stateMigrations";
 
-export const checkAndUnlockBadges = (updatedState: AppState, curriculum: any): AppState => {
+export const checkAndUnlockBadges = (updatedState: AppState, curriculum: any, prevState?: AppState): AppState => {
+  // Short-circuit: if all possible badges are already unlocked, skip checks completely
+  if (updatedState.unlockedBadges && updatedState.unlockedBadges.length >= 10) {
+    return updatedState;
+  }
+
+  // Short-circuit: if previous state exists, compare references to see if badge-relevant data changed
+  if (prevState) {
+    const dsaChanged = updatedState.dsaTopics !== prevState.dsaTopics;
+    const devChanged = updatedState.devCategories !== prevState.devCategories;
+    const logsChanged = updatedState.aiLogs !== prevState.aiLogs;
+    const streakChanged = updatedState.streak !== prevState.streak;
+    const projectsChanged = updatedState.projects !== prevState.projects;
+
+    if (!dsaChanged && !devChanged && !logsChanged && !streakChanged && !projectsChanged) {
+      return updatedState;
+    }
+  }
+
   let freshlyUnlocked: string[] = [];
 
   // 1. Calculate values
