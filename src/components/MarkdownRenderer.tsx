@@ -3,7 +3,6 @@ import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
-import remarkBreaks from "remark-breaks";
 import rehypeKatex from "rehype-katex";
 import DOMPurify from "dompurify";
 import { Clipboard, Check, AlertTriangle } from "lucide-react";
@@ -330,7 +329,7 @@ export const MarkdownBody: React.FC<{ content: string }> = ({ content }) => {
   return (
     <div className="select-text leading-relaxed font-sans text-[12px] text-slate-300">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkMath, remarkBreaks]}
+        remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex]}
         components={components}
       >

@@ -131,28 +131,28 @@ export const PracticeView: React.FC = () => {
     setAiDescription(null);
 
     try {
-      const prompt = `Generate a comprehensive and robust DSA coding problem description for: "${problem.name}".
+      const prompt = `Generate a comprehensive but concise and structured DSA coding problem description for: "${problem.name}".
 Difficulty: ${problem.difficulty}.
 Context Topic: ${problem.topicName}.
 Associated Tags: ${problem.tags ? problem.tags.join(", ") : "None"}.
 
-You MUST strictly follow this exact structure and return the description in beautiful, direct Markdown format. Do not use conversational openings, meta-text, or general intros. Go straight to the markdown response.
+You MUST strictly follow this exact structure and return the description in beautiful, direct Markdown format. Do not use conversational openings, meta-text, or general intros. Go straight to the markdown response. Keep it concise, crisp, and clean (under 300 words total).
 
 Structure:
 # ${problem.name}
 
 ## 1. Problem Statement & Explanation
-Provide a detailed explanation of the problem, the core objective, and any necessary context or patterns.
+Provide a clear, brief explanation of the problem, the core objective, and any necessary context or patterns. (Limit to 3-4 sentences maximum).
 
 ## 2. Examples
-Provide exactly 2 detailed examples. Each example must clearly specify:
+Provide exactly 2 clean, minimal examples. Each example must clearly specify:
 - **Input**: The input variables and their values.
 - **Output**: The expected output value.
-- **Explanation**: A step-by-step trace explaining why the given input yields this output.
+- **Explanation**: A short 1-2 sentence trace.
 
 ## 3. Constraints
 Provide precise constraints including:
-- Parameter bounds (e.g., array size, string length, range of values).
+- Parameter bounds (e.g., array size, range of values).
 - Expected optimal Time Complexity.
 - Expected optimal Space Complexity.
 
@@ -160,7 +160,7 @@ Provide precise constraints including:
 List the primary DSA topics and sub-topics utilized in this question. Format them as short inline code pills (e.g., \`Array\`, \`Hash Table\`, \`Two Pointers\`).
 
 ## 5. Additional Notes & Gotchas
-Provide key observations, potential corner cases (e.g., empty inputs, negative numbers, overflow), or optimization hints.`;
+Provide key observations, potential corner cases, or optimization hints in bullet points (limit to 3 bullet points max).`;
 
       const response = await nvidiaFetch({
         apiKey: state.sessionNvidiaKey,
