@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 
 export const PracticeView: React.FC = () => {
-  const { state, markPracticeProblemSolved, curriculum } = useAppState();
+  const { state, markPracticeProblemSolved, curriculum, confirmAction } = useAppState();
   
   // Flatten all problems from default DSA topics
   const allProblems = React.useMemo(() => {
@@ -131,16 +131,36 @@ export const PracticeView: React.FC = () => {
     setAiDescription(null);
 
     try {
-      const prompt = `Write a detailed DSA coding problem description for: "${problem.name}".
+      const prompt = `Generate a comprehensive and robust DSA coding problem description for: "${problem.name}".
 Difficulty: ${problem.difficulty}.
 Context Topic: ${problem.topicName}.
+Associated Tags: ${problem.tags ? problem.tags.join(", ") : "None"}.
 
-Include:
-1. Problem Statement: A clear, concise statement of what needs to be solved.
-2. Example Inputs and Outputs: 2 clean examples showing the input parameters, output value, and brief explanation.
-3. Constraints: Time complexity constraint, space complexity constraint, and parameter bounds (e.g. n <= 10^5).
+You MUST strictly follow this exact structure and return the description in beautiful, direct Markdown format. Do not use conversational openings, meta-text, or general intros. Go straight to the markdown response.
 
-Return the description in beautiful, direct Markdown format. Do not use conversational openings or general intros. Go straight to the description.`;
+Structure:
+# ${problem.name}
+
+## 1. Problem Statement & Explanation
+Provide a detailed explanation of the problem, the core objective, and any necessary context or patterns.
+
+## 2. Examples
+Provide exactly 2 detailed examples. Each example must clearly specify:
+- **Input**: The input variables and their values.
+- **Output**: The expected output value.
+- **Explanation**: A step-by-step trace explaining why the given input yields this output.
+
+## 3. Constraints
+Provide precise constraints including:
+- Parameter bounds (e.g., array size, string length, range of values).
+- Expected optimal Time Complexity.
+- Expected optimal Space Complexity.
+
+## 4. Topics Utilized
+List the primary DSA topics and sub-topics utilized in this question. Format them as short inline code pills (e.g., \`Array\`, \`Hash Table\`, \`Two Pointers\`).
+
+## 5. Additional Notes & Gotchas
+Provide key observations, potential corner cases (e.g., empty inputs, negative numbers, overflow), or optimization hints.`;
 
       const response = await nvidiaFetch({
         apiKey: state.sessionNvidiaKey,
@@ -197,6 +217,23 @@ Return the description in beautiful, direct Markdown format. Do not use conversa
     if (problem.url) return problem.url;
     // Fallback search Google
     return `https://www.google.com/search?q=${encodeURIComponent(problem.name + " " + (problem.source || "LeetCode") + " practice")}`;
+  };
+
+  const handleBack = () => {
+    if (timeElapsed > 0 || timerRunning) {
+      confirmAction({
+        title: "Abort Practice?",
+        message: "You have started the timer for practice. Do you want to abort practice of this question or continue the practice and stay on this page?",
+        confirmText: "Abort Practice",
+        cancelText: "Continue Practice",
+        severity: "warning",
+        onConfirm: () => {
+          setActiveQuestion(null);
+        }
+      });
+    } else {
+      setActiveQuestion(null);
+    }
   };
 
   const handleMarkAsSolved = () => {
@@ -450,7 +487,7 @@ Return the description in beautiful, direct Markdown format. Do not use conversa
             <div className="lg:col-span-1 space-y-6">
               {/* Back Button */}
               <button
-                onClick={() => setActiveQuestion(null)}
+                onClick={handleBack}
                 className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" /> Back to Arena
