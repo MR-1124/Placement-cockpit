@@ -292,14 +292,22 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
         temperature: 0.1
       });
 
-      const rawJsonText = await response.text();
-      // Clean up potential LLM markdown wrap blocks (e.g. ```json ... ```)
-      const cleanJsonText = rawJsonText
-        .replace(/^```json\s*/i, "")
-        .replace(/```$/, "")
-        .trim();
+      const data = await response.json();
+      let rawText = data.choices?.[0]?.message?.content || "";
+      
+      // Clean up potential <think>...</think> tags (e.g. from DeepSeek model)
+      rawText = rawText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
 
-      const parsed = JSON.parse(cleanJsonText);
+      const startIdx = rawText.indexOf("{");
+      const endIdx = rawText.lastIndexOf("}");
+      
+      if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) {
+        throw new Error("Could not find a valid JSON object in the AI response.");
+      }
+
+      const jsonText = rawText.substring(startIdx, endIdx + 1);
+      const parsed = JSON.parse(jsonText);
+
       if (parsed && Array.isArray(parsed.questions)) {
         setAiQuizQuestions(parsed.questions);
       } else {
