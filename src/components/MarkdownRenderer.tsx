@@ -243,9 +243,242 @@ export const CodeBlock: React.FC<CodeProps> = ({ code, language }) => {
   );
 };
 
-// 3. Custom Markdown Block Parser
+// 3. Dynamic KaTeX math equation renderer
+interface KatexProps {
+  math: string;
+  block?: boolean;
+}
+
+export const KatexRenderer: React.FC<KatexProps> = ({ math, block = false }) => {
+  const elementRef = useRef<HTMLSpanElement>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadKatex = async () => {
+      try {
+        if (!document.getElementById("katex-css")) {
+          const link = document.createElement("link");
+          link.id = "katex-css";
+          link.rel = "stylesheet";
+          link.href = "https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css";
+          document.head.appendChild(link);
+        }
+
+        if (!(window as any).katex) {
+          await new Promise<void>((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = "https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js";
+            script.async = true;
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error("Failed to load KaTeX"));
+            document.head.appendChild(script);
+          });
+        }
+
+        if (isMounted && elementRef.current) {
+          (window as any).katex.render(math, elementRef.current, {
+            displayMode: block,
+            throwOnError: false,
+            trust: true
+          });
+        }
+      } catch (err: any) {
+        console.error("KaTeX render error:", err);
+        if (isMounted) {
+          setError(err.message || "Failed to render equation");
+        }
+      }
+    };
+
+    loadKatex();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [math, block]);
+
+  if (error) {
+    return <code className="font-mono text-rose-400">{math}</code>;
+  }
+
+  return <span ref={elementRef} className={block ? "block my-4 overflow-x-auto text-center" : "inline-block px-1"} />;
+};
+
+// 4. Custom text block segment renderer supporting inline math and block list nesting
+interface TextBlockRendererProps {
+  content: string;
+}
+
+export const TextBlockRenderer: React.FC<TextBlockRendererProps> = ({ content }) => {
+  const segments: { type: "text" | "inline-math"; content: string }[] = [];
+  let currentText = content;
+
+  while (currentText) {
+    const matchStart = currentText.indexOf("\\(");
+    if (matchStart === -1) {
+      segments.push({ type: "text", content: currentText });
+      break;
+    }
+
+    if (matchStart > 0) {
+      segments.push({ type: "text", content: currentText.substring(0, matchStart) });
+    }
+
+    const matchEnd = currentText.indexOf("\\)", matchStart + 2);
+    if (matchEnd === -1) {
+      segments.push({ type: "inline-math", content: currentText.substring(matchStart + 2) });
+      break;
+    }
+
+    segments.push({
+      type: "inline-math",
+      content: currentText.substring(matchStart + 2, matchEnd).trim()
+    });
+
+    currentText = currentText.substring(matchEnd + 2);
+  }
+
+  const formatText = (text: string) => {
+    if (!text) return "";
+
+    let escaped = text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+    escaped = escaped.replace(/&lt;br\s*\/?&gt;/g, "<br />");
+
+    const lines = escaped.split("\n");
+    let resultLines: string[] = [];
+    let inList = false;
+    let listType: "ul" | "ol" | null = null;
+
+    const closeList = () => {
+      if (inList) {
+        resultLines.push(listType === "ul" ? "</ul>" : "</ol>");
+        inList = false;
+        listType = null;
+      }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
+      let trimmed = line.trim();
+
+      if (trimmed === "---" || trimmed === "***") {
+        closeList();
+        resultLines.push('<hr class="border-white/10 my-4" />');
+        continue;
+      }
+
+      const header4Match = line.match(/^#### (.*)$/);
+      if (header4Match) {
+        closeList();
+        resultLines.push(`<h5 class="text-[11px] font-bold text-white mt-3 mb-1 font-mono uppercase tracking-wider">${header4Match[1]}</h5>`);
+        continue;
+      }
+      const header3Match = line.match(/^### (.*)$/);
+      if (header3Match) {
+        closeList();
+        resultLines.push(`<h4 class="text-xs font-bold text-white mt-3 mb-1 font-mono uppercase tracking-wider">${header3Match[1]}</h4>`);
+        continue;
+      }
+      const header2Match = line.match(/^## (.*)$/);
+      if (header2Match) {
+        closeList();
+        resultLines.push(`<h3 class="text-sm font-bold text-white mt-4 mb-2 border-b border-white/5 pb-1">${header2Match[1]}</h3>`);
+        continue;
+      }
+      const header1Match = line.match(/^# (.*)$/);
+      if (header1Match) {
+        closeList();
+        resultLines.push(`<h2 class="text-base font-extrabold text-white mt-4 mb-2">${header1Match[1]}</h2>`);
+        continue;
+      }
+
+      if (trimmed.startsWith("&gt;")) {
+        closeList();
+        const blockquoteContent = trimmed.substring(4).trim();
+        resultLines.push(`<blockquote class="border-l-2 border-accentPrimary/40 pl-3.5 italic text-slate-400 my-2.5">${blockquoteContent}</blockquote>`);
+        continue;
+      }
+
+      const bulletMatch = line.match(/^(\s*)[-*]\s+(.*)$/);
+      if (bulletMatch) {
+        if (!inList || listType !== "ul") {
+          closeList();
+          resultLines.push('<ul class="list-disc pl-4 space-y-1 my-2">');
+          inList = true;
+          listType = "ul";
+        }
+        resultLines.push(`<li class="text-slate-350">${bulletMatch[2]}</li>`);
+        continue;
+      }
+
+      const numberMatch = line.match(/^(\s*)(\d+)\.\s+(.*)$/);
+      const isSectionHeader = trimmed.match(/^\d+\.\d+/);
+
+      if (numberMatch && !isSectionHeader) {
+        if (!inList || listType !== "ol") {
+          closeList();
+          resultLines.push('<ol class="list-decimal pl-4 space-y-1 my-2">');
+          inList = true;
+          listType = "ol";
+        }
+        resultLines.push(`<li class="text-slate-350">${numberMatch[3]}</li>`);
+        continue;
+      }
+
+      const sectionHeaderMatch = line.match(/^(\s*)(\d+\.\d+\.?\d*)\.?\s+(.*)$/);
+      if (sectionHeaderMatch) {
+        closeList();
+        resultLines.push(`<h4 class="text-xs font-bold text-white mt-4 mb-1.5 font-mono uppercase tracking-wider">${sectionHeaderMatch[2]} ${sectionHeaderMatch[3]}</h4>`);
+        continue;
+      }
+
+      if (trimmed === "") {
+        closeList();
+        resultLines.push('<div class="h-2"></div>');
+      } else {
+        closeList();
+        resultLines.push(`<div>${line}</div>`);
+      }
+    }
+
+    closeList();
+
+    let html = resultLines.join("\n");
+
+    html = html.replace(/`([^`\n]+)`/g, '<code class="bg-white/5 px-1.5 py-0.5 rounded font-mono text-amber-400 text-[11px]">$1</code>');
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
+    html = html.replace(/\b_([^_]+)_\b/g, '<em class="italic text-slate-300">$1</em>');
+    html = html.replace(/\*([^*]+)\*/g, '<em class="italic text-slate-300">$1</em>');
+
+    return html;
+  };
+
+  return (
+    <div className="prose prose-invert max-w-none space-y-1 my-1 select-text">
+      {segments.map((seg, idx) => {
+        if (seg.type === "inline-math") {
+          return <KatexRenderer key={idx} math={seg.content} block={false} />;
+        }
+        return (
+          <span
+            key={idx}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatText(seg.content)) }}
+          />
+        );
+      })}
+    </div>
+  );
+};
+
+// 5. Custom Markdown Block Parser
 export interface ContentBlock {
-  type: "text" | "think" | "code" | "mermaid" | "table";
+  type: "text" | "think" | "code" | "mermaid" | "table" | "math";
   content: string;
   language?: string;
 }
@@ -254,13 +487,12 @@ export const parseMarkdownBlocks = (text: string): ContentBlock[] => {
   const blocks: ContentBlock[] = [];
   let remainingText = text;
 
-  // Extract thinking blocks
   const thinkStart = remainingText.indexOf("<think>");
   if (thinkStart !== -1) {
     const thinkEnd = remainingText.indexOf("</think>", thinkStart);
     if (thinkEnd !== -1) {
       if (thinkStart > 0) {
-        blocks.push(...parseCodeAndTables(remainingText.substring(0, thinkStart)));
+        blocks.push(...parseMathBlocks(remainingText.substring(0, thinkStart)));
       }
       blocks.push({
         type: "think",
@@ -270,9 +502,44 @@ export const parseMarkdownBlocks = (text: string): ContentBlock[] => {
     }
   }
 
-  blocks.push(...parseCodeAndTables(remainingText));
+  blocks.push(...parseMathBlocks(remainingText));
   return blocks;
 };
+
+function parseMathBlocks(text: string): ContentBlock[] {
+  const segments: ContentBlock[] = [];
+  let currentText = text;
+
+  while (currentText) {
+    const mathStart = currentText.indexOf("\\[");
+    if (mathStart === -1) {
+      segments.push(...parseCodeAndTables(currentText));
+      break;
+    }
+
+    if (mathStart > 0) {
+      segments.push(...parseCodeAndTables(currentText.substring(0, mathStart)));
+    }
+
+    const mathEnd = currentText.indexOf("\\]", mathStart + 2);
+    if (mathEnd === -1) {
+      segments.push({
+        type: "math",
+        content: currentText.substring(mathStart + 2)
+      });
+      break;
+    }
+
+    segments.push({
+      type: "math",
+      content: currentText.substring(mathStart + 2, mathEnd).trim()
+    });
+
+    currentText = currentText.substring(mathEnd + 2);
+  }
+
+  return segments;
+}
 
 function parseCodeAndTables(text: string): ContentBlock[] {
   const segments: ContentBlock[] = [];
@@ -378,123 +645,13 @@ function parseTablesAndParagraphs(text: string): ContentBlock[] {
   return segments;
 }
 
-// 4. Main Markdown to React Node renderer
+// 6. Main Markdown to React Node renderer
 interface RendererProps {
   content: string;
 }
 
 export const MarkdownRenderer: React.FC<RendererProps> = ({ content }) => {
   const blocks = parseMarkdownBlocks(content);
-
-  const formatText = (text: string) => {
-    if (!text) return "";
-
-    let escaped = text
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
-
-    escaped = escaped.replace(/&lt;br\s*\/?&gt;/g, "<br />");
-
-    const lines = escaped.split("\n");
-    let resultLines: string[] = [];
-    let inList = false;
-    let listType: "ul" | "ol" | null = null;
-
-    const closeList = () => {
-      if (inList) {
-        resultLines.push(listType === "ul" ? "</ul>" : "</ol>");
-        inList = false;
-        listType = null;
-      }
-    };
-
-    for (let i = 0; i < lines.length; i++) {
-      let line = lines[i];
-      let trimmed = line.trim();
-
-      if (trimmed === "---" || trimmed === "***") {
-        closeList();
-        resultLines.push('<hr class="border-white/10 my-4" />');
-        continue;
-      }
-
-      const header4Match = line.match(/^#### (.*)$/);
-      if (header4Match) {
-        closeList();
-        resultLines.push(`<h5 class="text-[11px] font-bold text-white mt-3 mb-1 font-mono uppercase tracking-wider">${header4Match[1]}</h5>`);
-        continue;
-      }
-      const header3Match = line.match(/^### (.*)$/);
-      if (header3Match) {
-        closeList();
-        resultLines.push(`<h4 class="text-xs font-bold text-white mt-3 mb-1 font-mono uppercase tracking-wider">${header3Match[1]}</h4>`);
-        continue;
-      }
-      const header2Match = line.match(/^## (.*)$/);
-      if (header2Match) {
-        closeList();
-        resultLines.push(`<h3 class="text-sm font-bold text-white mt-4 mb-2 border-b border-white/5 pb-1">${header2Match[1]}</h3>`);
-        continue;
-      }
-      const header1Match = line.match(/^# (.*)$/);
-      if (header1Match) {
-        closeList();
-        resultLines.push(`<h2 class="text-base font-extrabold text-white mt-4 mb-2">${header1Match[1]}</h2>`);
-        continue;
-      }
-
-      if (trimmed.startsWith("&gt;")) {
-        closeList();
-        const content = trimmed.substring(4).trim();
-        resultLines.push(`<blockquote class="border-l-2 border-accentPrimary/40 pl-3.5 italic text-slate-400 my-2.5">${content}</blockquote>`);
-        continue;
-      }
-
-      const bulletMatch = line.match(/^(\s*)[-*]\s+(.*)$/);
-      if (bulletMatch) {
-        if (!inList || listType !== "ul") {
-          closeList();
-          resultLines.push('<ul class="list-disc pl-4 space-y-1 my-2">');
-          inList = true;
-          listType = "ul";
-        }
-        resultLines.push(`<li class="text-slate-350">${bulletMatch[2]}</li>`);
-        continue;
-      }
-
-      const numberMatch = line.match(/^(\s*)\d+\.\s+(.*)$/);
-      if (numberMatch) {
-        if (!inList || listType !== "ol") {
-          closeList();
-          resultLines.push('<ol class="list-decimal pl-4 space-y-1 my-2">');
-          inList = true;
-          listType = "ol";
-        }
-        resultLines.push(`<li class="text-slate-350">${numberMatch[2]}</li>`);
-        continue;
-      }
-
-      if (trimmed === "") {
-        closeList();
-        resultLines.push('<div class="h-2"></div>');
-      } else {
-        closeList();
-        resultLines.push(`<div>${line}</div>`);
-      }
-    }
-
-    closeList();
-
-    let html = resultLines.join("\n");
-
-    html = html.replace(/`([^`\n]+)`/g, '<code class="bg-white/5 px-1.5 py-0.5 rounded font-mono text-amber-400 text-[11px]">$1</code>');
-    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
-    html = html.replace(/\b_([^_]+)_\b/g, '<em class="italic text-slate-300">$1</em>');
-    html = html.replace(/\*([^*]+)\*/g, '<em class="italic text-slate-300">$1</em>');
-
-    return html;
-  };
 
   const renderTable = (tableMarkdown: string) => {
     const parseRow = (r: string) => {
@@ -578,15 +735,11 @@ export const MarkdownRenderer: React.FC<RendererProps> = ({ content }) => {
             return <MermaidDiagram key={idx} chart={block.content} />;
           case "table":
             return <React.Fragment key={idx}>{renderTable(block.content)}</React.Fragment>;
+          case "math":
+            return <KatexRenderer key={idx} math={block.content} block={true} />;
           case "text":
           default:
-            return (
-              <div
-                key={idx}
-                className="prose prose-invert max-w-none space-y-1 my-1 select-text"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatText(block.content)) }}
-              />
-            );
+            return <TextBlockRenderer key={idx} content={block.content} />;
         }
       })}
     </div>
