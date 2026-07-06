@@ -55,8 +55,8 @@ export const SettingsView: React.FC = () => {
       "nvidia/llama-3.1-nemotron-70b-instruct",
       "mistralai/mixtral-8x22b-instruct-v0.1",
       "deepseek-ai/deepseek-r1",
-      "nvidia/nemotron-3-nano-30b-a3b",
-      "gpt-oss-120b"
+      "nvidia/nemotron-mini-4b-instruct",
+      "meta/llama-3.3-70b-instruct"
     ].includes(model)) {
       return model;
     }
@@ -73,8 +73,8 @@ export const SettingsView: React.FC = () => {
       "nvidia/llama-3.1-nemotron-70b-instruct",
       "mistralai/mixtral-8x22b-instruct-v0.1",
       "deepseek-ai/deepseek-r1",
-      "nvidia/nemotron-3-nano-30b-a3b",
-      "gpt-oss-120b"
+      "nvidia/nemotron-mini-4b-instruct",
+      "meta/llama-3.3-70b-instruct"
     ].includes(model)) {
       return model;
     }
@@ -325,12 +325,12 @@ export const SettingsView: React.FC = () => {
                       }}
                       className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-xl py-2.5 pl-3 pr-10 text-xs text-white focus:outline-none transition-colors appearance-none cursor-pointer hover:bg-black/60"
                     >
-                      <option value="meta/llama-3.1-70b-instruct" className="bg-[#0f0f13] text-white">Llama 3.1 70B (Recommended)</option>
+                      <option value="meta/llama-3.3-70b-instruct" className="bg-[#0f0f13] text-white">Llama 3.3 70B (Recommended)</option>
                       <option value="deepseek-ai/deepseek-r1" className="bg-[#0f0f13] text-white">DeepSeek R1 (Reasoning)</option>
+                      <option value="meta/llama-3.1-70b-instruct" className="bg-[#0f0f13] text-white">Llama 3.1 70B</option>
                       <option value="meta/llama-3.1-405b-instruct" className="bg-[#0f0f13] text-white">Llama 3.1 405B</option>
                       <option value="nvidia/llama-3.1-nemotron-70b-instruct" className="bg-[#0f0f13] text-white">Nemotron 70B</option>
-                      <option value="nvidia/nemotron-3-nano-30b-a3b" className="bg-[#0f0f13] text-white">Nemotron-3 Nano 30B</option>
-                      <option value="gpt-oss-120b" className="bg-[#0f0f13] text-white">GPT OSS 120B</option>
+                      <option value="nvidia/nemotron-mini-4b-instruct" className="bg-[#0f0f13] text-white">Nemotron Mini 4B</option>
                       <option value="mistralai/mixtral-8x22b-instruct-v0.1" className="bg-[#0f0f13] text-white">Mixtral 8x22B</option>
                       <option value="custom" className="bg-[#0f0f13] text-white">Custom Model...</option>
                     </select>
@@ -379,12 +379,12 @@ export const SettingsView: React.FC = () => {
                       className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-xl py-2.5 pl-3 pr-10 text-xs text-white focus:outline-none transition-colors appearance-none cursor-pointer hover:bg-black/60"
                     >
                       <option value="default" className="bg-[#0f0f13] text-white">Same as Global/Mentor Model</option>
-                      <option value="meta/llama-3.1-70b-instruct" className="bg-[#0f0f13] text-white">Llama 3.1 70B</option>
+                      <option value="meta/llama-3.3-70b-instruct" className="bg-[#0f0f13] text-white">Llama 3.3 70B</option>
                       <option value="deepseek-ai/deepseek-r1" className="bg-[#0f0f13] text-white">DeepSeek R1 (Reasoning)</option>
+                      <option value="meta/llama-3.1-70b-instruct" className="bg-[#0f0f13] text-white">Llama 3.1 70B</option>
                       <option value="meta/llama-3.1-405b-instruct" className="bg-[#0f0f13] text-white">Llama 3.1 405B</option>
                       <option value="nvidia/llama-3.1-nemotron-70b-instruct" className="bg-[#0f0f13] text-white">Nemotron 70B</option>
-                      <option value="nvidia/nemotron-3-nano-30b-a3b" className="bg-[#0f0f13] text-white">Nemotron-3 Nano 30B</option>
-                      <option value="gpt-oss-120b" className="bg-[#0f0f13] text-white">GPT OSS 120B</option>
+                      <option value="nvidia/nemotron-mini-4b-instruct" className="bg-[#0f0f13] text-white">Nemotron Mini 4B</option>
                       <option value="mistralai/mixtral-8x22b-instruct-v0.1" className="bg-[#0f0f13] text-white">Mixtral 8x22B</option>
                       <option value="custom" className="bg-[#0f0f13] text-white">Custom Model...</option>
                     </select>
