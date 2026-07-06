@@ -217,28 +217,29 @@ function legacySplitCodeBlocks(text: string): ContentBlock[] {
 
 function renderMarkdownComponents(): Components {
   return {
-    pre: ({ children }) => <>{children}</>,
-
-    code: ({ inline, className, children, ...props }: any) => {
-      const code = String(children).replace(/\n$/, "");
-      const language = /language-(\w+)/.exec(className || "")?.[1] || "";
-
-      if (!inline && language === "mermaid") {
-        return <MermaidDiagram chart={code} />;
+    pre: ({ children }: any) => {
+      const codeElement = React.Children.toArray(children)[0] as any;
+      if (codeElement && codeElement.type === "code") {
+        const code = String(codeElement.props.children).replace(/\n$/, "");
+        const className = codeElement.props.className || "";
+        const language = /language-(\w+)/.exec(className)?.[1] || "";
+        if (language === "mermaid") {
+          return <MermaidDiagram chart={code} />;
+        }
+        return <CodeBlock code={code} language={language || "code"} />;
       }
+      return <pre className="p-4 bg-black/40 border border-white/[0.08] rounded-xl overflow-x-auto my-3">{children}</pre>;
+    },
 
-      if (inline) {
-        return (
-          <code
-            className="bg-white/5 px-1.5 py-0.5 rounded font-mono text-amber-400 text-[11px]"
-            {...props}
-          >
-            {children}
-          </code>
-        );
-      }
-
-      return <CodeBlock code={code} language={language || "code"} />;
+    code: ({ children, ...props }: any) => {
+      return (
+        <code
+          className="bg-white/5 px-1.5 py-0.5 rounded font-mono text-amber-400 text-[11px]"
+          {...props}
+        >
+          {children}
+        </code>
+      );
     },
 
     p: ({ children }) => <p className="my-1 text-slate-350 leading-relaxed">{children}</p>,
