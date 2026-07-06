@@ -12,6 +12,7 @@ const NotesView = React.lazy(() => import("./pages/NotesView").then(module => ({
 const AiChatView = React.lazy(() => import("./pages/AiChatView").then(module => ({ default: module.AiChatView })));
 const AiTrackerView = React.lazy(() => import("./pages/AiTrackerView").then(module => ({ default: module.AiTrackerView })));
 const BadgesView = React.lazy(() => import("./pages/BadgesView").then(module => ({ default: module.BadgesView })));
+const PracticeView = React.lazy(() => import("./pages/PracticeView").then(module => ({ default: module.PracticeView })));
 
 const FlashcardsView = React.lazy(() => import("./pages/FlashcardsView").then(module => ({ default: module.FlashcardsView })));
 const CompanyRoadmapsView = React.lazy(() => import("./pages/CompanyRoadmapsView").then(module => ({ default: module.CompanyRoadmapsView })));
@@ -60,7 +61,8 @@ import {
   FileText,
   PanelLeftClose,
   PanelLeftOpen,
-  MessageCircleHeart
+  MessageCircleHeart,
+  Target
 } from "lucide-react";
 
 
@@ -405,6 +407,7 @@ const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
       items: [
         { id: "dsa", name: "DSA Tracker", icon: Code2 },
         { id: "skilltree", name: "DSA Skill Tree", icon: GitFork },
+        { id: "practice", name: "Practice Arena", icon: Target },
         { id: "dev", name: "Full Stack", icon: Layers },
         { id: "projects", name: "Projects", icon: FolderGit2 }
       ]
@@ -464,6 +467,8 @@ const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
         return <DsaView />;
       case "skilltree":
         return <SkillTreeView />;
+      case "practice":
+        return <PracticeView />;
       case "dev":
         return <DevView setActiveTab={setActiveTab} />;
       case "ai":

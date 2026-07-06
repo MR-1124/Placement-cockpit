@@ -167,6 +167,7 @@ const getInitialState = (curriculum: any): AppState => ({
   lastActiveDate: "",
   unlockedBadges: [],
   xp: 0,
+  practiceProblemsSolved: {},
 
   chatSessions: {
     "default-session": {
@@ -1931,6 +1932,33 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     }));
   };
 
+  const markPracticeProblemSolved = (problemId: string, duration: number) => {
+    updateState(prev => {
+      const practiceProblemsSolved = {
+        ...(prev.practiceProblemsSolved || {}),
+        [problemId]: {
+          timestamp: new Date().toISOString(),
+          duration
+        }
+      };
+
+      let dailyHabits = { ...prev.dailyHabits };
+      let xpDiff = 50; // default 50 XP
+      if (!prev.dailyHabits.solveDsa) {
+        dailyHabits.solveDsa = true;
+        xpDiff += 10; // extra 10 XP for habit completion
+      }
+
+      return {
+        ...prev,
+        practiceProblemsSolved,
+        dailyHabits,
+        xp: Math.max(0, prev.xp + xpDiff),
+        lastActiveDate: getTodayString()
+      };
+    });
+  };
+
   const updateRoadmapProgress = (roadmapId: string, milestoneId: string, completed: boolean) => {
     updateState(prev => {
       const activeRoadmaps = prev.activeRoadmaps || [];
@@ -2092,7 +2120,8 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
         saveAtsReport,
         saveDevQuizAttempt,
-        updateDevSkillNote
+        updateDevSkillNote,
+        markPracticeProblemSolved
       }}
 
     >

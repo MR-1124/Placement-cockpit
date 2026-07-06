@@ -62,6 +62,7 @@ export interface BaseAppState {
   devSkillNotes?: Record<string, string>;
   devSkillTimestamps?: Record<string, number>;
   devPlanIntensity?: "Casual" | "Normal" | "Intense";
+  practiceProblemsSolved?: Record<string, { timestamp: string; duration: number }>;
 }
 
 export interface AppState extends BaseAppState {
@@ -207,4 +208,5 @@ export interface AppContextType {
   setDevPlanActiveSkillId: (skillId: string | null) => void;
   saveDevQuizAttempt: (attempt: DevQuizAttempt) => void;
   updateDevSkillNote: (skillId: string, note: string) => void;
+  markPracticeProblemSolved: (problemId: string, duration: number) => void;
 }

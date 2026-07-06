@@ -45,6 +45,38 @@ const curriculum = useAppState(s => s.curriculum);
 
   const ALL_PLANS = curriculum.ALL_PLANS;
 
+  const allProblemsFlat = useMemo(() => {
+    const flat: any[] = [];
+    const seenIds = new Set();
+    curriculum.DEFAULT_DSA_TOPICS.forEach((topic: any) => {
+      topic.problems.forEach((prob: any) => {
+        if (!seenIds.has(prob.id)) {
+          seenIds.add(prob.id);
+          flat.push(prob);
+        }
+      });
+    });
+    return flat;
+  }, [curriculum.DEFAULT_DSA_TOPICS]);
+
+  const todaySolvedList = useMemo(() => {
+    const solvedRecord = state.practiceProblemsSolved || {};
+    const todayStr = new Date().toISOString().split("T")[0];
+    return Object.entries(solvedRecord)
+      .filter(([_, info]: any) => info.timestamp.startsWith(todayStr))
+      .map(([id, info]: any) => {
+        const prob = allProblemsFlat.find(p => p.id === id);
+        return prob ? { ...prob, duration: info.duration } : null;
+      })
+      .filter(Boolean);
+  }, [state.practiceProblemsSolved, allProblemsFlat]);
+
+  const formatTime = (secs: number) => {
+    const mins = Math.floor(secs / 60);
+    const remainingSecs = secs % 60;
+    return `${mins.toString().padStart(2, "0")}:${remainingSecs.toString().padStart(2, "0")}`;
+  };
+
   const [newTaskName, setNewTaskName] = useState("");
   const [newGoalText, setNewGoalText] = useState("");
   const [selectedHeatmapCell, setSelectedHeatmapCell] = useState<{ date: string; week: number; day: number; habitsCompleted: number } | null>(null);
@@ -835,6 +867,54 @@ const curriculum = useAppState(s => s.curriculum);
         {/* Right Column: Heatmap & Alerts */}
         <div className="space-y-6">
           
+          {/* Today's Practice Card */}
+          <GlassCard className="space-y-4 border-emerald-500/10 bg-emerald-950/[0.01]">
+            <div className="flex justify-between items-center border-b border-white/[0.06] pb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Flame className="w-4 h-4 text-emerald-400 animate-pulse" /> Today's Practice
+              </h3>
+              <button
+                onClick={() => setActiveTab("practice")}
+                className="text-[10px] font-bold text-accentPrimary hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                Practice Arena <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            
+            <div className="space-y-2">
+              {todaySolvedList.length === 0 ? (
+                <p className="text-xs text-slate-500 italic font-mono py-2">
+                  No problems practiced today yet. Go to Practice Arena to start!
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono uppercase font-bold tracking-wider mb-1">
+                    <span>Problem Name</span>
+                    <span>Solve Time</span>
+                  </div>
+                  {todaySolvedList.map((prob: any) => {
+                    let diffColor = "text-blue-400";
+                    if (prob.difficulty === "Medium") diffColor = "text-amber-400";
+                    if (prob.difficulty === "Hard") diffColor = "text-rose-400";
+                    return (
+                      <div
+                        key={prob.id}
+                        className="flex justify-between items-center bg-white/[0.01] border border-white/[0.04] p-2 rounded-lg text-xs"
+                      >
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          <span className="text-slate-200 font-medium truncate max-w-[150px]">{prob.name}</span>
+                          <span className={`text-[9px] uppercase font-bold shrink-0 ${diffColor}`}>({prob.difficulty})</span>
+                        </div>
+                        <span className="font-mono text-[10px] text-slate-400 bg-white/[0.03] px-2 py-0.5 rounded border border-white/[0.06]">{formatTime(prob.duration)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </GlassCard>
+
           {/* Consistency Heatmap Card */}
           <GlassCard className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center border-b border-white/[0.06] pb-3 gap-3">
