@@ -22,6 +22,14 @@ import type {
   AtsReport
 } from "../types/AppTypes";
 
+export interface DevQuizAttempt {
+  skillId: string;
+  score: number;
+  total: number;
+  timestamp: string;
+  isAiGenerated: boolean;
+}
+
 export interface BaseAppState {
   projects: Project[];
   completedSkills: string[];
@@ -50,6 +58,10 @@ export interface BaseAppState {
   devPlanEnrolled?: boolean;
   devPlanTargetDate?: string;
   devPlanActiveSkillId?: string | null;
+  devQuizHistory?: DevQuizAttempt[];
+  devSkillNotes?: Record<string, string>;
+  devSkillTimestamps?: Record<string, number>;
+  devPlanIntensity?: "Casual" | "Normal" | "Intense";
 }
 
 export interface AppState extends BaseAppState {
@@ -191,6 +203,8 @@ export interface AppContextType {
   saveFlashcardSession: (session: FlashcardSession) => void;
 
   saveAtsReport: (report: AtsReport) => void;
-  enrollInDevPlan: (enrolled: boolean, targetDate?: string) => void;
+  enrollInDevPlan: (enrolled: boolean, targetDate?: string, intensity?: "Casual" | "Normal" | "Intense") => void;
   setDevPlanActiveSkillId: (skillId: string | null) => void;
+  saveDevQuizAttempt: (attempt: DevQuizAttempt) => void;
+  updateDevSkillNote: (skillId: string, note: string) => void;
 }

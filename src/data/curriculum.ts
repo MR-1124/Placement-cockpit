@@ -42,6 +42,7 @@ export interface DevSkill {
   built: boolean;
   deployed: boolean;
   revised: boolean;
+  prerequisites?: string[];
 }
 
 export interface DevCategory {

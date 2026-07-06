@@ -102,7 +102,9 @@ export const serializeState = (state: AppState): SerializedProgress => {
     atsReports: state.atsReports || [],
     devPlanEnrolled: state.devPlanEnrolled || false,
     devPlanTargetDate: state.devPlanTargetDate || "",
-    devPlanActiveSkillId: state.devPlanActiveSkillId || null
+    devPlanActiveSkillId: state.devPlanActiveSkillId || null,
+    devQuizHistory: state.devQuizHistory || [],
+    devSkillNotes: state.devSkillNotes || {}
   };
 };
 
@@ -219,7 +221,9 @@ export const deserializeState = (serialized: Partial<SerializedProgress>, curric
     atsReports: serialized.atsReports || [],
     devPlanEnrolled: serialized.devPlanEnrolled || false,
     devPlanTargetDate: serialized.devPlanTargetDate || "",
-    devPlanActiveSkillId: serialized.devPlanActiveSkillId || null
+    devPlanActiveSkillId: serialized.devPlanActiveSkillId || null,
+    devQuizHistory: serialized.devQuizHistory || [],
+    devSkillNotes: serialized.devSkillNotes || {}
   };
 };
 

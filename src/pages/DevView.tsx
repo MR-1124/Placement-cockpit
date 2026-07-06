@@ -1,6 +1,7 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import React, { useState } from "react";
 import { useAppState } from "../context/AppStateContext";
+import { SkillDrawerPanel } from "../components/SkillDrawerPanel";
 import { GlassCard, ProgressBar } from "../components/Common";
 import type { DevCategory, DevSkill } from "../data/curriculum";
 import { nvidiaFetch } from "../lib/nvidiaApi";
@@ -11,17 +12,15 @@ import {
   Hammer,
   Globe,
   RefreshCw,
-  Sparkles,
   ChevronDown,
   ChevronUp,
   CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  Play,
-  GraduationCap,
+  Lock,
+  History,
+  Medal,
+  ActivitySquare,
   Clock,
-  LayoutGrid,
-  ExternalLink
+  LayoutGrid
 } from "lucide-react";
 
 interface DevViewProps {
@@ -31,7 +30,7 @@ interface DevViewProps {
 // ----------------------------------------------------
 // Core educational resources with expanded detail
 // ----------------------------------------------------
-interface SkillResource {
+export interface SkillResource {
   guide: string;
   links: { name: string; url: string }[];
   boilerplate: string;
@@ -116,7 +115,7 @@ const SKILL_RESOURCES: Record<string, SkillResource> = {
 // ----------------------------------------------------
 // Quiz datasets for conceptual check-ins
 // ----------------------------------------------------
-interface QuizQuestion {
+export interface QuizQuestion {
   question: string;
   options: string[];
   correctIndex: number;
@@ -214,20 +213,18 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
   const addChatMessage = useAppState(s => s.addChatMessage);
   const enrollInDevPlan = useAppState(s => s.enrollInDevPlan);
   const setDevPlanActiveSkillId = useAppState(s => s.setDevPlanActiveSkillId);
+  const updateDevSkillNote = useAppState(s => s.updateDevSkillNote);
+  const saveDevQuizAttempt = useAppState(s => s.saveDevQuizAttempt);
 
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>("All");
   const [viewMode, setViewMode] = useState<"timeline" | "board">("timeline");
   const [openSkillDrawerId, setOpenSkillDrawerId] = useState<string | null>(null);
-  const [drawerTab, setDrawerTab] = useState<"guide" | "boilerplate" | "caseStudy" | "quiz">("guide");
 
   // Enrollment / Target inputs
   const [targetDateInput, setTargetDateInput] = useState(state.devPlanTargetDate || "");
+  const [intensityInput, setIntensityInput] = useState<"Casual" | "Normal" | "Intense">(state.devPlanIntensity || "Normal");
 
-  // Quiz active execution state
-  const [quizQuestionIdx, setQuizQuestionIdx] = useState<number>(0);
-  const [quizSelectedOption, setQuizSelectedOption] = useState<number | null>(null);
-  const [quizSubmitted, setQuizSubmitted] = useState<boolean>(false);
-  const [quizScore, setQuizScore] = useState<number>(0);
+
 
   // AI Quiz loading states
   const [aiQuizLoading, setAiQuizLoading] = useState(false);
@@ -258,40 +255,10 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
       setOpenSkillDrawerId(null);
     } else {
       setOpenSkillDrawerId(skillId);
-      setDrawerTab("guide");
-      resetQuizState();
     }
   };
 
-  const resetQuizState = () => {
-    setQuizQuestionIdx(0);
-    setQuizSelectedOption(null);
-    setQuizSubmitted(false);
-    setQuizScore(0);
-    setAiQuizQuestions(null);
-    setAiQuizError(null);
-  };
 
-  const handleQuizAnswer = (_question: QuizQuestion, optionIdx: number) => {
-    if (quizSubmitted) return;
-    setQuizSelectedOption(optionIdx);
-  };
-
-  const submitQuizQuestion = (question: QuizQuestion) => {
-    if (quizSelectedOption === null || quizSubmitted) return;
-    setQuizSubmitted(true);
-
-    const correct = quizSelectedOption === question.correctIndex;
-    if (correct) {
-      setQuizScore(prev => prev + 1);
-    }
-  };
-
-  const nextQuizQuestion = () => {
-    setQuizSelectedOption(null);
-    setQuizSubmitted(false);
-    setQuizQuestionIdx(prev => prev + 1);
-  };
 
   const handleGenerateAiQuiz = async (skill: DevSkill) => {
     if (!state.sessionNvidiaKey) {
@@ -301,7 +268,7 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
 
     setAiQuizLoading(true);
     setAiQuizError(null);
-    resetQuizState();
+    setAiQuizQuestions(null);
 
     try {
       const prompt = `Generate exactly 3 multiple-choice questions on the topic: "${skill.name}". Each question must have exactly 4 options. Return ONLY a valid JSON object matching this schema, without markdown wrappers or code fence indicators:
@@ -406,6 +373,8 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
 
   const daysRemaining = calculateDaysRemaining();
 
+
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -413,9 +382,7 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
       transition={{ duration: 0.3 }}
       className="space-y-6">
       
-      {/* ---------------------------------------------------- */}
       {/* 1. HERO ENROLLMENT OR TRACKER BANNER */}
-      {/* ---------------------------------------------------- */}
       {!state.devPlanEnrolled ? (
         <GlassCard className="p-6 bg-gradient-to-r from-violet-900/20 via-slate-900/40 to-slate-900/60 border border-violet-500/20 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="space-y-2 max-w-2xl">
@@ -430,31 +397,41 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
 
           <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0">
             <div className="flex flex-col gap-1">
+              <label className="text-[9px] uppercase font-bold text-slate-500 tracking-widest pl-1">Intensity</label>
+              <select
+                value={intensityInput}
+                onChange={e => setIntensityInput(e.target.value as any)}
+                className="px-3 py-2 bg-slate-900 border border-white/[0.08] text-white rounded-lg text-xs font-semibold focus:outline-none focus:border-violet-500 transition-colors cursor-pointer appearance-none"
+              >
+                <option value="Casual">Casual</option>
+                <option value="Normal">Normal</option>
+                <option value="Intense">Intense</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
               <label className="text-[9px] uppercase font-bold text-slate-500 tracking-widest pl-1">Target Date</label>
               <input
                 type="date"
                 value={targetDateInput}
                 onChange={e => setTargetDateInput(e.target.value)}
-                className="px-3 py-2 bg-slate-900 border border-white/[0.08] text-white rounded-lg text-xs font-semibold focus:outline-none focus:border-violet-500 transition-colors cursor-pointer"
+                className="px-3 py-2 bg-slate-900 border border-white/[0.08] text-white rounded-lg text-xs font-semibold focus:outline-none focus:border-violet-500 transition-colors"
               />
             </div>
             <button
-              onClick={() => enrollInDevPlan(true, targetDateInput)}
-              className="px-5 py-2.5 bg-violet-600 hover:bg-violet-500 rounded-lg text-xs font-bold text-white tracking-wider uppercase transition-all shadow-lg shadow-violet-600/20 self-end w-full sm:w-auto cursor-pointer"
+              onClick={() => enrollInDevPlan(true, targetDateInput, intensityInput)}
+              className="mt-4 sm:mt-0 self-end px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors cursor-pointer shadow-[0_0_15px_rgba(139,92,246,0.4)]"
             >
-              Enroll in Study Plan
+              Start Plan
             </button>
           </div>
         </GlassCard>
       ) : (
-        <GlassCard className="p-5 bg-gradient-to-r from-emerald-950/10 via-slate-900/40 to-slate-900/60 border border-emerald-500/20 rounded-2xl space-y-4">
+        <GlassCard className="p-5 border-emerald-500/20 bg-emerald-950/10 space-y-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-[9px] font-mono font-bold text-emerald-400 uppercase tracking-widest">
-                  Active Plan
-                </span>
-                <span className="text-[10px] font-mono text-slate-500 font-bold uppercase tracking-wider">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-widest">
                   Full Stack Competency Track
                 </span>
               </div>
@@ -477,10 +454,10 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
                   const activeCardEl = document.getElementById(activeSkill.id);
                   if (activeCardEl) {
                     activeCardEl.scrollIntoView({ behavior: "smooth", block: "center" });
-                    toggleSkillDrawer(activeSkill.id);
+                    if (openSkillDrawerId !== activeSkill.id) toggleSkillDrawer(activeSkill.id);
                   }
                 }}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-[10px] font-bold text-white uppercase tracking-wider transition-all cursor-pointer"
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-[10px] font-bold text-white uppercase tracking-wider transition-all cursor-pointer shadow-[0_0_12px_rgba(16,185,129,0.3)]"
               >
                 Resume: {activeSkill.name}
               </button>
@@ -499,7 +476,6 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
             </div>
           </div>
 
-          {/* Progress overview bar */}
           <div className="space-y-1.5 border-t border-white/[0.04] pt-3">
             <div className="flex justify-between items-center text-[10px] font-semibold text-slate-400">
               <span>Overall Plan Checklist Progress</span>
@@ -510,11 +486,33 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
         </GlassCard>
       )}
 
-      {/* ---------------------------------------------------- */}
-      {/* 2. TAB VIEW MODES (Timeline / Board layout) */}
-      {/* ---------------------------------------------------- */}
+      {/* ANALYTICS PANEL */}
+      {state.devPlanEnrolled && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {state.devCategories.map(cat => {
+            const catCompleted = cat.skills.filter(s => s.learned && s.practiced && s.built && s.deployed && s.revised).length;
+            const catTotal = cat.skills.length;
+            const catPercent = Math.round((catCompleted / catTotal) * 100);
+            return (
+              <GlassCard key={cat.id} className="p-4 flex flex-col justify-between gap-3 relative overflow-hidden">
+                <div className="flex justify-between items-center z-10">
+                  <span className="text-xs font-bold text-slate-300">{cat.name}</span>
+                  {catPercent === 100 && <Medal className="w-4 h-4 text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />}
+                </div>
+                <div className="z-10">
+                  <span className="text-2xl font-black font-mono text-white">{catPercent}%</span>
+                </div>
+                <div className="z-10">
+                  <ProgressBar percentage={catPercent} height={4} colorClass={catPercent === 100 ? "bg-yellow-500" : "bg-accentPrimary"} />
+                </div>
+              </GlassCard>
+            )
+          })}
+        </div>
+      )}
+
+      {/* 2. TAB VIEW MODES */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        {/* Category Filters */}
         <div className="flex gap-1 bg-white/[0.02] border border-white/[0.04] p-1 rounded-xl w-full sm:w-auto overflow-x-auto">
           {["All", "Frontend", "Backend", "Database", "Systems & Deployment"].map(catName => (
             <button
@@ -531,7 +529,6 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
           ))}
         </div>
 
-        {/* View Mode Toggle */}
         <div className="flex gap-1 bg-white/[0.02] border border-white/[0.04] p-1 rounded-xl shrink-0 self-end sm:self-auto">
           <button
             onClick={() => setViewMode("timeline")}
@@ -556,16 +553,13 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
         </div>
       </div>
 
-      {/* ---------------------------------------------------- */}
       {/* 3. MAIN CONTENTS RENDER (TIMELINE VS BOARD) */}
-      {/* ---------------------------------------------------- */}
       <div className="space-y-8">
         {viewMode === "timeline" ? (
-          // ==================== TIMELINE PATH LAYOUT ====================
           <div className="relative border-l border-white/[0.06] ml-4 pl-6 md:ml-6 md:pl-8 space-y-6">
             {allSkillsFlat
               .filter(skill => activeCategoryFilter === "All" || skill.categoryName === activeCategoryFilter)
-              .map((skill) => {
+              .map(skill => {
                 const isActive = state.devPlanActiveSkillId === skill.id;
                 const drawerOpen = openSkillDrawerId === skill.id;
                 const customGuide = SKILL_RESOURCES[skill.id] || getFallbackGuide(skill);
@@ -578,9 +572,24 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
                 if (skill.deployed) checkedCount++;
                 if (skill.revised) checkedCount++;
 
+                let isLocked = false;
+                if (skill.prerequisites && skill.prerequisites.length > 0) {
+                  const prereqMet = skill.prerequisites.every(reqId => {
+                    const reqSkill = allSkillsFlat.find(s => s.id === reqId);
+                    return reqSkill ? (reqSkill.learned && reqSkill.practiced && reqSkill.built && reqSkill.deployed && reqSkill.revised) : true;
+                  });
+                  isLocked = !prereqMet;
+                }
+                
+                const completedTimestamp = state.devSkillTimestamps?.[skill.id];
+                const completedDateStr = completedTimestamp ? new Date(completedTimestamp).toLocaleDateString() : null;
+                
+                const bestScore = state.devQuizHistory?.find(q => q.skillId === skill.id)?.score || 0;
+                const daysSinceCompletion = completedTimestamp ? (Date.now() - completedTimestamp) / (1000 * 3600 * 24) : 0;
+                const needsReview = (checkedCount === 5 && daysSinceCompletion > 14 && bestScore < 80);
+
                 return (
                   <div key={skill.id} id={skill.id} className="relative group">
-                    {/* Node Dot Indicator */}
                     <div className={`absolute -left-[31px] md:-left-[39px] top-4 w-4 h-4 rounded-full border-2 transition-all flex items-center justify-center ${
                       checkedCount === 5 
                         ? "bg-emerald-500 border-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" 
@@ -591,7 +600,7 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
                       {checkedCount === 5 && <CheckCircle2 className="w-2.5 h-2.5 text-white" />}
                     </div>
 
-                    <GlassCard className={`p-5 relative transition-all ${
+                    <GlassCard className={`p-5 relative transition-all ${isLocked ? "opacity-40 grayscale pointer-events-none" : ""} ${
                       isActive ? "border-violet-500/20 bg-violet-950/[0.02]" : "hover:border-white/[0.08]"
                     }`}>
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -600,6 +609,21 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
                             <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider font-bold">
                               {skill.categoryName} Stack
                             </span>
+                            {isLocked && (
+                              <span className="px-2 py-0.5 bg-slate-800 text-slate-400 rounded text-[9px] uppercase tracking-widest font-bold flex items-center gap-1">
+                                <Lock className="w-3 h-3" /> Locked
+                              </span>
+                            )}
+                            {needsReview && !isLocked && (
+                              <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded text-[9px] uppercase tracking-widest font-bold flex items-center gap-1 border border-orange-500/20">
+                                <ActivitySquare className="w-3 h-3" /> Needs Review
+                              </span>
+                            )}
+                            {completedDateStr && !needsReview && (
+                              <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded text-[9px] uppercase tracking-widest font-bold flex items-center gap-1">
+                                <History className="w-3 h-3" /> {completedDateStr}
+                              </span>
+                            )}
                             <span className={`px-2 py-0.5 rounded text-[8px] font-mono font-bold uppercase border ${skill.levelInfo.color}`}>
                               {skill.levelInfo.name}
                             </span>
@@ -616,17 +640,12 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
                               </button>
                             )}
                           </div>
-                          <h4 className="text-sm font-bold text-white">{skill.name}</h4>
-                          <p className="text-xs text-slate-400 leading-relaxed">{skill.description}</p>
+                          <h4 className="text-base font-bold text-slate-200 mt-1">{skill.name}</h4>
+                          <p className="text-[11px] text-slate-400 leading-relaxed max-w-xl">{skill.description}</p>
                         </div>
 
-                        {/* Interactive stages */}
-                        <div className="flex flex-col items-end gap-3 shrink-0">
-                          <span className="text-[9px] font-mono text-slate-500 uppercase font-bold">
-                            {checkedCount}/5 complete
-                          </span>
-
-                          <div className="flex gap-1">
+                        <div className="flex items-center gap-4 w-full md:w-auto shrink-0 mt-2 md:mt-0">
+                          <div className="flex gap-1.5 flex-1 md:flex-none justify-between md:justify-start">
                             {[
                               { key: "learned", label: "Study", icon: BookOpen },
                               { key: "practiced", label: "Code", icon: Code2 },
@@ -634,266 +653,74 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
                               { key: "deployed", label: "Deploy", icon: Globe },
                               { key: "revised", label: "Review", icon: RefreshCw }
                             ].map(stage => {
-                              const Icon = stage.icon;
+                              const IconComponent = stage.icon;
                               const active = (skill as any)[stage.key];
+
                               return (
                                 <button
                                   key={stage.key}
                                   onClick={() => updateDevSkill(skill.id, stage.key as any)}
-                                  title={`${stage.label}: Click to toggle`}
-                                  className={`p-1.5 rounded-lg border text-center transition-all cursor-pointer hover:scale-105 active:scale-95 ${
+                                  className={`relative w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer group/btn ${
                                     active
-                                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                                      : "bg-white/[0.005] border-white/[0.04] text-slate-500 hover:text-slate-400"
+                                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                      : "bg-slate-900 border border-white/[0.08] text-slate-500 hover:text-slate-300 hover:bg-white/[0.02]"
                                   }`}
                                 >
-                                  <Icon className="w-3.5 h-3.5" />
+                                  <IconComponent className="w-3.5 h-3.5" />
+                                  <div className="absolute -bottom-6 opacity-0 group-hover/btn:opacity-100 transition-opacity bg-slate-800 text-[9px] px-1.5 py-0.5 rounded whitespace-nowrap pointer-events-none font-semibold text-slate-300">
+                                    {stage.label}
+                                  </div>
                                 </button>
                               );
                             })}
                           </div>
+                          
+                          <button
+                            onClick={() => toggleSkillDrawer(skill.id)}
+                            className={`p-2 rounded-lg border transition-all cursor-pointer ${
+                              drawerOpen
+                                ? "bg-accentPrimary text-white border-accentPrimary shadow-lg shadow-accentPrimary/20"
+                                : "bg-white/[0.02] border-white/[0.08] text-slate-400 hover:bg-white/[0.05]"
+                            }`}
+                          >
+                            {drawerOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          </button>
                         </div>
                       </div>
-
-                      {/* Expander triggers */}
-                      <div className="flex justify-between items-center border-t border-white/[0.04] pt-3 mt-4">
-                        <button
-                          onClick={() => handleExplainWithAi(skill)}
-                          className="flex items-center gap-1.5 px-2.5 py-1 bg-accentPrimary/10 border border-accentPrimary/20 hover:bg-accentPrimary/20 hover:scale-105 rounded-md text-[10px] text-accentPrimary font-semibold tracking-wide transition-all cursor-pointer"
-                        >
-                          <Sparkles className="w-3 h-3" />
-                          <span>Explain with AI</span>
-                        </button>
-
-                        <button
-                          onClick={() => toggleSkillDrawer(skill.id)}
-                          className="text-[10px] text-slate-400 hover:text-white transition-colors font-semibold flex items-center gap-1 cursor-pointer"
-                        >
-                          <span>{drawerOpen ? "Hide Details" : "Show Deep-Dive & Quizzes"}</span>
-                          {drawerOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                        </button>
-                      </div>
-
-                      {/* Drawer Panel */}
-                      <AnimatePresence>
-                        {drawerOpen && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden bg-black/40 border border-white/[0.04] rounded-lg mt-4 p-4 space-y-4"
-                          >
-                            {/* Resource Tabs */}
-                            <div className="flex border-b border-white/[0.06] pb-1.5 gap-3 overflow-x-auto">
-                              {[
-                                { id: "guide", label: "Deep-Dive Guide" },
-                                { id: "boilerplate", label: "Code Boilerplate" },
-                                { id: "caseStudy", label: "Failure Case Study" },
-                                { id: "quiz", label: "Concept Quiz" }
-                              ].map(tab => (
-                                <button
-                                  key={tab.id}
-                                  onClick={() => setDrawerTab(tab.id as any)}
-                                  className={`text-[10px] font-bold uppercase tracking-wider pb-1.5 px-1.5 transition-colors cursor-pointer border-b ${
-                                    drawerTab === tab.id
-                                      ? "border-accentPrimary text-white animate-pulse"
-                                      : "border-transparent text-slate-500 hover:text-slate-300"
-                                  }`}
-                                >
-                                  {tab.label}
-                                </button>
-                              ))}
-                            </div>
-
-                            {/* Resource Tab Body */}
-                            <div className="text-xs text-slate-300 max-h-[280px] overflow-y-auto custom-scrollbar pr-2 pt-1">
-                              {drawerTab === "guide" && (
-                                <div className="space-y-4">
-                                  <p className="leading-relaxed whitespace-pre-wrap text-slate-300">{customGuide.guide}</p>
-                                  <div className="space-y-2 border-t border-white/[0.06] pt-3">
-                                    <span className="text-[10px] font-bold font-mono text-slate-500 uppercase tracking-wider block">Verified External Resources:</span>
-                                    <div className="flex flex-col gap-2">
-                                      {customGuide.links.map((link, lidx) => (
-                                        <a
-                                          key={lidx}
-                                          href={link.url}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          className="flex items-center gap-1.5 text-accentPrimary hover:underline text-[11px] font-semibold"
-                                        >
-                                          <ExternalLink className="w-3 h-3" />
-                                          <span>{link.name}</span>
-                                        </a>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {drawerTab === "boilerplate" && (
-                                <div className="space-y-3">
-                                  <span className="text-[9px] font-mono text-slate-500 uppercase block font-bold">Standard Production Boilerplate:</span>
-                                  <pre className="bg-black/40 rounded-xl border border-white/[0.06] p-3.5 font-mono text-[10px] text-emerald-400 overflow-x-auto whitespace-pre-wrap">
-                                    {customGuide.boilerplate}
-                                  </pre>
-                                </div>
-                              )}
-
-                              {drawerTab === "caseStudy" && (
-                                <div className="space-y-3">
-                                  <div className="flex gap-2 items-start bg-amber-500/5 border border-amber-500/20 text-amber-400 rounded-xl p-3.5">
-                                    <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
-                                    <div className="space-y-2">
-                                      <span className="text-[10px] font-bold uppercase tracking-wider block">Production Failure Analysis:</span>
-                                      <p className="leading-relaxed text-[11px] whitespace-pre-wrap">{customGuide.caseStudy}</p>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {drawerTab === "quiz" && (
-                                <div className="space-y-4">
-                                  {/* Prompt AI generator button */}
-                                  <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center bg-white/[0.01] border border-white/[0.04] p-3 rounded-xl">
-                                    <div className="space-y-0.5">
-                                      <span className="text-[10px] font-bold text-white flex items-center gap-1.5">
-                                        <Sparkles className="w-3.5 h-3.5 text-accentPrimary" /> Generate Dynamic AI Quiz
-                                      </span>
-                                      <p className="text-[9px] text-slate-500 leading-normal">
-                                        Generate 3 dynamically customized technical questions from LLM Mentor in real time.
-                                      </p>
-                                    </div>
-                                    <button
-                                      onClick={() => handleGenerateAiQuiz(skill)}
-                                      disabled={aiQuizLoading}
-                                      className="px-3.5 py-1.5 bg-accentPrimary/20 hover:bg-accentPrimary/30 disabled:opacity-40 rounded-lg text-[10px] font-bold text-accentPrimary uppercase tracking-wider transition-all shrink-0 cursor-pointer"
-                                    >
-                                      {aiQuizLoading ? "Generating Qs..." : "Generate AI Quiz"}
-                                    </button>
-                                  </div>
-
-                                  {aiQuizError && (
-                                    <div className="p-3 bg-red-500/5 border border-red-500/20 rounded-xl text-red-400 text-[10px] flex gap-2 items-start">
-                                      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                                      <p className="leading-normal">{aiQuizError}</p>
-                                    </div>
-                                  )}
-
-                                  {/* Active Quiz Question Frame */}
-                                  {aiQuizLoading ? (
-                                    <div className="flex flex-col items-center justify-center py-8 text-center space-y-2.5">
-                                      <RefreshCw className="w-6 h-6 text-accentPrimary animate-spin" />
-                                      <span className="text-[10px] font-mono text-slate-500 font-bold uppercase tracking-widest">NVIDIA NIM Generating Quiz Modules...</span>
-                                    </div>
-                                  ) : (
-                                    (() => {
-                                      const activeQuizSet = aiQuizQuestions || customQuiz;
-                                      return (
-                                        <div className="space-y-4">
-                                          {quizQuestionIdx < activeQuizSet.length ? (
-                                            <div className="space-y-3">
-                                              <div className="flex justify-between items-center text-[9px] font-mono text-slate-500 font-bold uppercase">
-                                                <span>Question {quizQuestionIdx + 1} of {activeQuizSet.length}</span>
-                                                <span>Score: {quizScore}/{activeQuizSet.length}</span>
-                                              </div>
-                                              
-                                              <p className="font-bold text-white text-xs leading-relaxed">{activeQuizSet[quizQuestionIdx].question}</p>
-                                              
-                                              <div className="space-y-2">
-                                                {activeQuizSet[quizQuestionIdx].options.map((option, optIdx) => {
-                                                  let optionStyle = "border-white/[0.06] text-slate-300 bg-white/[0.005] hover:bg-white/[0.02]";
-                                                  
-                                                  if (quizSubmitted) {
-                                                    if (optIdx === activeQuizSet[quizQuestionIdx].correctIndex) {
-                                                      optionStyle = "border-emerald-500/30 text-emerald-400 bg-emerald-500/5";
-                                                    } else if (optIdx === quizSelectedOption) {
-                                                      optionStyle = "border-red-500/30 text-red-400 bg-red-500/5";
-                                                    }
-                                                  } else if (optIdx === quizSelectedOption) {
-                                                    optionStyle = "border-accentPrimary/40 text-accentPrimary bg-accentPrimary/5";
-                                                  }
-
-                                                  return (
-                                                    <button
-                                                      key={optIdx}
-                                                      onClick={() => handleQuizAnswer(activeQuizSet[quizQuestionIdx], optIdx)}
-                                                      disabled={quizSubmitted}
-                                                      className={`w-full flex items-start gap-2.5 text-left p-2.5 rounded-lg border text-xs transition-all cursor-pointer ${optionStyle}`}
-                                                    >
-                                                      <span className="font-bold font-mono text-slate-500 shrink-0">{String.fromCharCode(65 + optIdx)}.</span>
-                                                      <span className="leading-tight">{option}</span>
-                                                    </button>
-                                                  );
-                                                })}
-                                              </div>
-
-                                              {/* Action / Explanation segment */}
-                                              {quizSubmitted ? (
-                                                <div className="space-y-2 border-t border-white/[0.06] pt-3">
-                                                  <div className="flex items-center gap-1.5">
-                                                    {quizSelectedOption === activeQuizSet[quizQuestionIdx].correctIndex ? (
-                                                      <span className="text-emerald-400 font-bold flex items-center gap-1 text-[9px] uppercase"><CheckCircle2 className="w-3.5 h-3.5" /> Correct!</span>
-                                                    ) : (
-                                                      <span className="text-red-400 font-bold flex items-center gap-1 text-[9px] uppercase"><XCircle className="w-3.5 h-3.5" /> Incorrect</span>
-                                                    )}
-                                                  </div>
-                                                  <p className="text-slate-400 text-[10px] leading-relaxed italic">{activeQuizSet[quizQuestionIdx].explanation}</p>
-                                                  
-                                                  <button
-                                                    onClick={() => quizQuestionIdx + 1 < activeQuizSet.length ? nextQuizQuestion() : setQuizQuestionIdx(prev => prev + 1)}
-                                                    className="w-full flex justify-center items-center gap-1.5 py-2 mt-2 bg-white/[0.08] hover:bg-white/[0.12] rounded-lg font-bold text-white transition-all cursor-pointer"
-                                                  >
-                                                    <span>{quizQuestionIdx + 1 < activeQuizSet.length ? "Next Question" : "Complete Quiz"}</span>
-                                                    <ChevronDown className="w-3 h-3 -rotate-90" />
-                                                  </button>
-                                                </div>
-                                              ) : (
-                                                <button
-                                                  onClick={() => submitQuizQuestion(activeQuizSet[quizQuestionIdx])}
-                                                  disabled={quizSelectedOption === null}
-                                                  className={`w-full flex justify-center items-center py-2 bg-emerald-500 hover:bg-emerald-600 font-bold text-white rounded-lg transition-all cursor-pointer ${
-                                                    quizSelectedOption === null ? "opacity-40 pointer-events-none" : ""
-                                                  }`}
-                                                >
-                                                  <Play className="w-3 h-3 mr-1.5 fill-current" />
-                                                  <span>Submit Answer</span>
-                                                </button>
-                                              )}
-                                            </div>
-                                          ) : (
-                                            // Quiz Completion Frame
-                                            <div className="flex flex-col items-center justify-center py-6 text-center space-y-3">
-                                              <GraduationCap className="w-8 h-8 text-accentPrimary" />
-                                              <div className="space-y-1">
-                                                <h4 className="font-bold text-white">Quiz Completed!</h4>
-                                                <p className="text-[10px] text-slate-400">You scored {quizScore} out of {activeQuizSet.length} correctly.</p>
-                                              </div>
-                                              <button
-                                                onClick={resetQuizState}
-                                                className="px-4 py-1.5 bg-accentPrimary/10 border border-accentPrimary/20 hover:bg-accentPrimary/20 rounded-md text-[10px] text-accentPrimary font-semibold transition-all cursor-pointer"
-                                              >
-                                                Restart Quiz
-                                              </button>
-                                            </div>
-                                          )}
-                                        </div>
-                                      );
-                                    })()
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                      
+                      <SkillDrawerPanel 
+                        isOpen={drawerOpen}
+                        skill={skill}
+                        customGuide={customGuide}
+                        customQuiz={customQuiz}
+                        notes={state.devSkillNotes?.[skill.id] || ""}
+                        quizBestScore={bestScore}
+                        onSaveNote={(note: string) => updateDevSkillNote(skill.id, note)}
+                        onUpdateProgress={(field: any) => updateDevSkill(skill.id, field)}
+                        onQuizSubmit={(score: number, total: number, isAi: boolean) => {
+                          if (saveDevQuizAttempt) {
+                            saveDevQuizAttempt({
+                              skillId: skill.id,
+                              score,
+                              total,
+                              timestamp: new Date().toISOString(),
+                              isAiGenerated: isAi
+                            });
+                          }
+                        }}
+                        onAiExplain={() => handleExplainWithAi(skill)}
+                        aiQuizLoading={aiQuizLoading}
+                        aiQuizQuestions={aiQuizQuestions}
+                        aiQuizError={aiQuizError}
+                        onGenerateAiQuiz={() => handleGenerateAiQuiz(skill)}
+                        appState={state}
+                      />
                     </GlassCard>
                   </div>
                 );
               })}
           </div>
         ) : (
-          // ==================== GRID BOARD LAYOUT ====================
           <div className="space-y-8">
             {filteredCategories.map((cat: DevCategory) => {
               const catProgress = getCategoryProgress(cat);
@@ -938,6 +765,11 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {skills.map((skill: DevSkill) => {
+                            const isActive = state.devPlanActiveSkillId === skill.id;
+                            const drawerOpen = openSkillDrawerId === skill.id;
+                            const customGuide = SKILL_RESOURCES[skill.id] || getFallbackGuide(skill);
+                            const customQuiz = SKILL_QUIZZES[skill.id] || getFallbackQuiz(skill);
+
                             let checkedCount = 0;
                             if (skill.learned) checkedCount++;
                             if (skill.practiced) checkedCount++;
@@ -945,14 +777,24 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
                             if (skill.deployed) checkedCount++;
                             if (skill.revised) checkedCount++;
 
-                            const customGuide = SKILL_RESOURCES[skill.id] || getFallbackGuide(skill);
-                            const customQuiz = SKILL_QUIZZES[skill.id] || getFallbackQuiz(skill);
-
-                            const drawerOpen = openSkillDrawerId === skill.id;
-                            const isActive = state.devPlanActiveSkillId === skill.id;
+                            let isLocked = false;
+                            if (skill.prerequisites && skill.prerequisites.length > 0) {
+                              const prereqMet = skill.prerequisites.every(reqId => {
+                                const reqSkill = allSkillsFlat.find(s => s.id === reqId);
+                                return reqSkill ? (reqSkill.learned && reqSkill.practiced && reqSkill.built && reqSkill.deployed && reqSkill.revised) : true;
+                              });
+                              isLocked = !prereqMet;
+                            }
+                            
+                            const completedTimestamp = state.devSkillTimestamps?.[skill.id];
+                            const completedDateStr = completedTimestamp ? new Date(completedTimestamp).toLocaleDateString() : null;
+                            
+                            const bestScore = state.devQuizHistory?.find(q => q.skillId === skill.id)?.score || 0;
+                            const daysSinceCompletion = completedTimestamp ? (Date.now() - completedTimestamp) / (1000 * 3600 * 24) : 0;
+                            const needsReview = (checkedCount === 5 && daysSinceCompletion > 14 && bestScore < 80);
 
                             return (
-                              <GlassCard key={skill.id} className={`flex flex-col justify-between p-5 space-y-4 relative group transition-all overflow-hidden ${
+                              <GlassCard key={skill.id} className={`flex flex-col justify-between p-5 space-y-4 relative group transition-all overflow-hidden ${isLocked ? "opacity-40 grayscale pointer-events-none" : ""} ${
                                 isActive ? "border-violet-500/20 bg-violet-950/[0.02]" : "hover:border-white/[0.08]"
                               }`}>
                                 <div className="absolute top-0 right-0 p-4 opacity-[0.02] group-hover:opacity-[0.04] transition-opacity pointer-events-none">
@@ -962,29 +804,39 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
                                 <div className="relative z-10 space-y-4">
                                   <div className="space-y-1">
                                     <div className="flex justify-between items-start gap-2">
-                                      <span className="text-xs font-semibold text-slate-200">{skill.name}</span>
-                                      <div className="flex items-center gap-1.5 shrink-0">
-                                        {state.devPlanEnrolled && (
-                                          <button
-                                            onClick={() => setDevPlanActiveSkillId(isActive ? null : skill.id)}
-                                            className={`text-[8px] font-mono font-bold uppercase px-1.5 py-0.5 rounded transition-all cursor-pointer ${
-                                              isActive
-                                                ? "bg-violet-600 text-white animate-pulse"
-                                                : "bg-white/[0.04] text-slate-400 hover:text-white"
-                                            }`}
-                                          >
-                                            {isActive ? "Active" : "Target"}
-                                          </button>
-                                        )}
-                                        <span className="text-[9px] font-mono text-slate-500 uppercase">
-                                          {checkedCount}/5 complete
-                                        </span>
+                                      <span className="text-xs font-semibold text-slate-200 flex-1">{skill.name}</span>
+                                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                          {isLocked && (
+                                            <Lock className="w-3 h-3 text-slate-500" />
+                                          )}
+                                          {needsReview && !isLocked && (
+                                            <ActivitySquare className="w-3 h-3 text-orange-500" />
+                                          )}
+                                          {completedDateStr && !needsReview && (
+                                            <History className="w-3 h-3 text-emerald-500" />
+                                          )}
+                                          {state.devPlanEnrolled && (
+                                            <button
+                                              onClick={() => setDevPlanActiveSkillId(isActive ? null : skill.id)}
+                                              className={`text-[8px] font-mono font-bold uppercase px-1.5 py-0.5 rounded transition-all cursor-pointer ${
+                                                isActive
+                                                  ? "bg-violet-600 text-white animate-pulse"
+                                                  : "bg-white/[0.04] text-slate-400 hover:text-white"
+                                              }`}
+                                            >
+                                              {isActive ? "Active" : "Target"}
+                                            </button>
+                                          )}
+                                          <span className="text-[9px] font-mono text-slate-500 uppercase">
+                                            {checkedCount}/5 complete
+                                          </span>
+                                        </div>
                                       </div>
                                     </div>
                                     <p className="text-[11px] text-slate-400 leading-relaxed">{skill.description}</p>
                                   </div>
 
-                                  {/* Checkbox stage buttons */}
                                   <div className="grid grid-cols-5 gap-1.5 pt-1">
                                     {[
                                       { key: "learned", label: "Study", icon: BookOpen },
@@ -1000,220 +852,67 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
                                         <button
                                           key={stage.key}
                                           onClick={() => updateDevSkill(skill.id, stage.key as any)}
-                                          className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg border text-center transition-all hover:scale-[1.02] active:scale-95 cursor-pointer ${
+                                          className={`relative h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer group/btn ${
                                             active
-                                              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-sm"
-                                              : "bg-white/[0.005] border-white/[0.04] text-slate-500 hover:text-slate-400 hover:bg-white/[0.01]"
+                                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                              : "bg-slate-900 border border-white/[0.08] text-slate-500 hover:text-slate-300 hover:bg-white/[0.02]"
                                           }`}
                                         >
-                                          <IconComponent className="w-3.5 h-3.5 mb-1" />
-                                          <span className="text-[9px] font-medium leading-none">{stage.label}</span>
+                                          <IconComponent className="w-3.5 h-3.5" />
+                                          <div className="absolute -bottom-6 opacity-0 group-hover/btn:opacity-100 transition-opacity bg-slate-800 text-[9px] px-1.5 py-0.5 rounded whitespace-nowrap pointer-events-none font-semibold z-50 text-slate-300">
+                                            {stage.label}
+                                          </div>
                                         </button>
                                       );
                                     })}
                                   </div>
-
-                                  {/* Footers trigger */}
-                                  <div className="flex justify-between items-center border-t border-white/[0.04] pt-3">
-                                    <button
-                                      onClick={() => handleExplainWithAi(skill)}
-                                      className="flex items-center gap-1.5 px-2.5 py-1 bg-accentPrimary/10 border border-accentPrimary/20 hover:bg-accentPrimary/20 hover:scale-105 rounded-md text-[10px] text-accentPrimary font-semibold tracking-wide transition-all cursor-pointer"
-                                    >
-                                      <Sparkles className="w-3 h-3" />
-                                      <span>Explain with AI</span>
-                                    </button>
-
-                                    <button
-                                      onClick={() => toggleSkillDrawer(skill.id)}
-                                      className="text-[10px] text-slate-400 hover:text-white transition-colors font-semibold flex items-center gap-1 cursor-pointer"
-                                    >
-                                      <span>{drawerOpen ? "Hide Details" : "Show Deep-Dive & Quizzes"}</span>
-                                      {drawerOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                                    </button>
-                                  </div>
-
-                                  {/* Drawer Panel */}
-                                  <AnimatePresence>
-                                    {drawerOpen && (
-                                      <motion.div
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: "auto", opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
-                                        transition={{ duration: 0.2 }}
-                                        className="overflow-hidden bg-black/40 border border-white/[0.04] rounded-lg mt-3 p-3 space-y-3"
-                                      >
-                                        {/* Drawer Tabs */}
-                                        <div className="flex border-b border-white/[0.06] pb-1 gap-2 overflow-x-auto">
-                                          {[
-                                            { id: "guide", label: "Guide" },
-                                            { id: "boilerplate", label: "Boilerplate" },
-                                            { id: "caseStudy", label: "Case Study" },
-                                            { id: "quiz", label: "Quiz" }
-                                          ].map(tab => (
-                                            <button
-                                              key={tab.id}
-                                              onClick={() => setDrawerTab(tab.id as any)}
-                                              className={`text-[9px] font-bold uppercase tracking-wider pb-1 px-1.5 transition-colors cursor-pointer border-b ${
-                                                drawerTab === tab.id
-                                                  ? "border-accentPrimary text-white animate-pulse"
-                                                  : "border-transparent text-slate-500 hover:text-slate-300"
-                                              }`}
-                                            >
-                                              {tab.label}
-                                            </button>
-                                          ))}
-                                        </div>
-
-                                        {/* Drawer Tab Content */}
-                                        <div className="text-[10px] text-slate-300 max-h-[220px] overflow-y-auto custom-scrollbar pr-1 pt-1">
-                                          {drawerTab === "guide" && (
-                                            <div className="space-y-3">
-                                              <p className="leading-relaxed whitespace-pre-wrap">{customGuide.guide}</p>
-                                              <div className="space-y-1.5 border-t border-white/[0.06] pt-2">
-                                                <span className="text-[9px] font-bold font-mono text-slate-500 uppercase tracking-wider block">Resource Links:</span>
-                                                <div className="flex flex-col gap-1.5">
-                                                  {customGuide.links.map((link, lidx) => (
-                                                    <a
-                                                      key={lidx}
-                                                      href={link.url}
-                                                      target="_blank"
-                                                      rel="noreferrer"
-                                                      className="flex items-center gap-1 text-accentPrimary hover:underline text-[10px] font-semibold"
-                                                    >
-                                                      <ExternalLink className="w-3 h-3" />
-                                                      <span>{link.name}</span>
-                                                    </a>
-                                                  ))}
-                                                </div>
-                                              </div>
-                                            </div>
-                                          )}
-
-                                          {drawerTab === "boilerplate" && (
-                                            <pre className="bg-black/30 rounded border border-white/[0.04] p-2 font-mono text-[9px] text-emerald-400 overflow-x-auto whitespace-pre-wrap">
-                                              {customGuide.boilerplate}
-                                            </pre>
-                                          )}
-
-                                          {drawerTab === "caseStudy" && (
-                                            <div className="flex gap-2 items-start bg-amber-500/5 border border-amber-500/20 text-amber-400 rounded-lg p-2.5">
-                                              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
-                                              <div className="space-y-1.5">
-                                                <span className="text-[9px] font-bold uppercase tracking-wider block">Production Failure Scenario:</span>
-                                                <p className="leading-normal text-[10px] whitespace-pre-wrap">{customGuide.caseStudy}</p>
-                                              </div>
-                                            </div>
-                                          )}
-
-                                          {drawerTab === "quiz" && (
-                                            <div className="space-y-3">
-                                              <div className="flex flex-col sm:flex-row gap-2 justify-between items-start sm:items-center bg-white/[0.01] border border-white/[0.04] p-2 rounded-lg mb-2">
-                                                <span className="text-[9px] font-bold text-white flex items-center gap-1">
-                                                  <Sparkles className="w-3 h-3 text-accentPrimary" /> AI Quiz Generator
-                                                </span>
-                                                <button
-                                                  onClick={() => handleGenerateAiQuiz(skill)}
-                                                  disabled={aiQuizLoading}
-                                                  className="px-2.5 py-1 bg-accentPrimary/20 hover:bg-accentPrimary/30 rounded text-[9px] font-bold text-accentPrimary uppercase tracking-wider transition-all cursor-pointer"
-                                                >
-                                                  {aiQuizLoading ? "Loading..." : "Generate AI Quiz"}
-                                                </button>
-                                              </div>
-
-                                              {aiQuizError && (
-                                                <p className="text-red-400 text-[9px] leading-relaxed">{aiQuizError}</p>
-                                              )}
-
-                                              {aiQuizLoading ? (
-                                                <div className="flex flex-col items-center justify-center py-4 text-center">
-                                                  <RefreshCw className="w-4 h-4 text-accentPrimary animate-spin" />
-                                                  <span className="text-[8px] font-mono text-slate-500 uppercase mt-1">Generating...</span>
-                                                </div>
-                                              ) : (
-                                                (() => {
-                                                  const activeQuizSet = aiQuizQuestions || customQuiz;
-                                                  return (
-                                                    <div className="space-y-3">
-                                                      {quizQuestionIdx < activeQuizSet.length ? (
-                                                        <div className="space-y-3">
-                                                          <div className="flex justify-between items-center text-[8px] font-mono text-slate-500 uppercase">
-                                                            <span>Q {quizQuestionIdx + 1} of {activeQuizSet.length}</span>
-                                                            <span>Score: {quizScore}/{activeQuizSet.length}</span>
-                                                          </div>
-                                                          <p className="font-bold text-white leading-relaxed">{activeQuizSet[quizQuestionIdx].question}</p>
-                                                          
-                                                          <div className="space-y-1.5">
-                                                            {activeQuizSet[quizQuestionIdx].options.map((option, optIdx) => {
-                                                              let optionStyle = "border-white/[0.06] text-slate-300 bg-white/[0.005] hover:bg-white/[0.02]";
-                                                              if (quizSubmitted) {
-                                                                if (optIdx === activeQuizSet[quizQuestionIdx].correctIndex) {
-                                                                  optionStyle = "border-emerald-500/30 text-emerald-400 bg-emerald-500/5";
-                                                                } else if (optIdx === quizSelectedOption) {
-                                                                  optionStyle = "border-red-500/30 text-red-400 bg-red-500/5";
-                                                                }
-                                                              } else if (optIdx === quizSelectedOption) {
-                                                                optionStyle = "border-accentPrimary/40 text-accentPrimary bg-accentPrimary/5";
-                                                              }
-
-                                                              return (
-                                                                <button
-                                                                  key={optIdx}
-                                                                  onClick={() => handleQuizAnswer(activeQuizSet[quizQuestionIdx], optIdx)}
-                                                                  disabled={quizSubmitted}
-                                                                  className={`w-full flex items-start gap-2 text-left p-2 rounded-lg border text-[10px] transition-all cursor-pointer ${optionStyle}`}
-                                                                >
-                                                                  <span className="font-bold font-mono text-slate-500 shrink-0">{String.fromCharCode(65 + optIdx)}.</span>
-                                                                  <span className="leading-tight">{option}</span>
-                                                                </button>
-                                                              );
-                                                            })}
-                                                          </div>
-
-                                                          {quizSubmitted ? (
-                                                            <div className="space-y-1.5 border-t border-white/[0.06] pt-2">
-                                                              <p className="text-slate-400 text-[9px] leading-relaxed italic">{activeQuizSet[quizQuestionIdx].explanation}</p>
-                                                              <button
-                                                                onClick={() => quizQuestionIdx + 1 < activeQuizSet.length ? nextQuizQuestion() : setQuizQuestionIdx(prev => prev + 1)}
-                                                                className="w-full py-1.5 mt-1.5 bg-white/[0.08] hover:bg-white/[0.12] rounded font-bold text-white transition-all text-[10px] cursor-pointer text-center"
-                                                              >
-                                                                Next
-                                                              </button>
-                                                            </div>
-                                                          ) : (
-                                                            <button
-                                                              onClick={() => submitQuizQuestion(activeQuizSet[quizQuestionIdx])}
-                                                              disabled={quizSelectedOption === null}
-                                                              className={`w-full py-1.5 bg-emerald-500 hover:bg-emerald-600 font-bold text-white rounded transition-all text-[10px] cursor-pointer ${
-                                                                quizSelectedOption === null ? "opacity-40 pointer-events-none" : ""
-                                                              }`}
-                                                            >
-                                                              Submit Answer
-                                                            </button>
-                                                          )}
-                                                        </div>
-                                                      ) : (
-                                                        <div className="flex flex-col items-center justify-center py-4 text-center space-y-2">
-                                                          <GraduationCap className="w-6 h-6 text-accentPrimary" />
-                                                          <span className="font-bold text-white text-[11px]">Quiz Done! Score: {quizScore}/{activeQuizSet.length}</span>
-                                                          <button
-                                                            onClick={resetQuizState}
-                                                            className="px-3 py-1 bg-accentPrimary/10 border border-accentPrimary/20 rounded text-[9px] text-accentPrimary font-semibold transition-all cursor-pointer"
-                                                          >
-                                                            Restart
-                                                          </button>
-                                                        </div>
-                                                      )}
-                                                    </div>
-                                                  );
-                                                })()
-                                              )}
-                                            </div>
-                                          )}
-                                        </div>
-                                      </motion.div>
-                                    )}
-                                  </AnimatePresence>
                                 </div>
+                                
+                                <div className="mt-2 pt-3 border-t border-white/[0.06] flex justify-center">
+                                  <button
+                                    onClick={() => toggleSkillDrawer(skill.id)}
+                                    className={`w-full py-1.5 rounded-lg border transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                                      drawerOpen
+                                        ? "bg-accentPrimary/20 text-accentPrimary border-accentPrimary/50 shadow-inner"
+                                        : "bg-white/[0.02] border-white/[0.04] text-slate-400 hover:bg-white/[0.05]"
+                                    }`}
+                                  >
+                                    <span className="text-[10px] uppercase font-bold tracking-widest">{drawerOpen ? "Close Resources" : "Open Resources"}</span>
+                                    {drawerOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                  </button>
+                                </div>
+
+                                {drawerOpen && (
+                                  <div className="relative z-20 mt-4 border border-white/[0.08] rounded-xl overflow-hidden bg-black/40">
+                                    <SkillDrawerPanel 
+                                      isOpen={true}
+                                      skill={skill}
+                                      customGuide={customGuide}
+                                      customQuiz={customQuiz}
+                                      notes={state.devSkillNotes?.[skill.id] || ""}
+                                      quizBestScore={bestScore}
+                                      onSaveNote={(note: string) => updateDevSkillNote(skill.id, note)}
+                                      onUpdateProgress={(field: any) => updateDevSkill(skill.id, field)}
+                                      onQuizSubmit={(score: number, total: number, isAi: boolean) => {
+                                        if (saveDevQuizAttempt) {
+                                          saveDevQuizAttempt({
+                                            skillId: skill.id,
+                                            score,
+                                            total,
+                                            timestamp: new Date().toISOString(),
+                                            isAiGenerated: isAi
+                                          });
+                                        }
+                                      }}
+                                      onAiExplain={() => handleExplainWithAi(skill)}
+                                      aiQuizLoading={aiQuizLoading}
+                                      aiQuizQuestions={aiQuizQuestions}
+                                      aiQuizError={aiQuizError}
+                                      onGenerateAiQuiz={() => handleGenerateAiQuiz(skill)}
+                                      appState={state}
+                                    />
+                                  </div>
+                                )}
                               </GlassCard>
                             );
                           })}

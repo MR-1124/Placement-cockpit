@@ -199,7 +199,9 @@ const getInitialState = (curriculum: any): AppState => ({
   atsReports: [],
   devPlanEnrolled: false,
   devPlanTargetDate: "",
-  devPlanActiveSkillId: null
+  devPlanActiveSkillId: null,
+  devQuizHistory: [],
+  devSkillNotes: {}
 });
 
 const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: any }> = ({ children, curriculum }) => {
@@ -945,12 +947,20 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
   ) => {
     updateState(prev => {
       let xpDiff = 0;
+      let completedSkillId: string | null = null;
       const devCategories = prev.devCategories.map(cat => {
         const skills = cat.skills.map(skill => {
           if (skill.id !== skillId) return skill;
           const nextVal = !skill[field];
           xpDiff += nextVal ? 15 : -15;
-          return { ...skill, [field]: nextVal };
+          const updatedSkill = { ...skill, [field]: nextVal };
+          const allDone = updatedSkill.learned && updatedSkill.practiced && updatedSkill.built && updatedSkill.deployed && updatedSkill.revised;
+          const wasComplete = skill.learned && skill.practiced && skill.built && skill.deployed && skill.revised;
+          if (!wasComplete && allDone) {
+            completedSkillId = skillId;
+            xpDiff += 50; // Completion bonus
+          }
+          return updatedSkill;
         });
         return { ...cat, skills };
       });
@@ -962,10 +972,16 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         xpDiff += 10;
       }
 
+      // ENH-8: Record completion timestamp
+      const devSkillTimestamps = completedSkillId
+        ? { ...(prev.devSkillTimestamps || {}), [completedSkillId]: Date.now() }
+        : (prev.devSkillTimestamps || {});
+
       return {
         ...prev,
         devCategories,
         dailyHabits,
+        devSkillTimestamps,
         xp: Math.max(0, prev.xp + xpDiff),
         lastActiveDate: getTodayString()
       };
@@ -1885,11 +1901,12 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     });
   };
 
-  const enrollInDevPlan = (enrolled: boolean, targetDate?: string) => {
+  const enrollInDevPlan = (enrolled: boolean, targetDate?: string, intensity?: "Casual" | "Normal" | "Intense") => {
     updateState(prev => ({
       ...prev,
       devPlanEnrolled: enrolled,
-      devPlanTargetDate: targetDate || ""
+      devPlanTargetDate: targetDate || "",
+      devPlanIntensity: intensity || "Normal"
     }));
   };
 
@@ -1897,6 +1914,20 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     updateState(prev => ({
       ...prev,
       devPlanActiveSkillId: skillId
+    }));
+  };
+
+  const saveDevQuizAttempt = (attempt: import("./AppStateTypes").DevQuizAttempt) => {
+    updateState(prev => ({
+      ...prev,
+      devQuizHistory: [...(prev.devQuizHistory || []), attempt]
+    }));
+  };
+
+  const updateDevSkillNote = (skillId: string, note: string) => {
+    updateState(prev => ({
+      ...prev,
+      devSkillNotes: { ...(prev.devSkillNotes || {}), [skillId]: note }
     }));
   };
 
@@ -2059,7 +2090,9 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         updateFlashcard,
         saveFlashcardSession,
 
-        saveAtsReport
+        saveAtsReport,
+        saveDevQuizAttempt,
+        updateDevSkillNote
       }}
 
     >

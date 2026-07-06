@@ -545,14 +545,14 @@ const curriculum = useAppState(s => s.curriculum);
             </div>
           </GlassCard>
 
-          <GlassCard className="flex flex-col justify-between h-full relative group hover:border-white/[0.1] transition-all overflow-hidden">
+          <GlassCard className="flex flex-col justify-between h-full relative group hover:border-accentPrimary/50 transition-all overflow-hidden cursor-pointer" onClick={() => setActiveTab && setActiveTab('dev')}>
             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
               <Zap className="w-32 h-32 text-emerald-500" />
             </div>
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-semibold text-slate-300">Full Stack Skills</span>
-                <Zap className="w-4 h-4 text-slate-500" />
+                <Zap className="w-4 h-4 text-emerald-500 group-hover:animate-pulse" />
               </div>
               <span className="text-3xl font-extrabold text-white font-mono">{devCompletion}%</span>
               <p className="text-xs text-slate-500 mt-1 font-mono">
@@ -561,6 +561,9 @@ const curriculum = useAppState(s => s.curriculum);
             </div>
             <div className="mt-4 relative z-10">
               <ProgressBar percentage={devCompletion} colorClass="bg-emerald-500" />
+            </div>
+            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="text-[9px] uppercase font-bold text-emerald-500 font-mono tracking-widest bg-emerald-500/10 px-2 py-1 rounded">Resume Plan &rarr;</span>
             </div>
           </GlassCard>
 
