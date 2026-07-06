@@ -389,30 +389,109 @@ export const MarkdownRenderer: React.FC<RendererProps> = ({ content }) => {
   const formatText = (text: string) => {
     if (!text) return "";
 
-    let html = text
+    let escaped = text
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
 
-    // Restore safe line breaks
-    html = html.replace(/&lt;br\s*\/?&gt;/g, "<br />");
+    escaped = escaped.replace(/&lt;br\s*\/?&gt;/g, "<br />");
 
-    // Inline code: `code`
-    html = html.replace(/`([^`\n]+)`/g, '<code class="bg-white/5 px-1.5 py-0.2 rounded font-mono text-amber-400">$1</code>');
+    const lines = escaped.split("\n");
+    let resultLines: string[] = [];
+    let inList = false;
+    let listType: "ul" | "ol" | null = null;
 
-    // Headers: # Header, ## Header, ### Header
-    html = html.replace(/^### (.*$)/gim, '<h4 class="text-xs font-bold text-white mt-3 mb-1 font-mono uppercase tracking-wider">$1</h4>');
-    html = html.replace(/^## (.*$)/gim, '<h3 class="text-sm font-bold text-white mt-4 mb-2 border-b border-white/5 pb-1">$1</h3>');
-    html = html.replace(/^# (.*$)/gim, '<h2 class="text-base font-bold text-white mt-4 mb-2">$1</h2>');
+    const closeList = () => {
+      if (inList) {
+        resultLines.push(listType === "ul" ? "</ul>" : "</ol>");
+        inList = false;
+        listType = null;
+      }
+    };
 
-    // Bold: **text**
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
+      let trimmed = line.trim();
+
+      if (trimmed === "---" || trimmed === "***") {
+        closeList();
+        resultLines.push('<hr class="border-white/10 my-4" />');
+        continue;
+      }
+
+      const header4Match = line.match(/^#### (.*)$/);
+      if (header4Match) {
+        closeList();
+        resultLines.push(`<h5 class="text-[11px] font-bold text-white mt-3 mb-1 font-mono uppercase tracking-wider">${header4Match[1]}</h5>`);
+        continue;
+      }
+      const header3Match = line.match(/^### (.*)$/);
+      if (header3Match) {
+        closeList();
+        resultLines.push(`<h4 class="text-xs font-bold text-white mt-3 mb-1 font-mono uppercase tracking-wider">${header3Match[1]}</h4>`);
+        continue;
+      }
+      const header2Match = line.match(/^## (.*)$/);
+      if (header2Match) {
+        closeList();
+        resultLines.push(`<h3 class="text-sm font-bold text-white mt-4 mb-2 border-b border-white/5 pb-1">${header2Match[1]}</h3>`);
+        continue;
+      }
+      const header1Match = line.match(/^# (.*)$/);
+      if (header1Match) {
+        closeList();
+        resultLines.push(`<h2 class="text-base font-extrabold text-white mt-4 mb-2">${header1Match[1]}</h2>`);
+        continue;
+      }
+
+      if (trimmed.startsWith("&gt;")) {
+        closeList();
+        const content = trimmed.substring(4).trim();
+        resultLines.push(`<blockquote class="border-l-2 border-accentPrimary/40 pl-3.5 italic text-slate-400 my-2.5">${content}</blockquote>`);
+        continue;
+      }
+
+      const bulletMatch = line.match(/^(\s*)[-*]\s+(.*)$/);
+      if (bulletMatch) {
+        if (!inList || listType !== "ul") {
+          closeList();
+          resultLines.push('<ul class="list-disc pl-4 space-y-1 my-2">');
+          inList = true;
+          listType = "ul";
+        }
+        resultLines.push(`<li class="text-slate-350">${bulletMatch[2]}</li>`);
+        continue;
+      }
+
+      const numberMatch = line.match(/^(\s*)\d+\.\s+(.*)$/);
+      if (numberMatch) {
+        if (!inList || listType !== "ol") {
+          closeList();
+          resultLines.push('<ol class="list-decimal pl-4 space-y-1 my-2">');
+          inList = true;
+          listType = "ol";
+        }
+        resultLines.push(`<li class="text-slate-350">${numberMatch[2]}</li>`);
+        continue;
+      }
+
+      if (trimmed === "") {
+        closeList();
+        resultLines.push('<div class="h-2"></div>');
+      } else {
+        closeList();
+        resultLines.push(`<div>${line}</div>`);
+      }
+    }
+
+    closeList();
+
+    let html = resultLines.join("\n");
+
+    html = html.replace(/`([^`\n]+)`/g, '<code class="bg-white/5 px-1.5 py-0.5 rounded font-mono text-amber-400 text-[11px]">$1</code>');
     html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
-
-    // Bullet points: - item or * item
-    html = html.replace(/^\s*[-*]\s+(.*$)/gim, '<li class="list-disc ml-4 my-1 text-slate-300">$1</li>');
-
-    // Line breaks
-    html = html.replace(/\n/g, "<br />");
+    html = html.replace(/\b_([^_]+)_\b/g, '<em class="italic text-slate-300">$1</em>');
+    html = html.replace(/\*([^*]+)\*/g, '<em class="italic text-slate-300">$1</em>');
 
     return html;
   };
