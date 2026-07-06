@@ -56,7 +56,9 @@ export const SettingsView: React.FC = () => {
       "mistralai/mixtral-8x22b-instruct-v0.1",
       "deepseek-ai/deepseek-r1",
       "nvidia/nemotron-mini-4b-instruct",
-      "meta/llama-3.3-70b-instruct"
+      "meta/llama-3.3-70b-instruct",
+      "nvidia/nemotron-3-nano-30b-a3b",
+      "openai/gpt-oss-120b"
     ].includes(model)) {
       return model;
     }
@@ -74,7 +76,9 @@ export const SettingsView: React.FC = () => {
       "mistralai/mixtral-8x22b-instruct-v0.1",
       "deepseek-ai/deepseek-r1",
       "nvidia/nemotron-mini-4b-instruct",
-      "meta/llama-3.3-70b-instruct"
+      "meta/llama-3.3-70b-instruct",
+      "nvidia/nemotron-3-nano-30b-a3b",
+      "openai/gpt-oss-120b"
     ].includes(model)) {
       return model;
     }
@@ -330,6 +334,8 @@ export const SettingsView: React.FC = () => {
                       <option value="meta/llama-3.1-70b-instruct" className="bg-[#0f0f13] text-white">Llama 3.1 70B</option>
                       <option value="meta/llama-3.1-405b-instruct" className="bg-[#0f0f13] text-white">Llama 3.1 405B</option>
                       <option value="nvidia/llama-3.1-nemotron-70b-instruct" className="bg-[#0f0f13] text-white">Nemotron 70B</option>
+                      <option value="nvidia/nemotron-3-nano-30b-a3b" className="bg-[#0f0f13] text-white">Nemotron-3 Nano 30B</option>
+                      <option value="openai/gpt-oss-120b" className="bg-[#0f0f13] text-white">GPT OSS 120B</option>
                       <option value="nvidia/nemotron-mini-4b-instruct" className="bg-[#0f0f13] text-white">Nemotron Mini 4B</option>
                       <option value="mistralai/mixtral-8x22b-instruct-v0.1" className="bg-[#0f0f13] text-white">Mixtral 8x22B</option>
                       <option value="custom" className="bg-[#0f0f13] text-white">Custom Model...</option>
@@ -384,6 +390,8 @@ export const SettingsView: React.FC = () => {
                       <option value="meta/llama-3.1-70b-instruct" className="bg-[#0f0f13] text-white">Llama 3.1 70B</option>
                       <option value="meta/llama-3.1-405b-instruct" className="bg-[#0f0f13] text-white">Llama 3.1 405B</option>
                       <option value="nvidia/llama-3.1-nemotron-70b-instruct" className="bg-[#0f0f13] text-white">Nemotron 70B</option>
+                      <option value="nvidia/nemotron-3-nano-30b-a3b" className="bg-[#0f0f13] text-white">Nemotron-3 Nano 30B</option>
+                      <option value="openai/gpt-oss-120b" className="bg-[#0f0f13] text-white">GPT OSS 120B</option>
                       <option value="nvidia/nemotron-mini-4b-instruct" className="bg-[#0f0f13] text-white">Nemotron Mini 4B</option>
                       <option value="mistralai/mixtral-8x22b-instruct-v0.1" className="bg-[#0f0f13] text-white">Mixtral 8x22B</option>
                       <option value="custom" className="bg-[#0f0f13] text-white">Custom Model...</option>
