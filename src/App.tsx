@@ -13,6 +13,7 @@ const AiChatView = React.lazy(() => import("./pages/AiChatView").then(module => 
 const AiTrackerView = React.lazy(() => import("./pages/AiTrackerView").then(module => ({ default: module.AiTrackerView })));
 const BadgesView = React.lazy(() => import("./pages/BadgesView").then(module => ({ default: module.BadgesView })));
 const PracticeView = React.lazy(() => import("./pages/PracticeView").then(module => ({ default: module.PracticeView })));
+const AptitudeView = React.lazy(() => import("./pages/AptitudeView").then(module => ({ default: module.AptitudeView })));
 
 const FlashcardsView = React.lazy(() => import("./pages/FlashcardsView").then(module => ({ default: module.FlashcardsView })));
 const CompanyRoadmapsView = React.lazy(() => import("./pages/CompanyRoadmapsView").then(module => ({ default: module.CompanyRoadmapsView })));
@@ -409,7 +410,8 @@ const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
         { id: "skilltree", name: "DSA Skill Tree", icon: GitFork },
         { id: "practice", name: "Practice Arena", icon: Target },
         { id: "dev", name: "Full Stack", icon: Layers },
-        { id: "projects", name: "Projects", icon: FolderGit2 }
+        { id: "projects", name: "Projects", icon: FolderGit2 },
+        { id: "aptitude", name: "Aptitude Prep", icon: ClipboardList }
       ]
     },
     {
@@ -469,6 +471,8 @@ const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
         return <SkillTreeView />;
       case "practice":
         return <PracticeView />;
+      case "aptitude":
+        return <AptitudeView />;
       case "dev":
         return <DevView setActiveTab={setActiveTab} />;
       case "ai":

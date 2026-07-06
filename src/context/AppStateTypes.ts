@@ -30,6 +30,24 @@ export interface DevQuizAttempt {
   isAiGenerated: boolean;
 }
 
+export interface AptitudeQuizAttempt {
+  topicId: string;
+  correctCount: number;
+  totalCount: number;
+  timeSpent: number;
+  timestamp: string;
+  answers: Record<number, { selected: string; correct: boolean }>;
+}
+
+export interface AptitudeTopicProgress {
+  topicId: string;
+  completed: boolean;
+  lastAttempted?: string;
+  bestScore?: number;
+  totalQuestionsSolved?: number;
+  timeSpent: number;
+}
+
 export interface BaseAppState {
   projects: Project[];
   completedSkills: string[];
@@ -63,6 +81,8 @@ export interface BaseAppState {
   devSkillTimestamps?: Record<string, number>;
   devPlanIntensity?: "Casual" | "Normal" | "Intense";
   practiceProblemsSolved?: Record<string, { timestamp: string; duration: number }>;
+  aptitudeQuizHistory?: AptitudeQuizAttempt[];
+  aptitudeTopicProgress?: Record<string, AptitudeTopicProgress>;
 }
 
 export interface AppState extends BaseAppState {
@@ -209,4 +229,6 @@ export interface AppContextType {
   saveDevQuizAttempt: (attempt: DevQuizAttempt) => void;
   updateDevSkillNote: (skillId: string, note: string) => void;
   markPracticeProblemSolved: (problemId: string, duration: number) => void;
+  markAptitudeTopicCompleted: (topicId: string) => void;
+  submitAptitudeQuiz: (topicId: string, correctCount: number, totalCount: number, timeSpent: number, answers: Record<number, { selected: string; correct: boolean }>) => void;
 }

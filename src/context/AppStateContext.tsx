@@ -202,7 +202,9 @@ const getInitialState = (curriculum: any): AppState => ({
   devPlanTargetDate: "",
   devPlanActiveSkillId: null,
   devQuizHistory: [],
-  devSkillNotes: {}
+  devSkillNotes: {},
+  aptitudeQuizHistory: [],
+  aptitudeTopicProgress: {}
 });
 
 const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: any }> = ({ children, curriculum }) => {
@@ -239,6 +241,8 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         updatedState.activeRoadmaps = updatedState.activeRoadmaps || [];
         updatedState.atsReports = updatedState.atsReports || [];
         updatedState.projects = updatedState.projects || [];
+        updatedState.aptitudeQuizHistory = updatedState.aptitudeQuizHistory || [];
+        updatedState.aptitudeTopicProgress = updatedState.aptitudeTopicProgress || {};
         updatedState.userPlans = updatedState.userPlans || [];
         // Ensure each userPlan has completedSegments
         updatedState.userPlans = updatedState.userPlans.map((up: any) => {
@@ -1959,6 +1963,80 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     });
   };
 
+  const markAptitudeTopicCompleted = (topicId: string) => {
+    updateState(prev => {
+      const aptitudeTopicProgress = { ...(prev.aptitudeTopicProgress || {}) };
+      const current = aptitudeTopicProgress[topicId] || {
+        topicId,
+        completed: false,
+        timeSpent: 0
+      };
+
+      const wasCompleted = current.completed;
+      aptitudeTopicProgress[topicId] = {
+        ...current,
+        completed: true
+      };
+
+      return {
+        ...prev,
+        aptitudeTopicProgress,
+        xp: prev.xp + (wasCompleted ? 0 : 50),
+        lastActiveDate: getTodayString()
+      };
+    });
+  };
+
+  const submitAptitudeQuiz = (
+    topicId: string,
+    correctCount: number,
+    totalCount: number,
+    timeSpent: number,
+    answers: Record<number, { selected: string; correct: boolean }>
+  ) => {
+    updateState(prev => {
+      const attempt = {
+        topicId,
+        correctCount,
+        totalCount,
+        timeSpent,
+        timestamp: new Date().toISOString(),
+        answers
+      };
+
+      const aptitudeQuizHistory = [...(prev.aptitudeQuizHistory || []), attempt];
+
+      const aptitudeTopicProgress = { ...(prev.aptitudeTopicProgress || {}) };
+      const current = aptitudeTopicProgress[topicId] || {
+        topicId,
+        completed: false,
+        timeSpent: 0
+      };
+
+      const newBestScore = Math.max(current.bestScore || 0, correctCount);
+      const newTotalSolved = (current.totalQuestionsSolved || 0) + correctCount;
+      const newTimeSpent = current.timeSpent + timeSpent;
+
+      aptitudeTopicProgress[topicId] = {
+        ...current,
+        lastAttempted: new Date().toISOString(),
+        bestScore: newBestScore,
+        totalQuestionsSolved: newTotalSolved,
+        timeSpent: newTimeSpent
+      };
+
+      const xpEarned = correctCount * 15;
+
+      return {
+        ...prev,
+        aptitudeQuizHistory,
+        aptitudeTopicProgress,
+        xp: prev.xp + xpEarned,
+        lastActiveDate: getTodayString()
+      };
+    });
+  };
+
   const updateRoadmapProgress = (roadmapId: string, milestoneId: string, completed: boolean) => {
     updateState(prev => {
       const activeRoadmaps = prev.activeRoadmaps || [];
@@ -2121,7 +2199,9 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         saveAtsReport,
         saveDevQuizAttempt,
         updateDevSkillNote,
-        markPracticeProblemSolved
+        markPracticeProblemSolved,
+        markAptitudeTopicCompleted,
+        submitAptitudeQuiz
       }}
 
     >
