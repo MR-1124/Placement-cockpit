@@ -10,7 +10,6 @@ import {
   Flame, 
   FolderGit2, 
   CalendarRange, 
-  StickyNote, 
   LogIn, 
   LayoutDashboard, 
   ArrowRight, 
@@ -20,7 +19,12 @@ import {
   X,
   Database,
   Terminal,
-  Cpu
+  Cpu,
+  Star,
+  BookOpen,
+  GraduationCap,
+  CheckCircle,
+  Play
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -35,6 +39,9 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Interactive Sandbox preview tab state
+  const [activePreviewTab, setActivePreviewTab] = useState<"dsa" | "ai" | "aptitude" | "dev">("dsa");
 
   const isLoggedIn = state.user !== null;
 
@@ -106,6 +113,13 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
       shadow: "hover:shadow-[0_8px_30px_rgb(59,130,246,0.15)]"
     },
     {
+      title: "Aptitude Textbook Library",
+      icon: BookOpen,
+      desc: "Master 80+ quantitative, logical and puzzles subtopics. Access dynamic textbooks and practice screenshot-style quiz maps.",
+      color: "text-rose-400 border-rose-500/20 bg-rose-500/5",
+      shadow: "hover:shadow-[0_8px_30px_rgb(244,63,94,0.15)]"
+    },
+    {
       title: "Focus Workspace",
       icon: Timer,
       desc: "Activate fullscreen Pomodoro workspace countdowns. Lock tab navigation and link timer complete checkpoints directly with DSA problems.",
@@ -123,55 +137,48 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
       title: "STAR Project Forge",
       icon: FolderGit2,
       desc: "Construct interview-ready software assets. Track completion levels, technology stacks, and star milestones in your personal pipeline.",
-      color: "text-rose-400 border-rose-500/20 bg-rose-500/5",
-      shadow: "hover:shadow-[0_8px_30px_rgb(244,63,94,0.15)]"
-    },
-    {
-      title: "Spaced Repetition",
-      icon: CalendarRange,
-      desc: "Automated revision engines queue solved problems for reviews at optimal scientific intervals, preventing memory decay.",
       color: "text-indigo-400 border-indigo-500/20 bg-indigo-500/5",
       shadow: "hover:shadow-[0_8px_30px_rgb(99,102,241,0.15)]"
     },
     {
-      title: "Concept Notebook",
-      icon: StickyNote,
-      desc: "Document technical definitions, key algorithms, mistakes, and tag filters inside a markdown-supported notebook space.",
+      title: "Spaced Repetition Engine",
+      icon: CalendarRange,
+      desc: "Automated revision engines queue solved problems for reviews at optimal scientific intervals, preventing memory decay.",
       color: "text-teal-400 border-teal-500/20 bg-teal-500/5",
       shadow: "hover:shadow-[0_8px_30px_rgb(20,184,166,0.15)]"
     }
   ];
 
   return (
-    <div className="min-h-screen bg-[#060608] text-slate-350 relative overflow-hidden select-none pb-20 font-sans">
+    <div className="min-h-screen bg-[#060608] text-slate-350 relative overflow-hidden pb-20 font-sans">
       
       {/* Animated Background Orbs */}
-      <div className="absolute inset-0 bg-dot-grid opacity-20 pointer-events-none z-0" />
+      <div className="absolute inset-0 bg-dot-grid opacity-15 pointer-events-none z-0" />
       <motion.div 
         animate={{ 
-          y: [0, -20, 0], 
-          scale: [1, 1.05, 1],
-          opacity: [0.1, 0.15, 0.1]
+          y: [0, -25, 0], 
+          scale: [1, 1.08, 1],
+          opacity: [0.12, 0.18, 0.12]
         }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] bg-accentPrimary/20 rounded-full blur-[140px] pointer-events-none" 
+        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-[-15%] left-[-10%] w-[700px] h-[700px] bg-accentPrimary/25 rounded-full blur-[150px] pointer-events-none" 
       />
       <motion.div 
         animate={{ 
-          y: [0, 30, 0], 
-          scale: [1, 1.1, 1],
-          opacity: [0.05, 0.1, 0.05]
+          y: [0, 35, 0], 
+          scale: [1, 1.12, 1],
+          opacity: [0.06, 0.12, 0.06]
         }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-        className="absolute bottom-[-20%] right-[-10%] w-[700px] h-[700px] bg-cyan-500/20 rounded-full blur-[160px] pointer-events-none" 
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        className="absolute bottom-[-15%] right-[-5%] w-[800px] h-[800px] bg-cyan-500/15 rounded-full blur-[180px] pointer-events-none" 
       />
       <motion.div 
         animate={{ 
-          x: [0, -30, 0], 
-          opacity: [0.03, 0.08, 0.03]
+          x: [0, -40, 0], 
+          opacity: [0.04, 0.1, 0.04]
         }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-        className="absolute top-[30%] left-[40%] w-[400px] h-[400px] bg-violet-600/20 rounded-full blur-[120px] pointer-events-none" 
+        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        className="absolute top-[35%] left-[35%] w-[500px] h-[500px] bg-violet-600/15 rounded-full blur-[130px] pointer-events-none" 
       />
 
       {/* Navigation Header */}
@@ -186,11 +193,18 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
           </div>
         </div>
 
-        <div>
+        <div className="flex items-center gap-6">
+          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-400">
+            <a href="#features" className="hover:text-white transition-colors">Suite</a>
+            <a href="#preview" className="hover:text-white transition-colors">Sandbox</a>
+            <a href="#stats" className="hover:text-white transition-colors">Metrics</a>
+            <a href="#placements" className="hover:text-white transition-colors">Destinations</a>
+          </nav>
+          
           {isLoggedIn ? (
             <button
               onClick={onEnterDashboard}
-              className="px-6 py-3 rounded-xl bg-accentPrimary hover:bg-accentPrimary/90 active:scale-[0.98] text-white font-extrabold text-xs flex items-center gap-2 transition-all shadow-lg shadow-accentPrimary/30 hover:shadow-accentPrimary/50 cursor-pointer border border-white/10"
+              className="px-5 py-2.5 rounded-xl bg-accentPrimary hover:bg-accentPrimary/90 active:scale-[0.98] text-white font-extrabold text-xs flex items-center gap-2 transition-all shadow-lg shadow-accentPrimary/30 hover:shadow-accentPrimary/50 cursor-pointer border border-white/10"
             >
               <LayoutDashboard className="w-4 h-4" />
               <span>Enter Dashboard</span>
@@ -198,7 +212,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
           ) : (
             <button
               onClick={() => setShowLoginModal(true)}
-              className="px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md text-white font-extrabold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-lg hover:shadow-white/5"
+              className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md text-white font-extrabold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-lg hover:shadow-white/5"
             >
               <LogIn className="w-4 h-4" />
               <span>Access Cockpit</span>
@@ -208,43 +222,44 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
       </header>
 
       {/* Hero Section */}
-      <section className="max-w-6xl mx-auto px-6 pt-32 pb-24 text-center space-y-8 relative z-10 flex flex-col items-center">
+      <section className="max-w-6xl mx-auto px-6 pt-24 pb-20 text-center space-y-8 relative z-10 flex flex-col items-center">
         
-        {/* Floating Icons Background */}
+        {/* Floating Code Elements */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <motion.div animate={{ y: [0, -15, 0], rotate: [0, 5, 0] }} transition={{ duration: 6, repeat: Infinity }} className="absolute top-[10%] left-[15%] text-accentPrimary/30">
-            <Code2 className="w-12 h-12" />
+          <motion.div animate={{ y: [0, -20, 0], rotate: [0, 8, 0] }} transition={{ duration: 7, repeat: Infinity }} className="absolute top-[8%] left-[10%] text-accentPrimary/25">
+            <Code2 className="w-14 h-14" />
           </motion.div>
-          <motion.div animate={{ y: [0, 20, 0], rotate: [0, -10, 0] }} transition={{ duration: 8, repeat: Infinity, delay: 1 }} className="absolute top-[20%] right-[15%] text-cyan-500/30">
-            <Database className="w-16 h-16" />
+          <motion.div animate={{ y: [0, 25, 0], rotate: [0, -12, 0] }} transition={{ duration: 9, repeat: Infinity, delay: 1 }} className="absolute top-[18%] right-[10%] text-cyan-500/25">
+            <Database className="w-20 h-20" />
           </motion.div>
-          <motion.div animate={{ y: [0, -10, 0], rotate: [0, 15, 0] }} transition={{ duration: 7, repeat: Infinity, delay: 2 }} className="absolute bottom-[20%] left-[25%] text-violet-500/30">
-            <Terminal className="w-10 h-10" />
+          <motion.div animate={{ y: [0, -12, 0], rotate: [0, 20, 0] }} transition={{ duration: 8, repeat: Infinity, delay: 2 }} className="absolute bottom-[15%] left-[20%] text-violet-500/25">
+            <Terminal className="w-12 h-12" />
           </motion.div>
-          <motion.div animate={{ y: [0, 15, 0], rotate: [0, -5, 0] }} transition={{ duration: 9, repeat: Infinity, delay: 0.5 }} className="absolute bottom-[30%] right-[20%] text-emerald-500/30">
-            <Cpu className="w-14 h-14" />
+          <motion.div animate={{ y: [0, 18, 0], rotate: [0, -8, 0] }} transition={{ duration: 10, repeat: Infinity, delay: 0.5 }} className="absolute bottom-[25%] right-[15%] text-emerald-500/25">
+            <Cpu className="w-16 h-16" />
           </motion.div>
         </div>
 
-        {/* Release tag */}
+        {/* Launch Banner */}
         <motion.span 
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-accentPrimary/30 bg-accentPrimary/10 text-xs font-mono font-bold tracking-widest text-accentPrimary uppercase backdrop-blur-sm shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.2)]"
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/5 bg-white/[0.03] text-xs font-mono font-bold tracking-widest text-slate-350 uppercase backdrop-blur-sm shadow-md"
         >
-          <Sparkles className="w-4 h-4 animate-pulse" /> Platform V2.4 Active
+          <Sparkles className="w-4 h-4 text-accentPrimary animate-pulse" />
+          NIM AI-POWERED PERSONAL WORKSPACE
         </motion.span>
 
-        {/* Big Creative Typography Title */}
+        {/* Dynamic Title */}
         <motion.h1 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="text-5xl sm:text-7xl lg:text-8xl font-black tracking-tighter text-white leading-[1.05] max-w-5xl mx-auto Outfit"
+          className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tighter text-white leading-[1.05] max-w-5xl mx-auto"
         >
-          Command Your Journey on <br />
+          Own Your Placement Journey. <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-accentPrimary via-cyan-400 to-indigo-500 bg-[length:200%_auto] animate-gradient block mt-2 pb-2">
-            Placement Cockpit
+            The Ultimate Candidate OS.
           </span>
         </motion.h1>
 
@@ -252,53 +267,274 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed font-medium"
+          className="text-sm sm:text-base text-slate-400 max-w-2xl mx-auto leading-relaxed"
         >
-          Unlock an autonomous workspace built to coordinate DSA tracks, full-stack matrices, Pomodoro tasks, and custom AI placement coaching.
+          Command center engineered for placement preparation. Sync curated DSA timelines, build structured system components, compile concepts, and mock interview with custom-aligned AI mentor agents.
         </motion.p>
 
-        {/* Action triggers */}
+        {/* Primary Action Buttons */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="flex flex-col sm:flex-row justify-center items-center gap-5 pt-8 w-full sm:w-auto z-20 relative"
+          className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-6 w-full sm:w-auto z-20 relative"
         >
           {isLoggedIn ? (
             <button
               onClick={onEnterDashboard}
-              className="w-full sm:w-auto px-10 py-4 rounded-2xl bg-gradient-to-r from-accentPrimary to-indigo-600 hover:from-accentPrimary/90 hover:to-indigo-600/90 active:scale-[0.98] text-white font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all shadow-[0_0_30px_rgba(var(--accent-color-rgb),0.3)] hover:shadow-[0_0_50px_rgba(var(--accent-color-rgb),0.5)] cursor-pointer border border-white/10"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-accentPrimary to-indigo-600 hover:from-accentPrimary/90 hover:to-indigo-600/90 active:scale-[0.98] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2.5 transition-all shadow-[0_0_30px_rgba(var(--accent-color-rgb),0.2)] cursor-pointer border border-white/10"
             >
-              <span>Go to Dashboard</span>
-              <ArrowRight className="w-5 h-5" />
+              <span>Dashboard Terminal</span>
+              <ArrowRight className="w-4.5 h-4.5" />
             </button>
           ) : (
             <button
               onClick={() => setShowLoginModal(true)}
-              className="w-full sm:w-auto px-10 py-4 rounded-2xl bg-gradient-to-r from-accentPrimary to-indigo-600 hover:from-accentPrimary/90 hover:to-indigo-600/90 active:scale-[0.98] text-white font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all shadow-[0_0_30px_rgba(var(--accent-color-rgb),0.3)] hover:shadow-[0_0_50px_rgba(var(--accent-color-rgb),0.5)] cursor-pointer border border-white/10"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-accentPrimary to-indigo-600 hover:from-accentPrimary/90 hover:to-indigo-600/90 active:scale-[0.98] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2.5 transition-all shadow-[0_0_30px_rgba(var(--accent-color-rgb),0.2)] cursor-pointer border border-white/10"
             >
-              <span>Initialize Workspace</span>
-              <ArrowRight className="w-5 h-5" />
+              <span>Initialize OS Cockpit</span>
+              <ArrowRight className="w-4.5 h-4.5" />
             </button>
           )}
 
           <a
-            href="#features"
-            className="w-full sm:w-auto px-10 py-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 backdrop-blur-md text-white font-bold text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer"
+            href="#preview"
+            className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 backdrop-blur-md text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
-            Explore Features
+            Launch Demo Sandbox
           </a>
         </motion.div>
+      </section>
+
+      {/* Target Companies Marquee Ticker */}
+      <section id="placements" className="max-w-7xl mx-auto px-6 py-12 border-t border-b border-white/[0.04] bg-white/[0.01] backdrop-blur-sm z-10 relative overflow-hidden">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2 shrink-0">
+            <GraduationCap className="w-5 h-5 text-accentPrimary" />
+            <span className="text-xs font-mono font-bold tracking-widest text-slate-300 uppercase">TARGET DESTINATIONS</span>
+          </div>
+          
+          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 text-sm font-black text-slate-500 tracking-wider">
+            <span className="hover:text-white transition-colors cursor-default flex items-center gap-1.5"><Star className="w-4.5 h-4.5 text-amber-500" /> Google</span>
+            <span className="hover:text-white transition-colors cursor-default">Amazon</span>
+            <span className="hover:text-white transition-colors cursor-default">Meta</span>
+            <span className="hover:text-white transition-colors cursor-default">Microsoft</span>
+            <span className="hover:text-white transition-colors cursor-default">Netflix</span>
+            <span className="hover:text-white transition-colors cursor-default">Apple</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Interactive Sandbox Preview Terminal */}
+      <section id="preview" className="max-w-6xl mx-auto px-6 py-24 relative z-10 scroll-mt-10">
+        <div className="text-center space-y-3 mb-12">
+          <span className="inline-block px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono font-bold tracking-widest text-slate-400 uppercase">
+            Feature Preview Sandbox
+          </span>
+          <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">Experience Placement Modules</h2>
+          <p className="text-xs text-slate-400 max-w-md mx-auto">Click tab nodes to preview high-fidelity workspaces compiled inside the cockpit.</p>
+        </div>
+
+        {/* Tab Controls */}
+        <div className="flex flex-wrap items-center justify-center gap-2.5 mb-8">
+          {[
+            { id: "dsa", label: "DSA Patterns Tracker", icon: Code2, color: "border-purple-500/30 text-purple-400" },
+            { id: "ai", label: "NIM AI Mentor Room", icon: Sparkles, color: "border-blue-500/30 text-blue-400" },
+            { id: "aptitude", label: "Aptitude Textbook Map", icon: BookOpen, color: "border-rose-500/30 text-rose-400" },
+            { id: "dev", label: "Dev Curriculum Matrix", icon: Layers, color: "border-emerald-500/30 text-emerald-400" }
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activePreviewTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActivePreviewTab(tab.id as any)}
+                className={`px-4 py-2.5 rounded-xl border font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+                  isActive 
+                    ? "bg-white/10 border-white/20 text-white shadow-md backdrop-blur-md" 
+                    : "bg-white/[0.02] border-white/[0.04] text-slate-450 hover:bg-white/[0.05]"
+                }`}
+              >
+                <Icon className="w-4.5 h-4.5" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* High-Fidelity Sandbox Display */}
+        <GlassCard className="border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl bg-[#0b0b0f] relative min-h-[380px]">
+          {/* Mock Console Top Bar */}
+          <div className="flex items-center justify-between px-5 py-3.5 bg-black/40 border-b border-white/[0.06] text-slate-500 font-mono text-[10px]">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500/60" />
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500/60" />
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/60" />
+              <span className="ml-2 text-slate-400 font-semibold tracking-wider">COCKPIT_WORKPLACE_ENV // {activePreviewTab.toUpperCase()}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded text-[9px] uppercase font-bold tracking-widest">LIVE MOCK</span>
+            </div>
+          </div>
+
+          <div className="p-6 md:p-8">
+            <AnimatePresence mode="wait">
+              {activePreviewTab === "dsa" && (
+                <motion.div 
+                  key="dsa"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-6"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="text-base font-black text-white">DSA Matrix: Two Pointers Pattern</h4>
+                      <p className="text-xs text-slate-400">Master matching element arrays in linear O(N) complexity.</p>
+                    </div>
+                    <span className="text-[10px] font-mono text-purple-400 bg-purple-500/10 border border-purple-500/20 px-3 py-1 rounded-full font-bold uppercase tracking-widest">Solved: 14 / 22</span>
+                  </div>
+
+                  {/* Mock solved grid list */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {[
+                      { name: "Two Sum II", diff: "Medium", status: "solved", color: "border-emerald-500/20 bg-emerald-500/5 text-emerald-400" },
+                      { name: "Valid Palindrome", diff: "Easy", status: "solved", color: "border-emerald-500/20 bg-emerald-500/5 text-emerald-400" },
+                      { name: "Container With Most Water", diff: "Medium", status: "active", color: "border-purple-500/30 bg-purple-500/5 text-purple-400 animate-pulse" },
+                      { name: "3Sum", diff: "Medium", status: "unsolved", color: "border-white/5 bg-white/[0.02] text-slate-400" },
+                      { name: "Trapping Rain Water", diff: "Hard", status: "unsolved", color: "border-white/5 bg-white/[0.02] text-slate-400" },
+                      { name: "4Sum", diff: "Medium", status: "unsolved", color: "border-white/5 bg-white/[0.02] text-slate-400" }
+                    ].map((item, idx) => (
+                      <div key={idx} className={`p-4 rounded-xl border flex justify-between items-center ${item.color}`}>
+                        <div className="space-y-1">
+                          <span className="text-xs font-bold block">{item.name}</span>
+                          <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-slate-500">{item.diff}</span>
+                        </div>
+                        {item.status === "solved" && <CheckCircle className="w-4 h-4 text-emerald-400" />}
+                        {item.status === "active" && <Play className="w-4 h-4 text-purple-400 animate-spin" />}
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {activePreviewTab === "ai" && (
+                <motion.div 
+                  key="ai"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-4"
+                >
+                  <div className="flex justify-between items-center border-b border-white/[0.06] pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                        <Sparkles className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-black text-white">System Design Mock Evaluator</h4>
+                        <p className="text-[10px] text-slate-400 font-mono">active_model: meta/llama-3.1-70b-instruct</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 font-mono text-xs">
+                    <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1 text-slate-400">
+                      <span className="text-blue-400 font-bold tracking-widest text-[9px] block">AI INTERVIEWER</span>
+                      <p className="leading-relaxed">How would you approach designing a rate limiter for API endpoints supporting millions of active users?</p>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-blue-500/5 border border-blue-500/20 space-y-1 text-slate-300">
+                      <span className="text-white font-bold tracking-widest text-[9px] block">CANDIDATE RESPONSE</span>
+                      <p className="leading-relaxed">I would implement a Token Bucket algorithm backed by Redis to keep tracks of request counts efficiently with minimal read latency.</p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {activePreviewTab === "aptitude" && (
+                <motion.div 
+                  key="aptitude"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-4"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="text-base font-black text-white">Aptitude Prep Library: HCF & LCM</h4>
+                      <p className="text-xs text-slate-400">Master prime factorization formulas and product relations.</p>
+                    </div>
+                    <span className="text-[10px] font-mono text-rose-400 bg-rose-500/10 border border-rose-500/20 px-3 py-1 rounded-full font-bold uppercase tracking-widest">Quiz Status: 80% Best Score</span>
+                  </div>
+
+                  {/* Simulated Dynamic Textbook summary */}
+                  <div className="bg-black/30 rounded-xl p-4 border border-white/[0.04] space-y-3 text-xs">
+                    <h5 className="font-bold text-white uppercase font-mono tracking-wider text-[10px]">Textbook shortcut formula</h5>
+                    <p className="text-slate-400 leading-relaxed">
+                      For any two positive integers <code className="text-rose-450 bg-rose-500/5 px-1 py-0.2 rounded font-mono font-bold">a</code> and <code className="text-rose-450 bg-rose-500/5 px-1 py-0.2 rounded font-mono font-bold">b</code>, their product is equal to the product of their H.C.F. and L.C.M.:
+                    </p>
+                    <div className="p-3 bg-[#060608] border border-white/[0.02] rounded-lg text-center font-mono text-white text-sm">
+                      a &times; b = H.C.F.(a, b) &times; L.C.M.(a, b)
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {activePreviewTab === "dev" && (
+                <motion.div 
+                  key="dev"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-4"
+                >
+                  <div className="flex justify-between items-start border-b border-white/[0.06] pb-4">
+                    <div>
+                      <h4 className="text-sm font-black text-white">Level 2: Backend Architecture & Databases</h4>
+                      <p className="text-[10px] text-slate-400 font-mono">Prerequisites: level_1_frontend</p>
+                    </div>
+                    <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full font-bold uppercase tracking-widest">Enrolled: CASUAL MODE</span>
+                  </div>
+
+                  {/* Level Steps */}
+                  <div className="flex flex-col md:flex-row items-stretch gap-4">
+                    {[
+                      { step: "01", name: "Relational Schemas", status: "completed", desc: "SQL design & normalization rules" },
+                      { step: "02", name: "NoSQL Scaling", status: "completed", desc: "Document stores & memory indexes" },
+                      { step: "03", name: "Microservices", status: "active", desc: "API gateways and event streams" }
+                    ].map((step, idx) => (
+                      <div key={idx} className={`p-4 rounded-xl border flex-1 space-y-2 ${
+                        step.status === "completed" 
+                          ? "border-emerald-500/10 bg-emerald-500/[0.01]" 
+                          : "border-emerald-500/30 bg-emerald-500/5 animate-pulse"
+                      }`}>
+                        <div className="flex justify-between items-center">
+                          <span className="text-[10px] font-mono text-slate-500 font-black">STEP {step.step}</span>
+                          <span className={`text-[9px] font-mono uppercase font-bold tracking-widest ${
+                            step.status === "completed" ? "text-emerald-400" : "text-amber-500"
+                          }`}>{step.status}</span>
+                        </div>
+                        <h5 className="text-xs font-black text-white">{step.name}</h5>
+                        <p className="text-[10px] text-slate-450 leading-relaxed">{step.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </GlassCard>
       </section>
 
       {/* Feature Showcase Grid Section */}
       <section id="features" className="max-w-7xl mx-auto px-6 py-24 relative z-10 scroll-mt-20">
         <div className="text-center space-y-3 mb-20">
           <span className="inline-block px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono font-bold tracking-widest text-slate-400 uppercase">
-            Cockpit Architecture
+            Platform Capabilities
           </span>
-          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">Fully Integrated Suite</h2>
-          <p className="text-sm text-slate-400 max-w-lg mx-auto">Everything you need to step up from developer to elite engineering candidate.</p>
+          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">Fully Integrated Cockpit</h2>
+          <p className="text-sm text-slate-400 max-w-lg mx-auto">Everything engineered to transform you from student into elite industry candidate.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -316,7 +552,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
                   <h3 className="text-sm font-bold text-white group-hover:text-accentPrimary transition-colors">
                     {feat.title}
                   </h3>
-                  <p className="text-xs text-slate-400 leading-relaxed min-h-[70px]">
+                  <p className="text-xs text-slate-405 leading-relaxed min-h-[70px]">
                     {feat.desc}
                   </p>
                 </div>
@@ -326,20 +562,19 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
         </div>
       </section>
 
-      {/* Live Preview / Stats Panel Mock */}
-      <section className="max-w-5xl mx-auto px-6 py-24 relative z-10">
+      {/* Platform Real-World Metrics Board */}
+      <section id="stats" className="max-w-5xl mx-auto px-6 py-24 relative z-10">
         <GlassCard className="p-8 sm:p-10 border border-white/[0.08] rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] bg-[#0f0f14]/90 backdrop-blur-2xl space-y-8 relative overflow-hidden">
-          {/* Decorative glowing orb inside the card */}
           <div className="absolute top-[-20%] right-[-10%] w-[300px] h-[300px] bg-accentPrimary/20 rounded-full blur-[100px] pointer-events-none" />
 
           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-white/[0.04] pb-6 relative z-10">
             <div>
-              <span className="text-[10px] font-mono tracking-widest text-accentPrimary font-bold uppercase mb-1 block">Live Cockpit Preview</span>
-              <h3 className="text-xl font-black text-white">Visual Readiness Analytics</h3>
+              <span className="text-[10px] font-mono tracking-widest text-accentPrimary font-bold uppercase mb-1 block">Platform Readiness Dashboard</span>
+              <h3 className="text-xl font-black text-white">Visual Performance Analytics</h3>
             </div>
             <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full">
               <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-              <span className="text-[10px] font-mono uppercase text-emerald-400 font-bold tracking-widest">Simulator Active</span>
+              <span className="text-[10px] font-mono uppercase text-emerald-400 font-bold tracking-widest">Ready to Launch</span>
             </div>
           </div>
 
@@ -358,12 +593,12 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
                 </svg>
                 85<span className="text-sm ml-0.5">%</span>
               </div>
-              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest mt-5 font-bold">Readiness score</span>
+              <span className="text-[10px] font-mono text-slate-405 uppercase tracking-widest mt-5 font-bold">Simulated Readiness Score</span>
             </div>
 
             <div className="bg-black/40 rounded-2xl p-6 border border-white/[0.06] space-y-5 flex flex-col justify-center group hover:border-amber-500/30 transition-colors">
-              <div className="flex justify-between items-center text-[11px] font-mono text-slate-400 font-bold">
-                <span className="tracking-widest">DAILY STREAK</span>
+              <div className="flex justify-between items-center text-[11px] font-mono text-slate-450 font-bold">
+                <span className="tracking-widest">DAILY PROGRESSION</span>
                 <span className="text-amber-500 flex items-center gap-1.5"><Flame className="w-3.5 h-3.5" /> 14 DAYS</span>
               </div>
               <div className="grid grid-cols-7 gap-1.5">
@@ -380,12 +615,12 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
                   <div key={i} className="h-4 rounded-sm bg-white/5 border border-white/10" />
                 ))}
               </div>
-              <span className="text-[10px] text-slate-500 leading-normal block">Excellent pacing! Keep solving DSA nodes daily.</span>
+              <span className="text-[10px] text-slate-500 leading-normal block">Excellent study pace! Maintain solving daily DSA nodes.</span>
             </div>
 
             <div className="bg-black/40 rounded-2xl p-6 border border-white/[0.06] flex flex-col justify-center group hover:border-indigo-500/30 transition-colors">
               <div className="space-y-1.5">
-                <span className="text-[10px] font-mono text-slate-400 uppercase font-bold tracking-widest">Current Badge</span>
+                <span className="text-[10px] font-mono text-slate-450 uppercase font-bold tracking-widest">Current Specialty Badge</span>
                 <h4 className="text-sm font-black text-white flex items-center gap-2">
                   <ShieldAlert className="w-4 h-4 text-indigo-400" />
                   Algorithm Specialist
@@ -399,25 +634,40 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
                   className="bg-gradient-to-r from-indigo-500 to-accentPrimary h-full rounded-full" 
                 />
               </div>
-              <div className="text-[10px] text-slate-500 font-mono flex justify-between mt-3 font-bold">
-                <span>15 / 20 tasks</span>
-                <span className="text-indigo-400">75% done</span>
+              <div className="text-[10px] text-slate-505 font-mono flex justify-between mt-3 font-bold">
+                <span>15 / 20 milestones</span>
+                <span className="text-indigo-405">75% complete</span>
               </div>
             </div>
           </div>
         </GlassCard>
       </section>
 
+      {/* Tech Stack Tech-Badges */}
+      <footer className="max-w-7xl mx-auto px-6 border-t border-white/[0.04] pt-12 flex flex-col md:flex-row justify-between items-center gap-6 text-slate-500 relative z-20">
+        <div className="space-y-2 text-center md:text-left">
+          <div className="flex items-center justify-center md:justify-start gap-2">
+            <span className="w-2 h-2 rounded-full bg-accentPrimary" />
+            <span className="text-xs font-mono font-bold text-white uppercase tracking-wider">PLATFORM STACK LOGS</span>
+          </div>
+          <p className="text-[10px] leading-relaxed max-w-sm">React 19 • TypeScript • TailwindCSS • Framer Motion • Firebase Firestore • NVIDIA NIM LLM API Orchestration.</p>
+        </div>
+
+        <div className="flex flex-col items-center md:items-end gap-2">
+          <span className="text-[10px] font-mono">© 2026 Placement Cockpit. Open Source MIT.</span>
+          <span className="text-[9px] font-mono text-slate-650">v2.4.2 // COMPILED SUCCESSFULLY // 0 LINT WARNINGS</span>
+        </div>
+      </footer>
+
       {/* Integrated Login Modal */}
       <AnimatePresence>
         {showLoginModal && (
           <div className="fixed inset-0 flex items-center justify-center p-4 z-[9999] select-none">
-            {/* Extremely blurred backdrop */}
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-[#060608]/80 backdrop-blur-2xl"
+              className="absolute inset-0 bg-[#060608]/85 backdrop-blur-2xl"
               onClick={() => setShowLoginModal(false)}
             />
 
@@ -428,22 +678,19 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
               transition={{ duration: 0.4, type: "spring", bounce: 0.25 }}
               className="bg-[#0f0f14]/90 border border-white/10 p-10 rounded-[2rem] w-full max-w-md relative shadow-[0_0_100px_rgba(0,0,0,0.8)] backdrop-blur-3xl"
             >
-              {/* Glowing inner border effect */}
               <div className="absolute inset-0 rounded-[2rem] border border-white/5 pointer-events-none" />
               <div className="absolute inset-0 rounded-[2rem] border border-accentPrimary/20 blur-[2px] pointer-events-none" />
 
               {/* Close Button */}
               <button
                 onClick={() => setShowLoginModal(false)}
-                className="absolute right-6 top-6 p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-white transition-all cursor-pointer z-10"
+                className="absolute right-6 top-6 p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-450 hover:text-white transition-all cursor-pointer z-10"
               >
                 <X className="w-5 h-5" />
               </button>
 
               <div className="flex flex-col items-center relative z-10">
-                {/* Logo Icon */}
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accentPrimary/20 to-indigo-500/20 border border-accentPrimary/30 flex items-center justify-center text-accentPrimary shadow-[0_0_30px_rgba(var(--accent-color-rgb),0.2)] mb-6 relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-accentPrimary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accentPrimary/20 to-indigo-500/20 border border-accentPrimary/30 flex items-center justify-center text-accentPrimary shadow-[0_0_30px_rgba(var(--accent-color-rgb),0.2)] mb-6 relative overflow-hidden">
                   <LogIn className="w-8 h-8 text-white relative z-10" />
                 </div>
 
@@ -460,7 +707,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
                 <button
                   onClick={handleGoogleSignIn}
                   disabled={loading}
-                  className="w-full h-12 bg-white hover:bg-slate-100 text-slate-900 font-black rounded-xl flex items-center justify-center gap-3 active:scale-[0.98] transition-all cursor-pointer shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-xs uppercase tracking-wider"
+                  className="w-full h-12 bg-white hover:bg-slate-105 text-slate-900 font-black rounded-xl flex items-center justify-center gap-3 active:scale-[0.98] transition-all cursor-pointer shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-xs uppercase tracking-wider"
                 >
                   <svg className="w-4.5 h-4.5" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M23.745 12.27c0-.77-.07-1.54-.2-2.27H12v4.51h6.6c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.58-5.18 3.58-8.82z" />
@@ -486,7 +733,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-[10px] font-mono text-rose-400 flex items-start gap-2 leading-relaxed"
+                      className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-[10px] font-mono text-rose-450 flex items-start gap-2 leading-relaxed"
                     >
                       <ShieldAlert className="w-4 h-4 text-rose-500 shrink-0" />
                       <span>{error}</span>
