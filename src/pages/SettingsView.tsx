@@ -19,7 +19,10 @@ import {
   Code2,
   Cpu,
   ChevronDown,
-  ShieldCheck
+  ShieldCheck,
+  Sun,
+  Moon,
+  Laptop
 } from "lucide-react";
 
 
@@ -174,6 +177,55 @@ export const SettingsView: React.FC = () => {
         {/* Left Column: Color & Layout configuration */}
         <div className="lg:col-span-7 space-y-8">
           
+          {/* Theme Mode selector */}
+          <GlassCard className="space-y-5 rounded-[1.5rem]">
+            <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider border-b border-white/[0.06] pb-3 flex items-center gap-2">
+              <Sun className="w-4 h-4 text-accentPrimary" /> Appearance & Theme Mode
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                { id: "dark", name: "Dark Mode", desc: "Obsidian Cyberpunk", icon: Moon, iconColor: "text-indigo-400" },
+                { id: "light", name: "Light Mode", desc: "Executive Clean Paper", icon: Sun, iconColor: "text-amber-500" },
+                { id: "system", name: "System Default", desc: "Syncs with OS preference", icon: Laptop, iconColor: "text-accentPrimary" }
+              ].map(themeOpt => {
+                const active = (state.settings.theme || "dark") === themeOpt.id;
+                const Icon = themeOpt.icon;
+                return (
+                  <button
+                    key={themeOpt.id}
+                    onClick={() => updateSettings({ theme: themeOpt.id as any })}
+                    className={`relative group flex flex-col items-start gap-2 p-4 rounded-xl border transition-all text-left cursor-pointer overflow-hidden ${
+                      active
+                        ? "bg-white/[0.06] border-accentPrimary text-white shadow-[0_0_20px_rgba(var(--accent-rgb),0.15)]"
+                        : "bg-black/40 border-white/[0.06] text-slate-400 hover:text-slate-200 hover:bg-white/[0.02]"
+                    }`}
+                  >
+                    {active && (
+                      <motion.div
+                        layoutId="activeThemeOutline"
+                        className="absolute inset-0 border-2 border-accentPrimary rounded-xl pointer-events-none"
+                        transition={{ duration: 0.2 }}
+                      />
+                    )}
+                    <div className="flex items-center justify-between w-full">
+                      <div className={`w-8 h-8 rounded-lg bg-black/40 border border-white/[0.06] flex items-center justify-center ${themeOpt.iconColor}`}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      {active && (
+                        <span className="w-2 h-2 rounded-full bg-accentPrimary shadow-[0_0_8px_var(--accent-color)]" />
+                      )}
+                    </div>
+                    <div className="space-y-0.5 mt-1">
+                      <span className="text-xs font-bold block text-white">{themeOpt.name}</span>
+                      <span className="text-[10px] text-slate-500 block leading-tight">{themeOpt.desc}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </GlassCard>
+
           {/* Accent Color picker */}
           <GlassCard className="space-y-5 rounded-[1.5rem]">
             <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider border-b border-white/[0.06] pb-3 flex items-center gap-2">

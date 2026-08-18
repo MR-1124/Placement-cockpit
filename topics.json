@@ -1,0 +1,407 @@
+[
+  {
+    "category": "Quantitative Aptitude",
+    "topics": [
+      {
+        "name": "Number System",
+        "subtopics": ["Types of numbers", "Integer properties", "Even/odd", "Prime/composite", "Factors and multiples", "Divisibility rules", "Remainders", "Units digit", "Number representation"]
+      },
+      {
+        "name": "H.C.F. and L.C.M. of Numbers",
+        "subtopics": ["Factorization methods", "Euclidean algorithm", "Applications in word problems", "LCM/HCF of fractions"]
+      },
+      {
+        "name": "Decimal Fractions",
+        "subtopics": ["Conversion between fractions and decimals", "Terminating/non-terminating decimals", "Operations with decimals", "Rounding and approximation"]
+      },
+      {
+        "name": "Simplification",
+        "subtopics": ["BODMAS", "Operations on large numbers", "Nested operations", "Number-based word problems", "Fractions"]
+      },
+      {
+        "name": "Square Roots and Cube Roots",
+        "subtopics": ["Finding roots by factorization", "Estimation of roots", "Irrational roots", "Surd forms"]
+      },
+      {
+        "name": "Average",
+        "subtopics": ["Mean", "Weighted mean", "Combined averages", "Moving averages", "Median", "Mode"]
+      },
+      {
+        "name": "Problems on Numbers",
+        "subtopics": ["Number puzzles", "Digit properties", "Place value", "Number-based word problems", "Remainder/unit digit"]
+      },
+      {
+        "name": "Problems on Ages",
+        "subtopics": ["Present/past/future age relations", "Age ratio problems", "Age averages", "Generational problems"]
+      },
+      {
+        "name": "Surds and Indices",
+        "subtopics": ["Laws of indices", "Rationalizing denominators", "Converting between exponents and roots", "Operations on surds"]
+      },
+      {
+        "name": "Logarithms",
+        "subtopics": ["Laws of logarithms", "Base change", "Log equations", "Log inequalities", "Applications"]
+      },
+      {
+        "name": "Percentage",
+        "subtopics": ["Percentage change", "Successive percentages", "Profit/loss relation", "Interest relation", "Marks and scores"]
+      },
+      {
+        "name": "Profit and Loss",
+        "subtopics": ["Cost price", "Selling price", "Mark-up", "Discount", "Gain/loss %", "Margin %"]
+      },
+      {
+        "name": "Ratio and Proportion",
+        "subtopics": ["Direct/inverse proportion", "Comparison of ratios", "Mixing ratios", "Applications"]
+      },
+      {
+        "name": "Partnership",
+        "subtopics": ["Investment timing", "Profit sharing ratio", "Partner joining/leaving", "Silent partner"]
+      },
+      {
+        "name": "Chain Rule",
+        "subtopics": ["Direct and inverse variation", "Multi-variable proportional problems"]
+      },
+      {
+        "name": "Pipes and Cisterns",
+        "subtopics": ["Inlet/outlet rates", "Net filling or emptying", "Leaks", "Variable rate pipes"]
+      },
+      {
+        "name": "Time and Work",
+        "subtopics": ["Work rate", "Combined work", "Efficiency", "Wages based on work", "Alternate day workers", "Machines"]
+      },
+      {
+        "name": "Time and Distance",
+        "subtopics": ["Speed", "Distance", "Time", "Relative speed", "Average speed", "Meeting and overtaking"]
+      },
+      {
+        "name": "Boats and Streams",
+        "subtopics": ["Upstream/downstream speed", "Relative speed with current", "Effective time and distance"]
+      },
+      {
+        "name": "Problems on Trains",
+        "subtopics": ["Relative speed in same/opposite direction", "Platforms and tunnels", "Crossing times", "Length"]
+      },
+      {
+        "name": "Alligation or Mixture",
+        "subtopics": ["Weighted averages", "Mixing different concentrations", "Successive mixtures", "Replacement"]
+      },
+      {
+        "name": "Simple Interest",
+        "subtopics": ["Principal", "Rate", "Time", "Amount", "Difference between SI and CI"]
+      },
+      {
+        "name": "Compound Interest",
+        "subtopics": ["Compounding frequency", "Effective rate", "Growth/decay", "Installment-type CI"]
+      },
+      {
+        "name": "Area",
+        "subtopics": ["Triangles", "Rectangles", "Circles", "Polygons", "Composite figures", "Shaded regions"]
+      },
+      {
+        "name": "Volume and Surface Areas",
+        "subtopics": ["Cubes", "Cuboids", "Cylinders", "Cones", "Spheres", "Frustums", "Combinations of solids"]
+      },
+      {
+        "name": "Races and Games of Skill",
+        "subtopics": ["Relative speed in races", "Start advantage", "Handicaps", "Probabilistic games", "Ties"]
+      },
+      {
+        "name": "Stocks and Shares",
+        "subtopics": ["Face value", "Market value", "Dividend", "Yield", "Brokerage", "ROI"]
+      },
+      {
+        "name": "Permutations & Combinations",
+        "subtopics": ["Factorials", "Arrangements", "Selections", "With/without repetition", "Circular permutations"]
+      },
+      {
+        "name": "Probability",
+        "subtopics": ["Classical probability", "Conditional probability (basic)", "Complementary events", "Independent/dependent events"]
+      },
+      {
+        "name": "True Discount",
+        "subtopics": ["Present worth", "True discount", "Banker's discount comparison", "Due dates"]
+      },
+      {
+        "name": "Banker's Discount",
+        "subtopics": ["Banker's discount", "Banker's gain", "Simple discounting", "Relation to true discount"]
+      },
+      {
+        "name": "Heights and Distances",
+        "subtopics": ["Right-triangle trigonometry", "Angle of elevation/depression", "Distance"]
+      },
+      {
+        "name": "Inequalities",
+        "subtopics": ["Linear inequality systems", "Solution ranges", "Sign analysis"]
+      },
+      {
+        "name": "Linear Equations",
+        "subtopics": ["Single and simultaneous equations", "Substitution", "Elimination", "Word problems"]
+      },
+      {
+        "name": "Quadratic Equations",
+        "subtopics": ["Roots", "Nature of roots", "Factorization", "Applications"]
+      },
+      {
+        "name": "Progressions",
+        "subtopics": ["Arithmetic progression", "Geometric progression", "Sum formulas", "Applications"]
+      },
+      {
+        "name": "Sets and Venn Diagrams",
+        "subtopics": ["Union", "Intersection", "Complement", "Cardinality", "2-set and 3-set problems"]
+      },
+      {
+        "name": "Number Series (Quant)",
+        "subtopics": ["Arithmetic and pattern-based numeric sequences"]
+      },
+      {
+        "name": "Points, Lines and Angles",
+        "subtopics": ["Geometry basics", "Line/angle properties"]
+      },
+      {
+        "name": "Trigonometry (basic)",
+        "subtopics": ["Basic ratios", "Right-angle triangle use in aptitude"]
+      },
+      {
+        "name": "Data Sufficiency (Quant)",
+        "subtopics": ["Checking sufficiency of quantitative conditions"]
+      },
+      {
+        "name": "Work and Wages",
+        "subtopics": ["Wages proportional to work", "Group work sharing", "Rate changes"]
+      }
+    ]
+  },
+  {
+    "category": "Logical Reasoning",
+    "topics": [
+      {
+        "name": "Calendar",
+        "subtopics": ["Odd days", "Leap years", "Day-of-week", "Recurring patterns", "Date differences"]
+      },
+      {
+        "name": "Clocks",
+        "subtopics": ["Angle between hands", "Overlaps", "Gain/lose time", "Incorrect clocks", "Mirror time"]
+      },
+      {
+        "name": "Odd Man Out and Series",
+        "subtopics": ["Number series", "Alphabet series", "Word series", "Outlier", "Missing term"]
+      },
+      {
+        "name": "Direction Sense",
+        "subtopics": ["Basic directions", "Distance", "Displacement", "Rotation", "Relative positioning"]
+      },
+      {
+        "name": "Blood Relations",
+        "subtopics": ["Family trees", "Coded relations", "Generation gaps", "Relation puzzles"]
+      },
+      {
+        "name": "Coding & Decoding",
+        "subtopics": ["Letter coding", "Number coding", "Symbol coding", "Substitution", "Matrix coding"]
+      },
+      {
+        "name": "Syllogism",
+        "subtopics": ["Categorical statements", "Venn diagram approach", "Definite vs possible conclusions"]
+      },
+      {
+        "name": "Seating Arrangement",
+        "subtopics": ["Linear seating", "Circular seating", "Rectangular seating", "Double row", "Floor-based", "Mixed constraints"]
+      },
+      {
+        "name": "Statement & Conclusion",
+        "subtopics": ["Evaluating statements", "Identifying valid conclusions"]
+      },
+      {
+        "name": "Statement & Assumption",
+        "subtopics": ["Implicit assumptions", "Necessary/possible assumptions"]
+      },
+      {
+        "name": "Statement & Argument",
+        "subtopics": ["Strong vs weak arguments", "Supporting/refuting reasoning"]
+      },
+      {
+        "name": "Series (Reasoning)",
+        "subtopics": ["Symbol series", "Letter series", "Mixed series"]
+      },
+      {
+        "name": "Analogy",
+        "subtopics": ["Word analogy", "Number analogy", "Figure analogies"]
+      },
+      {
+        "name": "Classification",
+        "subtopics": ["Grouping similar items", "Finding odd item out"]
+      },
+      {
+        "name": "Data Arrangement / Ordering",
+        "subtopics": ["Rank ordering", "Height/weight ranking", "Order of events"]
+      },
+      {
+        "name": "Puzzles (Logic)",
+        "subtopics": ["Floor puzzles", "Scheduling", "Distribution puzzles"]
+      },
+      {
+        "name": "Input-Output",
+        "subtopics": ["Patterned machine operations on sequences"]
+      },
+      {
+        "name": "Cryptarithmetic",
+        "subtopics": ["Alphametic equations", "Digit-letter mapping"]
+      },
+      {
+        "name": "Non verbal reasoning",
+        "subtopics": ["Mirror/water images", "Paper folding/cutting", "Embedded figures", "Cubes and dice"]
+      },
+      {
+        "name": "Decision Making / Selection",
+        "subtopics": ["Eligibility criteria", "Multi-condition selection"]
+      },
+      {
+        "name": "Cause and Effect",
+        "subtopics": ["Identify cause vs effect", "Direct vs indirect causation"]
+      },
+      {
+        "name": "Logical Games & Races",
+        "subtopics": ["Tournament brackets", "Winners", "Points tables"]
+      }
+    ]
+  },
+  {
+    "category": "Verbal Ability",
+    "topics": [
+      {
+        "name": "Synonyms",
+        "subtopics": ["Word meaning", "Contextual synonyms", "Common synonym sets"]
+      },
+      {
+        "name": "Antonyms",
+        "subtopics": ["Opposites", "Positive vs negative tone", "Nuanced antonyms"]
+      },
+      {
+        "name": "Sentence Improvement",
+        "subtopics": ["Rewriting sentences for clarity and grammar"]
+      },
+      {
+        "name": "Reading Comprehension",
+        "subtopics": ["Main idea", "Detail", "Inference", "Tone", "Vocab in context"]
+      },
+      {
+        "name": "Error Detection",
+        "subtopics": ["Grammar errors", "Punctuation", "Usage", "Wrong forms"]
+      },
+      {
+        "name": "Vocabulary",
+        "subtopics": ["Word meanings", "Usage", "Commonly confused words", "Phrasal verbs"]
+      },
+      {
+        "name": "Idioms and Phrases",
+        "subtopics": ["Common idioms", "Phrasal verbs", "Context-based meaning"]
+      },
+      {
+        "name": "One-word Substitution",
+        "subtopics": ["Replacing descriptive phrases with single words"]
+      },
+      {
+        "name": "Homonyms & Homophones",
+        "subtopics": ["Same spelling/pronunciation", "Different meanings"]
+      },
+      {
+        "name": "Parts of Speech",
+        "subtopics": ["Nouns", "Verbs", "Adjectives", "Adverbs", "Pronouns", "Conjunctions"]
+      },
+      {
+        "name": "Subject-Verb Agreement",
+        "subtopics": ["Singular/plural consistency", "Special cases"]
+      },
+      {
+        "name": "Tenses & Verb Forms",
+        "subtopics": ["Simple/continuous/perfect", "Sequence of tenses"]
+      },
+      {
+        "name": "Articles and Prepositions",
+        "subtopics": ["Usage of a/an/the", "Fixed preposition patterns"]
+      },
+      {
+        "name": "Sentence Correction",
+        "subtopics": ["Fixing grammar and usage", "Better structure"]
+      },
+      {
+        "name": "Sentence Completion / Fill in the Blanks",
+        "subtopics": ["Single/double blanks", "Vocab/grammar-based"]
+      },
+      {
+        "name": "Sentence Rearrangement / Para Jumbles",
+        "subtopics": ["Reordering jumbled sentences into a paragraph"]
+      },
+      {
+        "name": "Para Summary / Para Completion",
+        "subtopics": ["Summarizing or logically completing a paragraph"]
+      },
+      {
+        "name": "Error Spotting (line/para)",
+        "subtopics": ["Identifying error segments in sentences or paragraphs"]
+      }
+    ]
+  },
+  {
+    "category": "Data Interpretation",
+    "topics": [
+      {
+        "name": "Tabulation",
+        "subtopics": ["Reading complex tables", "Comparison", "Percent/ratio calculations"]
+      },
+      {
+        "name": "Bar Graphs",
+        "subtopics": ["Single/multiple/stacked bars", "Comparative analysis", "Trends"]
+      },
+      {
+        "name": "Pie Charts",
+        "subtopics": ["Percentage share", "Angle calculations", "Combined pies"]
+      },
+      {
+        "name": "Line Graphs",
+        "subtopics": ["Single/multi-line graphs", "Trend and slope analysis"]
+      },
+      {
+        "name": "Caselets",
+        "subtopics": ["Paragraph-style DI", "Extracting data from text"]
+      },
+      {
+        "name": "Mixed Graphs",
+        "subtopics": ["Combination of table/bar/line/pie", "Cross-reference"]
+      },
+      {
+        "name": "Data Sufficiency (DI)",
+        "subtopics": ["Checking sufficiency of DI-related information"]
+      },
+      {
+        "name": "Missing Data DI",
+        "subtopics": ["Filling missing entries based on constraints"]
+      }
+    ]
+  },
+  {
+    "category": "Brain Teasers & Puzzles",
+    "topics": [
+      {
+        "name": "Brain Teasers & Puzzles",
+        "subtopics": ["Classic logic puzzles", "Lateral thinking", "Riddles"]
+      },
+      {
+        "name": "Logic Grid Puzzles",
+        "subtopics": ["Matrix puzzles with multiple attributes"]
+      },
+      {
+        "name": "Matchstick / Visual Puzzles",
+        "subtopics": ["Rearrangement and count-based visual teasers"]
+      },
+      {
+        "name": "Game-based Puzzles",
+        "subtopics": ["Strategy puzzles", "Optimal moves"]
+      },
+      {
+        "name": "Brain Mixed Sets",
+        "subtopics": ["Multi-concept puzzles mixing arithmetic, logic, and DI"]
+      }
+    ]
+  }
+]

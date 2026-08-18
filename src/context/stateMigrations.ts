@@ -177,6 +177,7 @@ export const deserializeState = (serialized: Partial<SerializedProgress>, curric
     habitHistory: serialized.habitHistory || [],
     notes: serialized.notes || [],
     settings: {
+      theme: serialized.settings?.theme ?? "dark",
       accentColor: serialized.settings?.accentColor ?? "violet",
       compactUi: serialized.settings?.compactUi ?? false,
       reminderFrequency: serialized.settings?.reminderFrequency ?? "weekly",

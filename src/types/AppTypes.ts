@@ -96,6 +96,7 @@ export interface Note {
 }
 
 export interface AppSettings {
+  theme?: "dark" | "light" | "system";
   accentColor: "violet" | "emerald" | "amber" | "rose" | "blue";
   compactUi: boolean;
   sidebarCollapsed?: boolean;

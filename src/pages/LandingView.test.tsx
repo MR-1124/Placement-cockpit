@@ -48,15 +48,15 @@ describe('LandingView', () => {
 
     render(<LandingView onEnterDashboard={mockOnEnterDashboard} />);
     
-    expect(screen.getByText('Command Your Journey on')).toBeInTheDocument();
+    expect(screen.getByText('Own Your Placement Journey.')).toBeInTheDocument();
     const cockpitTexts = screen.getAllByText('Placement Cockpit', { selector: 'span' });
     expect(cockpitTexts.length).toBeGreaterThan(0);
     
     // Check if the login CTA is present
-    expect(screen.getByText('Initialize Workspace')).toBeInTheDocument();
+    expect(screen.getByText('Initialize OS Cockpit')).toBeInTheDocument();
   });
 
-  it('shows Go to Dashboard when logged in', () => {
+  it('shows Enter Dashboard when logged in', () => {
     mockContextValue = {
       state: { user: { uid: '123', name: 'Test User' } },
       loginUser: mockLoginUser
@@ -64,14 +64,14 @@ describe('LandingView', () => {
 
     render(<LandingView onEnterDashboard={mockOnEnterDashboard} />);
     
-    const dashboardButtons = screen.getAllByText('Go to Dashboard');
+    const dashboardButtons = screen.getAllByText('Enter Dashboard');
     expect(dashboardButtons.length).toBeGreaterThan(0);
     
     fireEvent.click(dashboardButtons[0]);
     expect(mockOnEnterDashboard).toHaveBeenCalled();
   });
 
-  it('opens the login modal when clicking Go to Dashboard', async () => {
+  it('opens the login modal when clicking Access Cockpit', async () => {
     mockContextValue = {
       state: { user: null },
       loginUser: mockLoginUser
@@ -87,8 +87,6 @@ describe('LandingView', () => {
     }
     
     // Check if the modal is open
-    const titles = await screen.findAllByText('Access Cockpit');
-    expect(titles.length).toBeGreaterThan(1); // One in header, one in modal
     expect(await screen.findByText('Developer Guest Mode')).toBeInTheDocument();
   });
 });

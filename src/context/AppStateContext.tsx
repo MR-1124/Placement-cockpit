@@ -144,6 +144,7 @@ const getInitialState = (curriculum: any): AppState => ({
   habitHistory: [],
   notes: [],
   settings: {
+    theme: "dark",
     accentColor: "violet",
     compactUi: false,
     reminderFrequency: "weekly",
@@ -484,6 +485,25 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
 
     root.style.setProperty("--accent-color", colorValue);
     root.style.setProperty("--accent-rgb", rgbValue);
+
+    // Apply theme mode class to documentElement
+    const theme = state.settings.theme || "dark";
+    if (theme === "light") {
+      root.classList.remove("dark");
+      root.classList.add("light");
+    } else if (theme === "dark") {
+      root.classList.remove("light");
+      root.classList.add("dark");
+    } else if (theme === "system") {
+      const isSystemDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      if (isSystemDark) {
+        root.classList.remove("light");
+        root.classList.add("dark");
+      } else {
+        root.classList.remove("dark");
+        root.classList.add("light");
+      }
+    }
 
     return () => {
       clearTimeout(handler);
@@ -1334,6 +1354,17 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     });
   };
 
+  const toggleTheme = () => {
+    updateState(prev => {
+      const currentTheme = prev.settings.theme || "dark";
+      const newTheme = currentTheme === "dark" ? "light" : "dark";
+      return {
+        ...prev,
+        settings: { ...prev.settings, theme: newTheme }
+      };
+    });
+  };
+
   const seedMockData = () => {
     updateState(prev => {
       const today = getTodayString();
@@ -2165,6 +2196,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         updateNote,
         deleteNote,
         updateSettings,
+        toggleTheme,
         resetAllData,
         seedMockData,
         followPlan,

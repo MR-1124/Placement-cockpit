@@ -63,7 +63,9 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   MessageCircleHeart,
-  Target
+  Target,
+  Sun,
+  Moon
 } from "lucide-react";
 
 
@@ -85,17 +87,18 @@ const AppContent: React.FC = () => {
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const state = useAppState(s => s.state);
-const readinessScore = useAppState(s => s.readinessScore);
-const level = useAppState(s => s.level);
-const xpProgress = useAppState(s => s.xpProgress);
-const levelTitle = useAppState(s => s.levelTitle);
-const curriculum = useAppState(s => s.curriculum);
-const addChatMessage = useAppState(s => s.addChatMessage);
-const clearChatHistory = useAppState(s => s.clearChatHistory);
-const confirmAction = useAppState(s => s.confirmAction);
-const updateSettings = useAppState(s => s.updateSettings);
-const collapsed = state.settings.sidebarCollapsed || false;
-const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
+  const readinessScore = useAppState(s => s.readinessScore);
+  const level = useAppState(s => s.level);
+  const xpProgress = useAppState(s => s.xpProgress);
+  const levelTitle = useAppState(s => s.levelTitle);
+  const curriculum = useAppState(s => s.curriculum);
+  const addChatMessage = useAppState(s => s.addChatMessage);
+  const clearChatHistory = useAppState(s => s.clearChatHistory);
+  const confirmAction = useAppState(s => s.confirmAction);
+  const updateSettings = useAppState(s => s.updateSettings);
+  const toggleTheme = useAppState(s => s.toggleTheme);
+  const collapsed = state.settings.sidebarCollapsed || false;
+  const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isWideChat, setIsWideChat] = useState(false);
@@ -521,7 +524,7 @@ const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
       <aside className={`hidden lg:flex flex-col bg-darkCard/80 border-r border-white/[0.06] backdrop-blur-md sticky top-0 h-screen z-20 justify-between select-none transition-all duration-300 ${collapsed ? "w-20" : "w-64"}`}>
         
         {/* Top Header Logo */}
-        <div className={`p-6 border-b border-white/[0.06] flex items-center ${collapsed ? "justify-center flex-col gap-4" : "justify-between"}`}>
+        <div className={`p-5 border-b border-white/[0.06] flex items-center ${collapsed ? "justify-center flex-col gap-3" : "justify-between"}`}>
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-md bg-accentPrimary flex items-center justify-center font-bold text-white text-xs shadow-md shrink-0">
               P
@@ -534,13 +537,27 @@ const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
             )}
           </div>
           
-          <button 
-            onClick={toggleSidebar} 
-            className="text-slate-500 hover:text-white transition-colors"
-            title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-          >
-            {collapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={toggleTheme}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer"
+              title={`Switch to ${state.settings.theme === "light" ? "Dark" : "Light"} Mode`}
+            >
+              {state.settings.theme === "light" ? (
+                <Moon className="w-4 h-4 text-amber-500" />
+              ) : (
+                <Sun className="w-4 h-4 text-amber-400" />
+              )}
+            </button>
+
+            <button 
+              onClick={toggleSidebar} 
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer"
+              title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            >
+              {collapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
 
         {/* Sidebar Nav Items */}
@@ -685,7 +702,20 @@ const toggleSidebar = () => updateSettings({ sidebarCollapsed: !collapsed });
           <span className="font-extrabold text-white text-xs tracking-tight">Placement Cockpit</span>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          {/* Theme Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer"
+            aria-label="Toggle Theme"
+          >
+            {state.settings.theme === "light" ? (
+              <Moon className="w-4 h-4 text-amber-500" />
+            ) : (
+              <Sun className="w-4 h-4 text-amber-400" />
+            )}
+          </button>
+
           {/* Quick Streak */}
           <div className="flex items-center gap-1 font-mono text-xs text-amber-500 font-bold bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10">
             <Flame className="w-3.5 h-3.5 fill-amber-500/10" />

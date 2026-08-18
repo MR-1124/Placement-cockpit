@@ -195,6 +195,7 @@ export interface AppContextType {
   updateNote: (note: Note) => void;
   deleteNote: (id: string) => void;
   updateSettings: (settings: Partial<AppSettings>) => void;
+  toggleTheme: () => void;
   resetAllData: () => void;
   seedMockData: () => void;
   followPlan: (planId: string) => void;

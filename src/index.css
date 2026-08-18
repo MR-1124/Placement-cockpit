@@ -28,6 +28,7 @@
     background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
     background-size: 24px 24px;
     background-attachment: fixed;
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -54,15 +55,15 @@
 
   /* Custom Scrollbar */
   ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+    width: 5px;
+    height: 5px;
   }
   ::-webkit-scrollbar-track {
     background: #0a0a0c;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
     background: var(--accent-color);
@@ -116,6 +117,181 @@
   border-color: rgba(var(--accent-rgb), 0.4);
 }
 
+/* =========================================================
+   LIGHT MODE DESIGN SYSTEM OVERRIDES
+   ========================================================= */
+
+html.light body {
+  background-color: #f8fafc;
+  color: #334155;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+}
+
+html.light h1,
+html.light h2,
+html.light h3,
+html.light h4,
+html.light h5,
+html.light h6 {
+  color: #0f172a;
+}
+
+html.light .text-xs-mono-caps {
+  color: #64748b;
+}
+
+html.light .bg-dot-grid {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px);
+}
+
+html.light .glass-panel {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+}
+
+html.light .glass-panel-hover:hover {
+  border-color: rgba(var(--accent-rgb), 0.5);
+  box-shadow: 0 4px 25px rgba(var(--accent-rgb), 0.12);
+}
+
+/* Base structural background adapters */
+html.light .bg-darkBg {
+  background-color: #f8fafc !important;
+}
+
+html.light .bg-darkCard {
+  background-color: #ffffff !important;
+}
+
+html.light .bg-darkCard\/80,
+html.light .bg-darkCard\/90,
+html.light .bg-darkCard\/95 {
+  background-color: rgba(255, 255, 255, 0.94) !important;
+}
+
+html.light .bg-black\/10,
+html.light .bg-black\/20,
+html.light .bg-black\/30,
+html.light .bg-black\/40,
+html.light .bg-black\/50,
+html.light .bg-black\/60,
+html.light .bg-black\/70,
+html.light .bg-black\/80,
+html.light .bg-black\/90 {
+  background-color: rgba(241, 245, 249, 0.85) !important;
+}
+
+html.light .bg-\[\#0a0a0c\],
+html.light .bg-\[\#060608\],
+html.light .bg-\[\#0b0b0f\],
+html.light .bg-\[\#0f0f14\],
+html.light .bg-\[\#111113\],
+html.light .bg-\[\#0f0f13\],
+html.light .bg-\[\#16161a\] {
+  background-color: #f8fafc !important;
+}
+
+html.light .bg-white\/\[0\.005\],
+html.light .bg-white\/\[0\.01\],
+html.light .bg-white\/\[0\.02\],
+html.light .bg-white\/\[0\.03\],
+html.light .bg-white\/\[0\.04\],
+html.light .bg-white\/\[0\.05\],
+html.light .bg-white\/5,
+html.light .bg-white\/10 {
+  background-color: rgba(241, 245, 249, 0.8) !important;
+}
+
+/* Border overrides */
+html.light .border-white\/\[0\.02\],
+html.light .border-white\/\[0\.04\],
+html.light .border-white\/\[0\.05\],
+html.light .border-white\/\[0\.06\],
+html.light .border-white\/\[0\.08\],
+html.light .border-white\/\[0\.1\],
+html.light .border-white\/5,
+html.light .border-white\/10,
+html.light .border-white\/20 {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Text color contrast adaptations */
+html.light .text-slate-200,
+html.light .text-slate-300,
+html.light .text-slate-350 {
+  color: #1e293b !important;
+}
+
+html.light .text-slate-400,
+html.light .text-slate-405,
+html.light .text-slate-450 {
+  color: #475569 !important;
+}
+
+html.light .text-slate-500,
+html.light .text-slate-505 {
+  color: #64748b !important;
+}
+
+html.light .text-slate-600,
+html.light .text-slate-650 {
+  color: #94a3b8 !important;
+}
+
+html.light .text-white {
+  color: #0f172a;
+}
+
+/* Preserve bright white text on colored solid action badges and buttons */
+html.light .bg-accentPrimary .text-white,
+html.light .bg-accentPrimary.text-white,
+html.light button.bg-accentPrimary,
+html.light .bg-emerald-500.text-white,
+html.light .bg-emerald-600.text-white,
+html.light .bg-rose-500.text-white,
+html.light .bg-rose-600.text-white,
+html.light .bg-amber-500.text-white,
+html.light .bg-amber-600.text-white,
+html.light .bg-blue-500.text-white,
+html.light .bg-blue-600.text-white,
+html.light .bg-violet-500.text-white,
+html.light .bg-gradient-to-r .text-white,
+html.light .bg-gradient-to-br .text-white,
+html.light .badge-solid {
+  color: #ffffff !important;
+}
+
+/* Input, Select, Textarea in Light Mode */
+html.light input:not([type="checkbox"]):not([type="radio"]),
+html.light textarea,
+html.light select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+html.light select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* Scrollbars in Light Mode */
+html.light ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+html.light ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.16);
+}
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-color);
+}
+
 @media print {
   body {
     background: white !important;
@@ -145,4 +321,3 @@
 .perspective-1000 { perspective: 1000px; }
 .preserve-3d { transform-style: preserve-3d; }
 .backface-hidden { backface-visibility: hidden; }
-
