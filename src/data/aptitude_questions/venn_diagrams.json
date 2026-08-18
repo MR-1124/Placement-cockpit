@@ -1,0 +1,76 @@
+{
+  "generated_at_utc": "2026-08-18T20:48:08.266479+00:00",
+  "provider": "NVIDIA NIM / OpenAI",
+  "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+  "category": "Logical Reasoning",
+  "topic": "Venn Diagrams",
+  "question_count": 2,
+  "questions": [
+    {
+      "id": "q-venn_diagrams-ad0c2257",
+      "question": "In a survey of 100 students, 45 play Cricket, 50 play Football, and 20 play both Cricket and Football. How many students play neither Cricket nor Football?",
+      "subtopic": "Venn Diagrams",
+      "difficulty": "Easy",
+      "options": [
+        {
+          "key": "A",
+          "text": "15"
+        },
+        {
+          "key": "B",
+          "text": "25"
+        },
+        {
+          "key": "C",
+          "text": "35"
+        },
+        {
+          "key": "D",
+          "text": "45"
+        }
+      ],
+      "correctOption": "B",
+      "explanation": "Using the principle of inclusion-exclusion, the number of students who play at least one game is n(C ∪ F) = n(C) + n(F) - n(C ∩ F) = 45 + 50 - 20 = 75. Therefore, students who play neither = Total - 75 = 100 - 75 = 25.",
+      "stepByStep": [
+        "Step 1: Identify the total number of students surveyed, which is 100.",
+        "Step 2: Calculate the number of students who play at least one sport using the formula: Only Cricket + Only Football + Both = (45 - 20) + (50 - 20) + 20 = 75.",
+        "Step 3: Subtract this value from the total number of students: 100 - 75 = 25."
+      ],
+      "svgDiagram": "<svg viewBox='0 0 400 250' xmlns='http://www.w3.org/2000/svg'><rect width='400' height='250' fill='#0f172a'/><circle cx='150' cy='125' r='80' fill='none' stroke='#6366f1' stroke-width='2'/><circle cx='290' cy='125' r='80' fill='none' stroke='#10b981' stroke-width='2'/><text x='150' y='100' font-family='Arial' font-size='14' fill='white' text-anchor='middle'>Cricket (45)</text><text x='290' y='100' font-family='Arial' font-size='14' fill='white' text-anchor='middle'>Football (50)</text><text x='220' y='125' font-family='Arial' font-size='14' fill='white' text-anchor='middle'>20</text><text x='150' y='230' font-family='Arial' font-size='14' fill='white' text-anchor='middle'>Neither</text></svg>",
+      "estimatedTimeSec": 60
+    },
+    {
+      "id": "q-venn_diagrams-99702129",
+      "question": "In a group of 60 people, 35 like Tea, 25 like Coffee, and 10 like both Tea and Coffee. How many people like only Tea?",
+      "subtopic": "Venn Diagrams",
+      "difficulty": "Medium",
+      "options": [
+        {
+          "key": "A",
+          "text": "15"
+        },
+        {
+          "key": "B",
+          "text": "20"
+        },
+        {
+          "key": "C",
+          "text": "25"
+        },
+        {
+          "key": "D",
+          "text": "35"
+        }
+      ],
+      "correctOption": "A",
+      "explanation": "To find the number of people who like only Tea, we subtract those who like both Tea and Coffee from the total number of Tea lovers. Calculation: 35 - 20 = 15.",
+      "stepByStep": [
+        "Step 1: Identify the total number of people who like Tea, which is 35.",
+        "Step 2: Identify the number of people who like both Tea and Coffee, which is given as 20.",
+        "Step 3: Subtract the number of people who like both from the total Tea lovers to get those who like only Tea: 35 - 20 = 15."
+      ],
+      "svgDiagram": "<svg viewBox='0 0 400 250' xmlns='http://www.w3.org/2000/svg'><rect width='400' height='250' fill='#0f172a'/><circle cx='150' cy='125' r='80' fill='none' stroke='#6366f1' stroke-width='2'/><circle cx='290' cy='125' r='80' fill='none' stroke='#10b981' stroke-width='2'/><text x='150' y='100' font-family='Arial' font-size='14' fill='white' text-anchor='middle'>Tea (35)</text><text x='290' y='100' font-family='Arial' font-size='14' fill='white' text-anchor='middle'>Coffee (25)</text><text x='220' y='125' font-family='Arial' font-size='14' fill='white' text-anchor='middle'>20</text><text x='150' y='230' font-family='Arial' font-size='14' fill='white' text-anchor='middle'>Only Tea</text></svg>",
+      "estimatedTimeSec": 60
+    }
+  ]
+}

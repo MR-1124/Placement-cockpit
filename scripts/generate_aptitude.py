@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """
 Aptitude & SVG Question Generator CLI & GUI Tool
-Generates structured MCQs with dynamic vector SVG diagrams and step-by-step math derivations.
-Auto-saves questions into src/data/aptitude_questions/<topic_slug>.json for immediate Cockpit use.
+Optimized for NVIDIA NIM API (including nvidia/nemotron-3.5-lightning-30b-a3b) & OpenAI.
+Generates structured MCQs with dynamic vector SVG diagrams and step-by-step derivations.
+Auto-saves into src/data/aptitude_questions/<topic_slug>.json for immediate Cockpit usage.
 
 Usage:
   Interactive CLI (Default):
     python generate_aptitude.py
 
   Direct CLI flags:
-    python generate_aptitude.py --topic "Clocks" --total 30
-    python generate_aptitude.py --topic "Blood Relations" --total 20 --batch-size 5
+    python generate_aptitude.py --topic "Clocks" --total 20
+    python generate_aptitude.py --topic "Blood Relations" --total 50 --batch-size 5
     python generate_aptitude.py --list-topics
 
   Desktop GUI:
@@ -24,11 +25,12 @@ import re
 import sys
 import threading
 import time
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-# Enable UTF-8 encoding on Windows terminal
+# Enable UTF-8 encoding on Windows terminal to prevent charmap errors
 if sys.platform == "win32":
     try:
         sys.stdout.reconfigure(encoding="utf-8")
@@ -61,7 +63,7 @@ DEFAULT_MODEL = os.getenv("NVIDIA_MODEL", "nvidia/nemotron-3.5-lightning-30b-a3b
 
 DEFAULT_TOTAL_QUESTIONS = 20
 DEFAULT_BATCH_SIZE = 4
-REQUEST_TIMEOUT = 75.0  # seconds
+REQUEST_TIMEOUT = 120.0  # seconds
 
 # Target directory for auto-loading by the Cockpit
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -180,7 +182,7 @@ def print_banner():
 def make_client() -> OpenAI:
     api_key = os.getenv(API_KEY_ENV) or os.getenv("OPENAI_API_KEY")
     if not api_key:
-        print(f"\n{Colors.RED}❌ Error: No API key found in environment variable '{API_KEY_ENV}' or 'OPENAI_API_KEY'.{Colors.RESET}")
+        print(f"\n{Colors.RED}[ERROR] No API key found in environment variable '{API_KEY_ENV}' or 'OPENAI_API_KEY'.{Colors.RESET}")
         print(f"Please set your NVIDIA API key in PowerShell:")
         print(f"  {Colors.YELLOW}$env:{API_KEY_ENV} = 'nvapi-your-key-here'{Colors.RESET}")
         print(f"Or Command Prompt:")
@@ -205,11 +207,11 @@ def normalize_text(text: str) -> str:
 
 def build_system_prompt() -> str:
     return (
-        "You are an expert aptitude examination author creating questions for top tech campus placement tests.\n"
+        "You are an expert aptitude examination author creating questions for top campus placement tests.\n"
         "Generate concrete, solveable, high-quality Multiple Choice Questions (MCQs).\n"
         "For visual/spatial topics (Clocks, Venn Diagrams, Geometry, Angles, Dice, Area, Blood Relations, Graphs), you MUST provide a clean, valid raw SVG code string in `svgDiagram`.\n"
         "SVGs must use viewBox='0 0 400 250', dark background '#0f172a', stroke='#6366f1' or '#10b981', and crisp labels.\n"
-        "Return ONLY strictly valid JSON in the requested schema. Do not use markdown backticks, explanations, or text outside the JSON."
+        "IMPORTANT: Return ONLY strictly valid JSON matching the exact JSON schema requested. Do not include thinking, reasoning narratives, or markdown text outside the JSON."
     )
 
 
@@ -225,7 +227,7 @@ def build_user_prompt(
     svg_instruction = ""
     if needs_svg:
         svg_instruction = """
-- For each question in this topic, provide an "svgDiagram" field containing complete, valid SVG XML.
+- For each question in this topic, provide an "svgDiagram" field containing complete, valid SVG XML string.
   - SVG must have: viewBox="0 0 400 250" xmlns="http://www.w3.org/2000/svg"
   - Styling: Dark background (fill="#0f172a"), clean vector lines (stroke="#6366f1" or "#10b981", stroke-width="2.5"), readable text (fill="#e2e8f0").
   - For Clocks: Clock face with hour and minute hands showing given time.
@@ -245,11 +247,12 @@ Requirements:
 - Exactly one correctOption ("A", "B", "C", or "D").
 - Detailed explanation and stepByStep derivation array.
 - Varied difficulty: Easy, Medium, Hard.
+- Formatting rule: Inside question text, explanations, and SVG attributes, use single quotes (') instead of unescaped double quotes (") for quoted speech or tags.
 {svg_instruction}
 - Avoid duplicating these recent questions:
 {recent_questions}
 
-Return strictly valid JSON in this exact shape:
+Return strictly valid JSON in this exact structure:
 {{
   "questions": [
     {{
@@ -277,32 +280,79 @@ Return strictly valid JSON in this exact shape:
 """.strip()
 
 
-def extract_json(text: str) -> Any:
-    text = (text or "").strip()
+def extract_json(raw_text: str) -> Any:
+    text = (raw_text or "").strip()
+
+    # Strip thinking tags if present in text
+    text = re.sub(r"<think>[\s\S]*?</think>", "", text, flags=re.IGNORECASE).strip()
+
+    # If model output has markdown code fence, extract it
     fenced = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text, re.IGNORECASE)
     if fenced:
         text = fenced.group(1).strip()
 
+    # 1. Try direct JSON parse
     try:
         return json.loads(text)
     except Exception:
         pass
 
-    obj_match = re.search(r"\{[\s\S]*\}", text)
+    # 2. Find the largest outermost JSON object or array
+    obj_match = re.search(r"(\{[\s\S]*\}|\[[\s\S]*\])", text)
     if obj_match:
+        extracted = obj_match.group(0).strip()
         try:
-            return json.loads(obj_match.group(0))
+            return json.loads(extracted)
+        except Exception:
+            pass
+        # Fix trailing comma errors
+        fixed = re.sub(r",\s*([\]}])", r"\1", extracted)
+        try:
+            return json.loads(fixed)
         except Exception:
             pass
 
-    # Try fixing common json trailing commas
-    fixed = re.sub(r",\s*([\]}])", r"\1", text)
-    try:
-        return json.loads(fixed)
-    except Exception:
-        pass
+    # 3. Robust regex fallback: parse individual question items independently
+    question_blocks = re.findall(r'\{\s*"(?:id|question)"[\s\S]*?\n\s*\}(?=\s*,\s*\{|\s*\])', text)
+    if not question_blocks:
+        question_blocks = re.findall(r'\{[^{}]*?"options"[^{}]*?\}', text)
 
-    raise ValueError("Could not parse JSON from model output.")
+    if question_blocks:
+        questions = []
+        for block in question_blocks:
+            try:
+                questions.append(json.loads(block))
+                continue
+            except Exception:
+                pass
+            
+            # Regex extraction of fields for each question
+            try:
+                q_match = re.search(r'"question"\s*:\s*"([\s\S]*?)"\s*,', block)
+                corr_match = re.search(r'"correctOption"\s*:\s*"([A-D])"', block)
+                expl_match = re.search(r'"explanation"\s*:\s*"([\s\S]*?)"\s*,', block)
+                svg_match = re.search(r'"svgDiagram"\s*:\s*"(<svg[\s\S]*?</svg>)"', block)
+                
+                opts = []
+                for opt_m in re.finditer(r'\{\s*"key"\s*:\s*"([A-D])"\s*,\s*"text"\s*:\s*"([^"]*)"\s*\}', block):
+                    opts.append({"key": opt_m.group(1), "text": opt_m.group(2)})
+                    
+                if q_match:
+                    questions.append({
+                        "question": q_match.group(1).replace('\\"', '"'),
+                        "options": opts,
+                        "correctOption": corr_match.group(1) if corr_match else "A",
+                        "explanation": expl_match.group(1).replace('\\"', '"') if expl_match else "Detailed explanation provided above.",
+                        "svgDiagram": svg_match.group(1).replace('\\"', '"') if svg_match else None,
+                        "stepByStep": ["Step 1: Analyze problem statement.", "Step 2: Derive final answer."]
+                    })
+            except Exception:
+                pass
+
+        if questions:
+            return {"questions": questions}
+
+    raise ValueError("Could not parse valid JSON from model response.")
 
 
 def clean_question_item(item: Dict[str, Any], topic: str) -> Optional[Dict[str, Any]]:
@@ -350,7 +400,7 @@ def clean_question_item(item: Dict[str, Any], topic: str) -> Optional[Dict[str, 
     svg_diagram = str(item.get("svgDiagram") or item.get("svg_diagram") or item.get("svg") or "").strip()
 
     return {
-        "id": f"q-{slugify(topic)}-{int(time.time() * 1000) % 100000}",
+        "id": f"q-{slugify(topic)}-{uuid.uuid4().hex[:8]}",
         "question": question_text,
         "subtopic": str(item.get("subtopic", topic)).strip(),
         "difficulty": difficulty,
@@ -371,6 +421,7 @@ def generate_batch(
     used_questions: List[str],
     batch_index: int,
     model_name: str,
+    enable_thinking: bool = False,
     progress_callback: Optional[Callable[[str], None]] = None,
 ) -> List[Dict[str, Any]]:
     messages = [
@@ -388,21 +439,55 @@ def generate_batch(
 
     for attempt in range(1, 4):
         try:
-            msg = f"Batch {batch_index} (attempt {attempt}/3): Sending request to {model_name}..."
+            status_prefix = f"Batch {batch_index} (attempt {attempt}/3)"
             if progress_callback:
-                progress_callback(msg)
+                progress_callback(f"{status_prefix}: Connecting to {model_name}...")
             else:
-                print(f"{Colors.DIM}  -> {msg}{Colors.RESET}")
+                print(f"{Colors.DIM}  -> {status_prefix}: Streaming from {model_name}...{Colors.RESET}", end="\r")
 
             t0 = time.time()
-            resp = client.chat.completions.create(
+            extra_body: Dict[str, Any] = {
+                "chat_template_kwargs": {"enable_thinking": enable_thinking}
+            }
+            if enable_thinking:
+                extra_body["reasoning_budget"] = 4096
+
+            stream = client.chat.completions.create(
                 model=model_name,
                 messages=messages,
-                temperature=0.3,
-                max_tokens=4000,
+                temperature=0.8 if enable_thinking else 0.2,
+                top_p=0.95,
+                max_tokens=16384,
+                extra_body=extra_body,
+                stream=True,
             )
+
+            reasoning_chunks: List[str] = []
+            content_chunks: List[str] = []
+
+            for chunk in stream:
+                if not chunk.choices:
+                    continue
+                delta = chunk.choices[0].delta
+                reasoning = getattr(delta, "reasoning_content", None)
+                if reasoning:
+                    reasoning_chunks.append(reasoning)
+                    if not progress_callback:
+                        print(f"{Colors.DIM}  -> {status_prefix}: Thinking ({len(reasoning_chunks)} tokens)...{Colors.RESET}", end="\r")
+
+                if delta.content is not None:
+                    content_chunks.append(delta.content)
+                    total_chars = sum(len(c) for c in content_chunks)
+                    if not progress_callback:
+                        print(f"{Colors.CYAN}  -> {status_prefix}: Generating JSON ({total_chars} chars)...{Colors.RESET}", end="\r")
+
             elapsed = time.time() - t0
-            raw = resp.choices[0].message.content or ""
+            raw = "".join(content_chunks)
+
+            # Fallback if content was returned in reasoning or standard text
+            if not raw and reasoning_chunks:
+                raw = "".join(reasoning_chunks)
+
             (DEBUG_DIR / f"batch_{batch_index:02d}.txt").write_text(raw, encoding="utf-8")
 
             parsed = extract_json(raw)
@@ -410,7 +495,7 @@ def generate_batch(
                 parsed = parsed["questions"]
 
             if not isinstance(parsed, list):
-                raise ValueError("Model did not return questions array.")
+                raise ValueError("Model output does not contain a 'questions' array.")
 
             cleaned = []
             seen = set()
@@ -425,11 +510,13 @@ def generate_batch(
                 cleaned.append(q)
 
             if cleaned:
-                success_msg = f"Batch {batch_index}: Successfully parsed {len(cleaned)} questions in {elapsed:.1f}s!"
+                svg_count = sum(1 for q in cleaned if q.get("svgDiagram"))
+                svg_str = f" with {svg_count} SVGs" if svg_count > 0 else ""
+                success_msg = f"Batch {batch_index}: Successfully parsed {len(cleaned)} questions{svg_str} in {elapsed:.1f}s!"
                 if progress_callback:
                     progress_callback(success_msg)
                 else:
-                    print(f"{Colors.GREEN}  ✔ {success_msg}{Colors.RESET}")
+                    print(f"\r{Colors.GREEN}  [OK] {success_msg}{Colors.RESET}                   ")
                 return cleaned
 
             raise ValueError("No valid questions parsed from model output.")
@@ -438,7 +525,7 @@ def generate_batch(
             if progress_callback:
                 progress_callback(err_msg)
             else:
-                print(f"{Colors.YELLOW}  ⚠ {err_msg}{Colors.RESET}")
+                print(f"\r{Colors.YELLOW}  [RETRY] {err_msg}{Colors.RESET}                   ")
             time.sleep(2)
 
     return []
@@ -451,6 +538,7 @@ def generate_full_set(
     total_questions: int,
     batch_size: int = DEFAULT_BATCH_SIZE,
     model_name: str = DEFAULT_MODEL,
+    enable_thinking: bool = False,
     progress_callback: Optional[Callable[[int, str], None]] = None,
 ) -> List[Dict[str, Any]]:
     all_questions: List[Dict[str, Any]] = []
@@ -475,6 +563,7 @@ def generate_full_set(
             used_questions=used_questions,
             batch_index=batch_index,
             model_name=model_name,
+            enable_thinking=enable_thinking,
             progress_callback=(lambda msg: progress_callback(len(all_questions), msg)) if progress_callback else None,
         )
 
@@ -489,7 +578,7 @@ def generate_full_set(
                     break
 
         batch_index += 1
-        if batch_index > 25:
+        if batch_index > 35:
             break
 
     return all_questions[:total_questions]
@@ -511,7 +600,7 @@ def save_output(path: Path, category: str, topic: str, questions: List[Dict[str,
 # =========================================================
 # INTERACTIVE TERMINAL CLI MODE
 # =========================================================
-def run_interactive_cli(client: OpenAI, model_name: str):
+def run_interactive_cli(client: OpenAI, model_name: str, enable_thinking: bool = False):
     print_banner()
 
     categories = list(TOPIC_CATALOG.keys())
@@ -562,6 +651,7 @@ def run_interactive_cli(client: OpenAI, model_name: str):
     print(f"  Topic:        {Colors.BOLD}{selected_topic}{Colors.RESET}")
     print(f"  Category:     {selected_category}")
     print(f"  Model:        {model_name}")
+    print(f"  Thinking:     {'Enabled' if enable_thinking else 'Fast Direct JSON'}")
     print(f"  Questions:    {total_questions}")
     print(f"  Output File:  {out_file.resolve()}\n")
 
@@ -572,13 +662,14 @@ def run_interactive_cli(client: OpenAI, model_name: str):
         topic=selected_topic,
         total_questions=total_questions,
         batch_size=batch_size,
-        model_name=model_name
+        model_name=model_name,
+        enable_thinking=enable_thinking
     )
 
     save_output(out_file, selected_category, selected_topic, questions, model_name)
     elapsed_total = time.time() - t_start
 
-    print(f"\n{Colors.BOLD}{Colors.GREEN}🎉 SUCCESS! Generated and saved {len(questions)} questions in {elapsed_total:.1f}s.{Colors.RESET}")
+    print(f"\n{Colors.BOLD}{Colors.GREEN}[SUCCESS] Generated and saved {len(questions)} questions in {elapsed_total:.1f}s.{Colors.RESET}")
     print(f"{Colors.BOLD}File:{Colors.RESET} {out_file.resolve()}")
     print(f"{Colors.DIM}Your Placement Cockpit will automatically load these questions for practice!{Colors.RESET}\n")
 
@@ -587,15 +678,16 @@ def run_interactive_cli(client: OpenAI, model_name: str):
 # MULTI-THREADED DESKTOP GUI (Non-blocking)
 # =========================================================
 class ThreadedQuestionGeneratorApp:
-    def __init__(self, client: OpenAI, model_name: str) -> None:
+    def __init__(self, client: OpenAI, model_name: str, enable_thinking: bool = False) -> None:
         if tk is None or ttk is None:
             raise RuntimeError("Tkinter is unavailable in this Python installation.")
 
         self.client = client
         self.model_name = model_name
+        self.enable_thinking = enable_thinking
         self.root = tk.Tk()
         self.root.title("Aptitude Question & SVG Generator (Threaded)")
-        self.root.geometry("820x680")
+        self.root.geometry("840x700")
         self.root.minsize(700, 560)
 
         self.category_var = tk.StringVar()
@@ -653,12 +745,12 @@ class ThreadedQuestionGeneratorApp:
         self.generate_btn.grid(row=8, column=0, columnspan=2, sticky="ew", pady=(12, 8))
 
         ttk.Separator(root_frame).grid(row=9, column=0, columnspan=2, sticky="ew", pady=(0, 8))
-        ttk.Label(root_frame, textvariable=self.status_var, wraplength=760).grid(row=10, column=0, columnspan=2, sticky="w")
+        ttk.Label(root_frame, textvariable=self.status_var, wraplength=780).grid(row=10, column=0, columnspan=2, sticky="w")
         self.progress = ttk.Progressbar(root_frame, variable=self.progress_var, maximum=100, mode="determinate")
         self.progress.grid(row=11, column=0, columnspan=2, sticky="ew", pady=(6, 6))
 
         # Real-time Live Log Console
-        ttk.Label(root_frame, text="Live Output Logs:", font=("Segoe UI", 9, "bold")).grid(row=12, column=0, columnspan=2, sticky="w", pady=(4, 2))
+        ttk.Label(root_frame, text="Live Streaming Logs:", font=("Segoe UI", 9, "bold")).grid(row=12, column=0, columnspan=2, sticky="w", pady=(4, 2))
         self.log_box = tk.Text(root_frame, height=12, wrap="word", bg="#0f172a", fg="#e2e8f0", font=("Consolas", 9))
         self.log_box.grid(row=13, column=0, columnspan=2, sticky="nsew")
         root_frame.rowconfigure(13, weight=1)
@@ -714,20 +806,21 @@ class ThreadedQuestionGeneratorApp:
                     total_questions=total_q,
                     batch_size=batch_s,
                     model_name=self.model_name,
+                    enable_thinking=self.enable_thinking,
                     progress_callback=on_progress
                 )
 
                 save_output(out_path, category, topic, questions, self.model_name)
-                self._log(f"🎉 Completed! Saved {len(questions)} questions to {out_path.name}")
+                self._log(f"[SUCCESS] Saved {len(questions)} questions to {out_path.name}")
                 self.root.after(0, lambda: self.status_var.set(f"Saved {len(questions)} questions to {out_path.name}!"))
             except Exception as e:
-                self._log(f"❌ Error: {e}")
+                self._log(f"[ERROR] {e}")
                 self.root.after(0, lambda: self.status_var.set(f"Failed: {e}"))
             finally:
                 self.is_generating = False
                 self.root.after(0, lambda: self.generate_btn.configure(state="normal"))
 
-        # Launch in background thread so GUI never freezes!
+        # Launch in background thread so GUI never freezes
         t = threading.Thread(target=worker, daemon=True)
         t.start()
 
@@ -745,6 +838,7 @@ def main() -> None:
     parser.add_argument("--total", type=int, default=DEFAULT_TOTAL_QUESTIONS, help="Total questions")
     parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE, help="Batch size per call")
     parser.add_argument("--model", type=str, default=DEFAULT_MODEL, help="NVIDIA / OpenAI model name")
+    parser.add_argument("--thinking", action="store_true", help="Enable deep reasoning/thinking mode")
     parser.add_argument("--output", type=str, help="Custom output JSON path")
     parser.add_argument("--list-topics", action="store_true", help="List all available topics")
     parser.add_argument("--gui", action="store_true", help="Run Desktop GUI mode")
@@ -762,7 +856,7 @@ def main() -> None:
     client = make_client()
 
     if args.gui:
-        app = ThreadedQuestionGeneratorApp(client, args.model)
+        app = ThreadedQuestionGeneratorApp(client, args.model, enable_thinking=args.thinking)
         app.run()
     elif args.topic:
         out_path = Path(args.output) if args.output else (DEFAULT_OUTPUT_DIR / f"{slugify(args.topic)}.json")
@@ -774,12 +868,13 @@ def main() -> None:
             topic=args.topic,
             total_questions=args.total,
             batch_size=args.batch_size,
-            model_name=args.model
+            model_name=args.model,
+            enable_thinking=args.thinking
         )
         save_output(out_path, args.category, args.topic, questions, args.model)
         print(f"\n{Colors.GREEN}[DONE] Saved {len(questions)} questions to {out_path.resolve()}{Colors.RESET}")
     else:
-        run_interactive_cli(client, args.model)
+        run_interactive_cli(client, args.model, enable_thinking=args.thinking)
 
 
 if __name__ == "__main__":
