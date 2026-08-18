@@ -29,6 +29,7 @@ import { PlansView } from "./pages/PlansView";
 import { LandingView } from "./pages/LandingView";
 import { MarkdownRenderer } from "./components/MarkdownRenderer";
 import { FocusMode } from "./components/FocusMode";
+import { CommandPalette } from "./components/CommandPalette";
 import { motion, AnimatePresence } from "framer-motion";
 
 import {
@@ -65,7 +66,8 @@ import {
   MessageCircleHeart,
   Target,
   Sun,
-  Moon
+  Moon,
+  Search
 } from "lucide-react";
 
 
@@ -102,7 +104,27 @@ const AppContent: React.FC = () => {
 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isWideChat, setIsWideChat] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
+
+  // Global Keyboard Shortcuts (Ctrl+K for Command Palette, Ctrl+T for Theme)
+  useEffect(() => {
+    const handleGlobalShortcuts = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsCommandPaletteOpen(prev => !prev);
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "t") {
+        const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+        if (tag !== "input" && tag !== "textarea") {
+          e.preventDefault();
+          toggleTheme();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalShortcuts);
+    return () => window.removeEventListener("keydown", handleGlobalShortcuts);
+  }, [toggleTheme]);
 
   const activeSession = state.chatSessions?.[state.currentSessionId || "default-session"];
   const currentMessages = activeSession?.messages || [];
@@ -560,8 +582,27 @@ const AppContent: React.FC = () => {
           </div>
         </div>
 
+        {/* Quick Command Palette trigger */}
+        <div className={`pt-3 pb-1 ${collapsed ? "px-2" : "px-4"}`}>
+          <button
+            onClick={() => setIsCommandPaletteOpen(true)}
+            className={`w-full flex items-center ${collapsed ? "justify-center" : "justify-between"} p-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.06] hover:border-accentPrimary/40 text-slate-400 hover:text-white transition-all text-xs font-mono group cursor-pointer shadow-sm`}
+            title="Command Palette (Ctrl + K)"
+          >
+            <div className="flex items-center gap-2">
+              <Search className="w-3.5 h-3.5 text-accentPrimary group-hover:scale-110 transition-transform" />
+              {!collapsed && <span className="text-[11px] font-sans text-slate-400 group-hover:text-slate-200">Quick Jump...</span>}
+            </div>
+            {!collapsed && (
+              <kbd className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-black/40 border border-white/10 text-slate-400 group-hover:text-white">
+                Ctrl K
+              </kbd>
+            )}
+          </button>
+        </div>
+
         {/* Sidebar Nav Items */}
-        <nav className={`flex-1 py-4 space-y-4 overflow-y-auto overflow-x-hidden custom-scrollbar ${collapsed ? "px-2" : "px-4"}`}>
+        <nav className={`flex-1 py-3 space-y-4 overflow-y-auto overflow-x-hidden custom-scrollbar ${collapsed ? "px-2" : "px-4"}`}>
           {navigationCategories.map((category, catIdx) => {
             const hasVisibleItems = category.items.length > 0;
             if (!hasVisibleItems) return null;
@@ -702,7 +743,16 @@ const AppContent: React.FC = () => {
           <span className="font-extrabold text-white text-xs tracking-tight">Placement Cockpit</span>
         </div>
         
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
+          {/* Quick Search */}
+          <button
+            onClick={() => setIsCommandPaletteOpen(true)}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer"
+            aria-label="Open Command Palette"
+          >
+            <Search className="w-4 h-4 text-accentPrimary" />
+          </button>
+
           {/* Theme Toggle Button */}
           <button
             onClick={toggleTheme}
@@ -1058,6 +1108,16 @@ const AppContent: React.FC = () => {
           />
         )}
       </AnimatePresence>
+
+      {/* Global Command Palette (Ctrl+K) */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onNavigate={(tabId) => {
+          setActiveTab(tabId);
+          setMobileMenuOpen(false);
+        }}
+      />
     </div>
   );
 };

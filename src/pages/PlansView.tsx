@@ -22,7 +22,10 @@ import {
   ChevronUp,
   CheckCircle2,
   Code2,
-  ExternalLink
+  ExternalLink,
+  CheckSquare,
+  RotateCcw,
+  Filter
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -50,6 +53,7 @@ export const PlansView: React.FC = () => {
   // Detailed view tab: "timeline" or "problems"
   const [detailedViewTab, setDetailedViewTab] = useState<"timeline" | "problems">("timeline");
   const [planProblemDifficultyTab, setPlanProblemDifficultyTab] = useState<"All" | "Easy" | "Medium" | "Hard">("All");
+  const [problemStatusFilter, setProblemStatusFilter] = useState<"All" | "Unsolved" | "Solved">("All");
   const [problemSearchQuery, setProblemSearchQuery] = useState("");
   const [weekProblemTabs, setWeekProblemTabs] = useState<Record<string, "All" | "Easy" | "Medium" | "Hard">>({});
 
@@ -162,6 +166,12 @@ export const PlansView: React.FC = () => {
     else if (planProblemDifficultyTab === "Medium") list = mediumPlanProblems;
     else if (planProblemDifficultyTab === "Hard") list = hardPlanProblems;
 
+    if (problemStatusFilter === "Unsolved") {
+      list = list.filter(p => !p.problem.isCompleted);
+    } else if (problemStatusFilter === "Solved") {
+      list = list.filter(p => p.problem.isCompleted);
+    }
+
     if (!problemSearchQuery.trim()) return list;
     const q = problemSearchQuery.toLowerCase();
     return list.filter(p => 
@@ -169,7 +179,41 @@ export const PlansView: React.FC = () => {
       p.topicName.toLowerCase().includes(q) ||
       p.weekTitle.toLowerCase().includes(q)
     );
-  }, [planAllProblems, easyPlanProblems, mediumPlanProblems, hardPlanProblems, planProblemDifficultyTab, problemSearchQuery]);
+  }, [planAllProblems, easyPlanProblems, mediumPlanProblems, hardPlanProblems, planProblemDifficultyTab, problemStatusFilter, problemSearchQuery]);
+
+  const handleBatchMarkCompleted = () => {
+    const uncompleted = filteredPlanProblems.filter(p => !p.problem.isCompleted);
+    if (uncompleted.length === 0) return;
+    confirmAction({
+      title: "Batch Mark Problems Completed",
+      message: `Are you sure you want to mark ${uncompleted.length} filtered problems as completed?`,
+      confirmText: "Mark Completed",
+      cancelText: "Cancel",
+      severity: "info",
+      onConfirm: () => {
+        uncompleted.forEach(({ topicId, problem }) => {
+          toggleDsaProblem(topicId, problem.id);
+        });
+      }
+    });
+  };
+
+  const handleBatchResetCompleted = () => {
+    const completed = filteredPlanProblems.filter(p => p.problem.isCompleted);
+    if (completed.length === 0) return;
+    confirmAction({
+      title: "Reset Problem Progress",
+      message: `Are you sure you want to reset completion status for ${completed.length} problems?`,
+      confirmText: "Reset Problems",
+      cancelText: "Cancel",
+      severity: "danger",
+      onConfirm: () => {
+        completed.forEach(({ topicId, problem }) => {
+          toggleDsaProblem(topicId, problem.id);
+        });
+      }
+    });
+  };
 
   return (
     <div className="space-y-8 pb-12">
@@ -634,6 +678,51 @@ export const PlansView: React.FC = () => {
                     onChange={e => setProblemSearchQuery(e.target.value)}
                     className="w-full bg-black/50 border border-white/[0.08] focus:border-accentPrimary rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-colors"
                   />
+                </div>
+              </div>
+
+              {/* Status Filter & Batch Action Toolbar */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white/[0.01] border border-white/[0.04] p-3 rounded-xl text-xs">
+                {/* Status Toggle Tabs */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-mono uppercase text-slate-500 font-bold mr-1 flex items-center gap-1">
+                    <Filter className="w-3 h-3" /> Status:
+                  </span>
+                  {(["All", "Unsolved", "Solved"] as const).map(status => (
+                    <button
+                      key={status}
+                      onClick={() => setProblemStatusFilter(status)}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer ${
+                        problemStatusFilter === status
+                          ? "bg-accentPrimary text-white shadow-sm"
+                          : "bg-black/30 border border-white/[0.05] text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                  <span className="text-[10px] font-mono text-slate-500 ml-2">
+                    Showing <strong className="text-white">{filteredPlanProblems.length}</strong> of {planAllProblems.length}
+                  </span>
+                </div>
+
+                {/* Batch Action Buttons */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleBatchMarkCompleted}
+                    className="px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-mono text-[10px] font-bold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                    title="Mark all visible problems as completed"
+                  >
+                    <CheckSquare className="w-3.5 h-3.5" /> Mark Filtered Done
+                  </button>
+
+                  <button
+                    onClick={handleBatchResetCompleted}
+                    className="px-3 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 font-mono text-[10px] font-bold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                    title="Reset completion status for visible problems"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" /> Reset Done
+                  </button>
                 </div>
               </div>
 
