@@ -18,10 +18,17 @@ export interface AptitudeCategory {
 export interface AptitudeQuestion {
   id: string;
   text: string;
+  topic?: string;
+  subtopic?: string;
   options: { key: "A" | "B" | "C" | "D"; text: string }[];
   correctOption: "A" | "B" | "C" | "D";
   difficulty: "Easy" | "Medium" | "Hard";
   explanation: string;
+  stepByStep?: string[];
+  svgDiagram?: string;
+  mermaidChart?: string;
+  mathFormula?: string;
+  estimatedTimeSec?: number;
 }
 
 export const APTITUDE_CATEGORIES: AptitudeCategory[] = [
@@ -214,3 +221,87 @@ export const generateMockQuestions = (topicName: string): AptitudeQuestion[] => 
 
   return questions;
 };
+
+// Auto-load all JSON question sets in src/data/aptitude_questions/
+const jsonQuestionModules = import.meta.glob<any>("./aptitude_questions/*.json", { eager: true });
+
+export const FILE_BASED_QUESTIONS: Record<string, AptitudeQuestion[]> = {};
+
+// Index all loaded questions by topic name slug
+Object.entries(jsonQuestionModules).forEach(([filePath, moduleContent]) => {
+  try {
+    const data = moduleContent.default || moduleContent;
+    const questions: any[] = Array.isArray(data) ? data : data.questions || [];
+    const topic = data.topic || filePath.split("/").pop()?.replace(".json", "") || "general";
+    const normalizedTopic = topic.toLowerCase().replace(/[^a-z0-9]+/g, "_").trim();
+    
+    const parsedQuestions: AptitudeQuestion[] = questions.map((q, idx) => {
+      let options = q.options;
+      let correctOption = q.correctOption || q.correct_option || "A";
+      
+      if (!options && q.answer) {
+        options = [
+          { key: "A", text: q.answer },
+          { key: "B", text: "Option B" },
+          { key: "C", text: "Option C" },
+          { key: "D", text: "Option D" }
+        ];
+        correctOption = "A";
+      }
+
+      return {
+        id: q.id || `q-${normalizedTopic}-${idx + 1}`,
+        text: q.text || q.question || "Question",
+        topic: q.topic || topic,
+        subtopic: q.subtopic,
+        options: options || [],
+        correctOption: correctOption as any,
+        difficulty: (q.difficulty === "easy" || q.difficulty === "Easy" ? "Easy" : q.difficulty === "hard" || q.difficulty === "Hard" ? "Hard" : "Medium"),
+        explanation: q.explanation || "Detailed explanation provided above.",
+        stepByStep: q.stepByStep || q.step_by_step || q.steps,
+        svgDiagram: q.svgDiagram || q.svg_diagram || q.svg,
+        mermaidChart: q.mermaidChart || q.mermaid_chart,
+        mathFormula: q.mathFormula || q.math_formula,
+        estimatedTimeSec: q.estimatedTimeSec || q.estimated_time_sec || 60
+      };
+    });
+
+    if (parsedQuestions.length > 0) {
+      FILE_BASED_QUESTIONS[normalizedTopic] = parsedQuestions;
+    }
+  } catch (err) {
+    console.error(`Failed to load questions from ${filePath}:`, err);
+  }
+});
+
+/**
+ * Retrieve questions for a topic. First checks the dynamic JSON file bank,
+ * then falls back to generated mock questions.
+ */
+export const getQuestionsForTopic = (topicName: string): AptitudeQuestion[] => {
+  const normalized = topicName.toLowerCase().replace(/[^a-z0-9]+/g, "_").trim();
+  
+  if (FILE_BASED_QUESTIONS[normalized] && FILE_BASED_QUESTIONS[normalized].length > 0) {
+    return FILE_BASED_QUESTIONS[normalized];
+  }
+
+  // Also check if any key is a substring
+  const matchingKey = Object.keys(FILE_BASED_QUESTIONS).find(k => k.includes(normalized) || normalized.includes(k));
+  if (matchingKey && FILE_BASED_QUESTIONS[matchingKey].length > 0) {
+    return FILE_BASED_QUESTIONS[matchingKey];
+  }
+
+  return generateMockQuestions(topicName);
+};
+
+export const getLoadedTopicQuestionCount = (): { totalFiles: number; totalQuestions: number } => {
+  let totalQuestions = 0;
+  Object.values(FILE_BASED_QUESTIONS).forEach(qList => {
+    totalQuestions += qList.length;
+  });
+  return {
+    totalFiles: Object.keys(FILE_BASED_QUESTIONS).length,
+    totalQuestions
+  };
+};
+

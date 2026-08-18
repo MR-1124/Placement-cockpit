@@ -1,0 +1,49 @@
+{
+  "category": "Logical Reasoning",
+  "topic": "Clocks",
+  "generated_at_utc": "2026-08-19T00:00:00Z",
+  "questions": [
+    {
+      "id": "clock-q1",
+      "question": "At what angle are the hands of a clock inclined at 3:30?",
+      "subtopic": "Angle between hands",
+      "difficulty": "Easy",
+      "options": [
+        { "key": "A", "text": "75°" },
+        { "key": "B", "text": "80°" },
+        { "key": "C", "text": "90°" },
+        { "key": "D", "text": "105°" }
+      ],
+      "correctOption": "A",
+      "svgDiagram": "<svg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'><circle cx='150' cy='150' r='120' fill='#0f172a' stroke='#6366f1' stroke-width='4'/><circle cx='150' cy='150' r='6' fill='#a855f7'/><line x1='150' y1='150' x2='195' y2='175' stroke='#38bdf8' stroke-width='5' stroke-linecap='round'/><line x1='150' y1='150' x2='150' y2='245' stroke='#ec4899' stroke-width='4' stroke-linecap='round'/><text x='142' y='55' fill='#94a3b8' font-size='16' font-family='monospace' font-weight='bold'>12</text><text x='245' y='156' fill='#94a3b8' font-size='16' font-family='monospace' font-weight='bold'>3</text><text x='145' y='260' fill='#94a3b8' font-size='16' font-family='monospace' font-weight='bold'>6</text><text x='45' y='156' fill='#94a3b8' font-size='16' font-family='monospace' font-weight='bold'>9</text><path d='M 175 165 A 35 35 0 0 1 150 185' fill='none' stroke='#f59e0b' stroke-width='2.5' stroke-dasharray='4'/><text x='170' y='200' fill='#f59e0b' font-size='14' font-family='monospace' font-weight='bold'>75°</text></svg>",
+      "explanation": "Formula: Angle = |(30 * H) - (5.5 * M)|. For 3:30, Angle = |(30 * 3) - (5.5 * 30)| = |90 - 165| = 75°.",
+      "stepByStep": [
+        "Minute hand at 30 mins is at 6 (180° from 12).",
+        "Hour hand at 3:30 moves 30 * 0.5° = 15° past 3 o'clock mark (90° + 15° = 105°).",
+        "Angle between hands = 180° - 105° = 75°."
+      ],
+      "estimatedTimeSec": 45
+    },
+    {
+      "id": "clock-q2",
+      "question": "At what time between 4 and 5 o'clock will the hands of a clock coincide?",
+      "subtopic": "Overlaps",
+      "difficulty": "Medium",
+      "options": [
+        { "key": "A", "text": "21 (9/11) minutes past 4" },
+        { "key": "B", "text": "20 minutes past 4" },
+        { "key": "C", "text": "22 (5/11) minutes past 4" },
+        { "key": "D", "text": "21 (5/11) minutes past 4" }
+      ],
+      "correctOption": "A",
+      "svgDiagram": "<svg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'><circle cx='150' cy='150' r='120' fill='#0f172a' stroke='#10b981' stroke-width='4'/><circle cx='150' cy='150' r='6' fill='#10b981'/><line x1='150' y1='150' x2='220' y2='190' stroke='#10b981' stroke-width='5' stroke-linecap='round'/><line x1='150' y1='150' x2='235' y2='198' stroke='#34d399' stroke-width='3' stroke-linecap='round'/><text x='142' y='55' fill='#94a3b8' font-size='16' font-family='monospace' font-weight='bold'>12</text><text x='245' y='156' fill='#94a3b8' font-size='16' font-family='monospace' font-weight='bold'>3</text><text x='145' y='260' fill='#94a3b8' font-size='16' font-family='monospace' font-weight='bold'>6</text><text x='45' y='156' fill='#94a3b8' font-size='16' font-family='monospace' font-weight='bold'>9</text></svg>",
+      "explanation": "At 4 o'clock, the minute hand is 20 minute spaces behind the hour hand. To coincide, the minute hand must gain 20 minute spaces at a rate of 55 spaces in 60 mins. Time = 20 * (60/55) = 240/11 = 21 (9/11) minutes past 4.",
+      "stepByStep": [
+        "In 60 minutes, the minute hand gains 55 minute spaces over the hour hand.",
+        "Space to gain = 20 minutes.",
+        "Required time = 20 * (12/11) = 240/11 = 21 (9/11) min."
+      ],
+      "estimatedTimeSec": 60
+    }
+  ]
+}

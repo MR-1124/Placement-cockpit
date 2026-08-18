@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAppState } from "../context/AppStateContext";
 import { GlassCard } from "../components/Common";
 import { MarkdownRenderer } from "../components/MarkdownRenderer";
+import { SvgDiagramRenderer } from "../components/SvgDiagramRenderer";
 import { nvidiaFetch } from "../lib/nvidiaApi";
-import { APTITUDE_CATEGORIES, generateMockQuestions } from "../data/aptitudeData";
+import { APTITUDE_CATEGORIES, getQuestionsForTopic, getLoadedTopicQuestionCount, FILE_BASED_QUESTIONS } from "../data/aptitudeData";
 import type { AptitudeTopic, AptitudeQuestion } from "../data/aptitudeData";
 import {
   Award,
@@ -17,7 +18,11 @@ import {
   Trophy,
   Play,
   Bookmark,
-  Flag
+  Flag,
+  Upload,
+  FileCode,
+  CheckCircle2,
+  X
 } from "lucide-react";
 
 export const AptitudeView: React.FC = () => {
@@ -46,6 +51,68 @@ export const AptitudeView: React.FC = () => {
   const [quizTimeSpent, setQuizTimeSpent] = useState(0);
   const [quizTimerActive, setQuizTimerActive] = useState(false);
   const quizTimerRef = useRef<any>(null);
+
+  // Custom JSON Import Modal state
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importJsonText, setImportJsonText] = useState("");
+  const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const loadedStats = React.useMemo(() => {
+    return getLoadedTopicQuestionCount();
+  }, [refreshTrigger]);
+
+  const handleImportJson = () => {
+    try {
+      if (!importJsonText.trim()) return;
+      const parsed = JSON.parse(importJsonText);
+      const questions = Array.isArray(parsed) ? parsed : parsed.questions || [];
+      const topic = parsed.topic || "Custom Topic";
+      const normalizedTopic = topic.toLowerCase().replace(/[^a-z0-9]+/g, "_").trim();
+
+      if (!questions.length) {
+        throw new Error("No questions array found in JSON.");
+      }
+
+      const formatted: AptitudeQuestion[] = questions.map((q: any, idx: number) => {
+        let options = q.options;
+        let correctOption = q.correctOption || q.correct_option || "A";
+        if (!options && q.answer) {
+          options = [
+            { key: "A", text: q.answer },
+            { key: "B", text: "Option B" },
+            { key: "C", text: "Option C" },
+            { key: "D", text: "Option D" }
+          ];
+        }
+        return {
+          id: q.id || `custom-${normalizedTopic}-${idx + 1}`,
+          text: q.question || q.text || "Question",
+          topic: q.topic || topic,
+          subtopic: q.subtopic,
+          options: options || [],
+          correctOption: correctOption as any,
+          difficulty: q.difficulty === "Easy" ? "Easy" : q.difficulty === "Hard" ? "Hard" : "Medium",
+          explanation: q.explanation || "Explanation provided.",
+          stepByStep: q.stepByStep || q.step_by_step,
+          svgDiagram: q.svgDiagram || q.svg_diagram || q.svg,
+          mathFormula: q.mathFormula || q.math_formula,
+          estimatedTimeSec: q.estimatedTimeSec || 60
+        };
+      });
+
+      FILE_BASED_QUESTIONS[normalizedTopic] = formatted;
+      setRefreshTrigger(prev => prev + 1);
+      setImportStatus(`Successfully loaded ${formatted.length} questions for "${topic}"!`);
+      setTimeout(() => {
+        setIsImportModalOpen(false);
+        setImportJsonText("");
+        setImportStatus(null);
+      }, 1200);
+    } catch (err: any) {
+      setImportStatus(`Import Error: ${err.message}`);
+    }
+  };
 
   // Stats calculation
   const quizHistory = state.aptitudeQuizHistory || [];
@@ -149,7 +216,7 @@ Return the explanation in clean, highly readable Markdown format. Do not use con
 
   const startQuiz = () => {
     if (!selectedTopic) return;
-    const questions = generateMockQuestions(selectedTopic.name);
+    const questions = getQuestionsForTopic(selectedTopic.name);
     setQuizQuestions(questions);
     setCurrentQuestionIdx(0);
     setSelectedAnswers({});
@@ -282,6 +349,29 @@ Return the explanation in clean, highly readable Markdown format. Do not use con
             transition={{ duration: 0.2 }}
             className="space-y-6"
           >
+            {/* Header & Ingestion Toolbar */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/[0.01] border border-white/[0.05] p-4 rounded-2xl">
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-widest text-accentPrimary font-bold">Quantitative, Logical & Spatial Engine</span>
+                <h2 className="text-xl font-black text-white">Aptitude Practice Library</h2>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-[10px] font-mono bg-white/[0.03] border border-white/[0.06] text-slate-300 px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm">
+                  <FileCode className="w-3.5 h-3.5 text-accentPrimary" />
+                  <span><strong>{loadedStats.totalFiles}</strong> Topics Loaded ({loadedStats.totalQuestions} Questions)</span>
+                </span>
+
+                <button
+                  onClick={() => setIsImportModalOpen(true)}
+                  className="px-3.5 py-1.5 rounded-xl bg-accentPrimary/10 hover:bg-accentPrimary/20 border border-accentPrimary/30 text-accentPrimary font-mono text-[10px] font-bold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                  title="Import Custom JSON Question Bank"
+                >
+                  <Upload className="w-3.5 h-3.5" /> Import JSON Set
+                </button>
+              </div>
+            </div>
+
             {/* Aptitude Metrics Header */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <GlassCard className="p-5 flex items-center justify-between border-white/[0.04]">
@@ -569,6 +659,11 @@ Return the explanation in clean, highly readable Markdown format. Do not use con
                   {activeQuestion.text}
                 </h4>
 
+                {/* Dynamic SVG Vector Diagram */}
+                {activeQuestion.svgDiagram && (
+                  <SvgDiagramRenderer svg={activeQuestion.svgDiagram} />
+                )}
+
                 {/* Options cards A, B, C, D */}
                 <div className="space-y-3 pt-2">
                   {activeQuestion.options.map(opt => {
@@ -649,11 +744,28 @@ Return the explanation in clean, highly readable Markdown format. Do not use con
                   </div>
                 </div>
 
-                {/* Explanation text */}
+                {/* Explanation & Step-by-Step Derivation */}
                 {(checkedQuestions[currentQuestionIdx] || revealedQuestions[currentQuestionIdx]) && (
-                  <div className="p-4 bg-white/[0.02] border border-white/[0.06] rounded-xl text-xs text-slate-400 space-y-1.5 leading-relaxed">
-                    <div className="font-bold text-slate-200">Solution Explanation:</div>
+                  <div className="p-4 bg-white/[0.02] border border-white/[0.06] rounded-xl text-xs text-slate-400 space-y-2 leading-relaxed">
+                    <div className="font-bold text-slate-200 flex items-center gap-2">
+                      <span>Solution Explanation:</span>
+                      <span className="px-2 py-0.5 rounded bg-accentPrimary/20 text-accentPrimary font-mono font-bold text-[10px]">
+                        Option {activeQuestion.correctOption}
+                      </span>
+                    </div>
                     <p>{activeQuestion.explanation}</p>
+                    {activeQuestion.stepByStep && activeQuestion.stepByStep.length > 0 && (
+                      <div className="pt-2 border-t border-white/[0.04] space-y-1">
+                        <span className="text-[10px] font-mono font-bold uppercase text-slate-300 block">
+                          Derivation Steps:
+                        </span>
+                        <ul className="space-y-1 text-[11px] list-disc list-inside text-slate-300">
+                          {activeQuestion.stepByStep.map((step, sIdx) => (
+                            <li key={sIdx}>{step}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 )}
               </GlassCard>
@@ -785,6 +897,104 @@ Return the explanation in clean, highly readable Markdown format. Do not use con
           </motion.div>
         )}
 
+      </AnimatePresence>
+
+      {/* Custom JSON Ingestion Modal */}
+      <AnimatePresence>
+        {isImportModalOpen && (
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsImportModalOpen(false)}
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="relative w-full max-w-xl bg-darkCard border border-white/10 rounded-2xl p-6 space-y-4 shadow-2xl glass-panel z-10"
+            >
+              <div className="flex justify-between items-center border-b border-white/[0.06] pb-3">
+                <div className="flex items-center gap-2">
+                  <FileCode className="w-5 h-5 text-accentPrimary" />
+                  <h3 className="text-sm font-bold text-white font-mono uppercase tracking-wider">
+                    Import Custom JSON Question Bank
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setIsImportModalOpen(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Paste JSON generated by <code className="text-accentPrimary bg-black/40 px-1.5 py-0.5 rounded font-mono">scripts/generate_aptitude.py</code> or upload a question file directly.
+              </p>
+
+              {/* File Upload Input */}
+              <div>
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        const content = event.target?.result as string;
+                        if (content) setImportJsonText(content);
+                      };
+                      reader.readAsText(file);
+                    }
+                  }}
+                  className="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-white/[0.05] file:text-white hover:file:bg-white/[0.1] file:cursor-pointer cursor-pointer"
+                />
+              </div>
+
+              <textarea
+                value={importJsonText}
+                onChange={(e) => setImportJsonText(e.target.value)}
+                placeholder='Paste raw JSON here, e.g. { "topic": "Clocks", "questions": [...] }'
+                rows={8}
+                className="w-full bg-black/50 border border-white/[0.08] focus:border-accentPrimary rounded-xl p-3 text-xs font-mono text-white placeholder-slate-600 focus:outline-none transition-colors resize-none custom-scrollbar"
+              />
+
+              {importStatus && (
+                <div className={`p-3 rounded-xl text-xs font-mono flex items-center gap-2 ${
+                  importStatus.startsWith("Successfully")
+                    ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
+                    : "bg-rose-500/10 border border-rose-500/20 text-rose-400"
+                }`}>
+                  {importStatus.startsWith("Successfully") && <CheckCircle2 className="w-4 h-4 shrink-0" />}
+                  <span>{importStatus}</span>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsImportModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleImportJson}
+                  disabled={!importJsonText.trim()}
+                  className="px-5 py-2 rounded-xl bg-accentPrimary hover:bg-accentPrimary/90 disabled:opacity-30 text-xs font-bold text-white transition-all shadow-md active:scale-95 cursor-pointer"
+                >
+                  Import Questions
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
     </div>
   );
