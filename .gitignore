@@ -29,4 +29,6 @@ skills-lock.json
 
 # Documentation containing local config/secrets
 project_overview.md
+scripts/debug_raw_outputs/
+
 
