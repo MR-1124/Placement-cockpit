@@ -22,8 +22,11 @@ import {
   ShieldCheck,
   Sun,
   Moon,
-  Laptop
+  Laptop,
+  Volume2,
+  VolumeX
 } from "lucide-react";
+import { audioTelemetry } from "../lib/audioTelemetry";
 
 
 const GithubIcon: React.FC<{className?: string}> = ({ className }) => (
@@ -257,6 +260,116 @@ export const SettingsView: React.FC = () => {
                   </button>
                 );
               })}
+            </div>
+          </GlassCard>
+
+          {/* Cybernetic Audio & Voice Telemetry */}
+          <GlassCard className="space-y-5 rounded-[1.5rem]">
+            <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
+              <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider flex items-center gap-2">
+                <Volume2 className="w-4 h-4 text-accentPrimary" /> Cybernetic Audio Telemetry
+              </h3>
+              <button
+                onClick={() => {
+                  const nextVal = !(state.settings.soundEnabled ?? true);
+                  updateSettings({ soundEnabled: nextVal });
+                  audioTelemetry.setMuted(!nextVal);
+                  if (nextVal) audioTelemetry.check();
+                }}
+                className={`px-3 py-1 rounded-full text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  state.settings.soundEnabled ?? true
+                    ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400"
+                    : "bg-white/[0.03] border border-white/[0.08] text-slate-500"
+                }`}
+              >
+                {state.settings.soundEnabled ?? true ? (
+                  <>
+                    <Volume2 className="w-3.5 h-3.5" />
+                    <span>Active</span>
+                  </>
+                ) : (
+                  <>
+                    <VolumeX className="w-3.5 h-3.5" />
+                    <span>Muted</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <p className="text-[11px] text-slate-400 leading-relaxed font-mono">
+              Procedural Web Audio synthesizer generating instant tactile audio telemetry. Zero external audio downloads.
+            </p>
+
+            {/* Volume Control */}
+            <div className="space-y-2 bg-black/30 p-4 rounded-xl border border-white/[0.04]">
+              <div className="flex justify-between items-center text-xs font-mono">
+                <span className="text-slate-400">Master Sound FX Volume</span>
+                <span className="text-white font-bold">{Math.round((state.settings.soundVolume ?? 0.35) * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                value={state.settings.soundVolume ?? 0.35}
+                onChange={e => {
+                  const vol = parseFloat(e.target.value);
+                  updateSettings({ soundVolume: vol });
+                  audioTelemetry.setVolume(vol);
+                  audioTelemetry.click();
+                }}
+                className="w-full accent-accentPrimary cursor-pointer"
+              />
+            </div>
+
+            {/* Test Audition Buttons */}
+            <div className="space-y-2">
+              <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider block">Audition Sound FX</span>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                {[
+                  { name: "Click", action: () => audioTelemetry.click() },
+                  { name: "Check", action: () => audioTelemetry.check() },
+                  { name: "Streak", action: () => audioTelemetry.streak() },
+                  { name: "Fanfare", action: () => audioTelemetry.levelUp() },
+                  { name: "Alert", action: () => audioTelemetry.alert() },
+                  { name: "Sonar", action: () => audioTelemetry.sonar() }
+                ].map((sfx, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={sfx.action}
+                    className="p-2 rounded-lg bg-white/[0.02] hover:bg-accentPrimary/10 border border-white/[0.06] hover:border-accentPrimary/30 text-slate-300 hover:text-accentPrimary text-[11px] font-mono font-bold transition-all cursor-pointer active:scale-95 text-center"
+                  >
+                    {sfx.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Voice Interviewer TTS Toggle */}
+            <div className="pt-4 border-t border-white/[0.06] flex items-center justify-between">
+              <div>
+                <div className="text-xs font-bold text-white font-mono">Interviewer Voice Playback</div>
+                <div className="text-[10px] text-slate-400">Speak questions aloud using Web Speech API in Mock Interviews.</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  audioTelemetry.click();
+                  updateSettings({ voiceEnabled: !(state.settings.voiceEnabled ?? false) });
+                }}
+                className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer border ${
+                  state.settings.voiceEnabled
+                    ? "bg-accentPrimary/20 border-accentPrimary/40"
+                    : "bg-white/[0.05] border-white/[0.08]"
+                }`}
+              >
+                <div
+                  className={`w-4 h-4 rounded-full bg-accentPrimary absolute top-0.5 transition-transform ${
+                    state.settings.voiceEnabled ? "left-7" : "left-1"
+                  }`}
+                />
+              </button>
             </div>
           </GlassCard>
 

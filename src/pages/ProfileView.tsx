@@ -1,12 +1,11 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useAppState } from "../context/AppStateContext";
-import { GlassCard } from "../components/Common";
+import { GlassCard, SpotlightCard } from "../components/Common";
 import { auth } from "../firebase";
 import {
   User,
   Mail,
-  
   Building2,
   X,
   Plus,
@@ -17,14 +16,21 @@ import {
   Flame,
   Binary,
   Layers,
-  Bot
+  Bot,
+  RefreshCw,
+  ExternalLink,
+  Code2,
+  GitBranch
 } from "lucide-react";
 import { ResumeParser } from "../components/ResumeParser";
+import { fetchLeetCodeStats, fetchGitHubStats, type LeetCodeStats, type GitHubStats } from "../lib/externalStatsSync";
+import { audioTelemetry } from "../lib/audioTelemetry";
 
 export const ProfileView: React.FC = () => {
   const {
     state,
     updateUserProfile,
+    updateSettings,
     overallCompletion,
     dsaCompletion,
     devCompletion,
@@ -52,6 +58,73 @@ export const ProfileView: React.FC = () => {
   
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // External telemetry sync states
+  const [lcUsername, setLcUsername] = useState(state.settings.integrations?.leetcodeUsername || "");
+  const [ghUsername, setGhUsername] = useState(state.settings.integrations?.githubUsername || (githubUrl ? githubUrl.split("/").pop() || "" : ""));
+  const [lcStats, setLcStats] = useState<LeetCodeStats | null>(() => {
+    try {
+      const cached = localStorage.getItem(`ext_lc_cache_${(state.settings.integrations?.leetcodeUsername || "").toLowerCase()}`);
+      return cached ? JSON.parse(cached).data : null;
+    } catch { return null; }
+  });
+  const [ghStats, setGhStats] = useState<GitHubStats | null>(() => {
+    try {
+      const cached = localStorage.getItem(`ext_gh_cache_${(state.settings.integrations?.githubUsername || "").toLowerCase()}`);
+      return cached ? JSON.parse(cached).data : null;
+    } catch { return null; }
+  });
+  const [isSyncingStats, setIsSyncingStats] = useState(false);
+  const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
+
+  const handleSyncExternalStats = async () => {
+    audioTelemetry.click();
+    setIsSyncingStats(true);
+    setSyncFeedback(null);
+    let successCount = 0;
+    const errors: string[] = [];
+
+    if (lcUsername.trim()) {
+      try {
+        const stats = await fetchLeetCodeStats(lcUsername.trim());
+        setLcStats(stats);
+        successCount++;
+      } catch (e: any) {
+        errors.push(`LeetCode: ${e.message}`);
+      }
+    }
+
+    if (ghUsername.trim()) {
+      try {
+        const stats = await fetchGitHubStats(ghUsername.trim());
+        setGhStats(stats);
+        successCount++;
+      } catch (e: any) {
+        errors.push(`GitHub: ${e.message}`);
+      }
+    }
+
+    // Save usernames into state
+    updateSettings({
+      integrations: {
+        ...(state.settings.integrations || {}),
+        leetcodeUsername: lcUsername.trim(),
+        githubUsername: ghUsername.trim(),
+        leetcodeLastSynced: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        githubLastSynced: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      }
+    });
+
+    if (successCount > 0) {
+      audioTelemetry.streak();
+      setSyncFeedback("✓ Successfully synchronized external telemetry!");
+    } else if (errors.length > 0) {
+      setSyncFeedback(errors.join(" | "));
+    } else {
+      setSyncFeedback("Please enter a LeetCode or GitHub username to sync.");
+    }
+    setIsSyncingStats(false);
+  };
 
   if (!user) {
     return (
@@ -385,13 +458,190 @@ export const ProfileView: React.FC = () => {
               <button
                 onClick={handleSaveProfile}
                 disabled={isSaving}
-                className="w-full sm:w-auto h-10 bg-accentPrimary hover:bg-accentPrimary/90 disabled:bg-slate-800 text-black font-bold font-mono uppercase px-5 rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer shadow-[0_0_15px_rgba(var(--color-accent-primary),0.3)] text-xs"
+                className="w-full sm:w-auto h-10 bg-accentPrimary hover:bg-accentPrimary/90 disabled:bg-slate-800 text-black font-bold font-mono uppercase px-5 rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer shadow-[0_0_15px_rgba(var(--accent-rgb),0.3)] text-xs"
               >
                 <Save className="w-4 h-4" />
                 <span>{isSaving ? "Saving..." : "Save Profile"}</span>
               </button>
             </div>
           </GlassCard>
+
+          {/* Live Developer Telemetry Sync (LeetCode & GitHub) */}
+          <SpotlightCard className="p-6 space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/[0.06] pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-accentPrimary" />
+                  <h3 className="text-base font-bold text-white tracking-tight">Live Telemetry Integrations</h3>
+                  <span className="px-2 py-0.5 rounded-full bg-accentPrimary/10 border border-accentPrimary/20 text-accentPrimary text-[10px] font-mono font-bold">
+                    External Sync
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  Connect public LeetCode and GitHub profiles to stream real-time engineering stats into your Cockpit.
+                </p>
+              </div>
+
+              <button
+                onClick={handleSyncExternalStats}
+                disabled={isSyncingStats}
+                className="px-4 py-2 rounded-xl bg-accentPrimary hover:bg-accentPrimary/90 disabled:opacity-50 text-black font-mono font-bold text-xs flex items-center gap-2 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer shadow-md"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncingStats ? "animate-spin" : ""}`} />
+                <span>{isSyncingStats ? "Syncing..." : "Sync Live Stats"}</span>
+              </button>
+            </div>
+
+            {syncFeedback && (
+              <div className="text-xs font-mono p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-slate-300">
+                {syncFeedback}
+              </div>
+            )}
+
+            {/* Inputs Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono flex items-center justify-between">
+                  <span>LeetCode Handle</span>
+                  {lcStats && <span className="text-emerald-400">Synced {lcStats.lastSynced}</span>}
+                </label>
+                <div className="relative">
+                  <Code2 className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                  <input
+                    type="text"
+                    placeholder="e.g. tourpran"
+                    value={lcUsername}
+                    onChange={e => setLcUsername(e.target.value)}
+                    className="w-full bg-black/60 border border-white/[0.08] focus:border-accentPrimary rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-slate-600 focus:outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono flex items-center justify-between">
+                  <span>GitHub Handle</span>
+                  {ghStats && <span className="text-emerald-400">Synced {ghStats.lastSynced}</span>}
+                </label>
+                <div className="relative">
+                  <GitBranch className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                  <input
+                    type="text"
+                    placeholder="e.g. torvalds"
+                    value={ghUsername}
+                    onChange={e => setGhUsername(e.target.value)}
+                    className="w-full bg-black/60 border border-white/[0.08] focus:border-accentPrimary rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-slate-600 focus:outline-none font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Live Stats Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              {/* LeetCode Verified Card */}
+              <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white font-mono flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-400" />
+                    LeetCode Problem Metrics
+                  </span>
+                  {lcStats && (
+                    <a
+                      href={`https://leetcode.com/u/${lcStats.username}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] font-mono text-accentPrimary hover:underline flex items-center gap-1"
+                    >
+                      <span>@{lcStats.username}</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                  )}
+                </div>
+
+                {lcStats ? (
+                  <div className="space-y-3">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-black font-mono text-white">{lcStats.totalSolved}</span>
+                      <span className="text-xs text-slate-400 font-mono">/ {lcStats.totalQuestions} solved</span>
+                      <span className="ml-auto text-[10px] font-mono text-slate-400">Rank: #{lcStats.ranking.toLocaleString()}</span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 text-center text-xs font-mono">
+                      <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                        <div className="text-[10px] uppercase text-emerald-500 font-bold">Easy</div>
+                        <div className="font-bold text-sm mt-0.5">{lcStats.easySolved}</div>
+                      </div>
+                      <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                        <div className="text-[10px] uppercase text-amber-500 font-bold">Medium</div>
+                        <div className="font-bold text-sm mt-0.5">{lcStats.mediumSolved}</div>
+                      </div>
+                      <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400">
+                        <div className="text-[10px] uppercase text-rose-500 font-bold">Hard</div>
+                        <div className="font-bold text-sm mt-0.5">{lcStats.hardSolved}</div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-6 text-center text-xs text-slate-500 font-mono">
+                    Enter LeetCode username and click &quot;Sync Live Stats&quot; to fetch problem statistics.
+                  </div>
+                )}
+              </div>
+
+              {/* GitHub Verified Card */}
+              <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white font-mono flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    GitHub Public Telemetry
+                  </span>
+                  {ghStats && (
+                    <a
+                      href={ghStats.profileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] font-mono text-accentPrimary hover:underline flex items-center gap-1"
+                    >
+                      <span>@{ghStats.username}</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                  )}
+                </div>
+
+                {ghStats ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      {ghStats.avatarUrl && (
+                        <img src={ghStats.avatarUrl} alt={ghStats.name} className="w-10 h-10 rounded-full border border-white/10" />
+                      )}
+                      <div>
+                        <div className="text-xs font-bold text-white">{ghStats.name}</div>
+                        {ghStats.bio && <p className="text-[10px] text-slate-400 line-clamp-1">{ghStats.bio}</p>}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 text-center text-xs font-mono">
+                      <div className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.06] text-slate-200">
+                        <div className="text-[10px] uppercase text-slate-400 font-bold">Repos</div>
+                        <div className="font-bold text-sm mt-0.5">{ghStats.publicRepos}</div>
+                      </div>
+                      <div className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.06] text-slate-200">
+                        <div className="text-[10px] uppercase text-slate-400 font-bold">Followers</div>
+                        <div className="font-bold text-sm mt-0.5">{ghStats.followers}</div>
+                      </div>
+                      <div className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.06] text-slate-200">
+                        <div className="text-[10px] uppercase text-slate-400 font-bold">Following</div>
+                        <div className="font-bold text-sm mt-0.5">{ghStats.following}</div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-6 text-center text-xs text-slate-500 font-mono">
+                    Enter GitHub username and click &quot;Sync Live Stats&quot; to fetch public repository activity.
+                  </div>
+                )}
+              </div>
+            </div>
+          </SpotlightCard>
         </div>
       </div>
     </motion.div>

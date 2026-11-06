@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppState } from "../context/AppStateContext";
-import { GlassCard } from "../components/Common";
+import { SpotlightCard } from "../components/Common";
 import { ResumeParser } from "../components/ResumeParser";
 import { nvidiaFetch } from "../lib/nvidiaApi";
 import { 
@@ -91,7 +91,6 @@ You MUST respond with ONLY a valid JSON object matching this exact structure, wi
       const data = await response.json();
       let rawText = data.choices[0].message.content;
       
-      // Remove <think> blocks first
       rawText = rawText.replace(/<think>[\s\S]*?<\/think>/g, '');
       
       const startIdx = rawText.indexOf('{');
@@ -116,7 +115,7 @@ You MUST respond with ONLY a valid JSON object matching this exact structure, wi
         };
         
         setGradeResult(report);
-        saveAtsReport(report); // Save to history
+        saveAtsReport(report);
       } catch (parseError) {
         console.error("JSON Parse Error:", parseError, "Raw output:", rawText);
         throw new Error("Failed to parse ATS report data. The AI did not return valid JSON.");
@@ -148,33 +147,20 @@ You MUST respond with ONLY a valid JSON object matching this exact structure, wi
 ${gradeResult.summary}
 
 ## Missing Keywords
-${gradeResult.missingKeywords.map(k => `- [ ] ${k}`).join('\n')}
+${gradeResult.missingKeywords.map(k => `- ${k}`).join('\n')}
 
 ## Found Keywords
-${gradeResult.foundKeywords.map(k => `- [x] ${k}`).join('\n')}
+${gradeResult.foundKeywords.map(k => `- ${k}`).join('\n')}
 
-## Weak vs Strong Action Verbs
-**Strong Verbs Found:** ${gradeResult.actionVerbs.strong.join(', ')}
-**Weak Verbs Found:** ${gradeResult.actionVerbs.weak.join(', ')}
-
-## Impact & Bullet Point Rewrites
-${gradeResult.impactIssues.map(i => `
-### Weak Bullet Point:
-> ${i.original}
-### Strong Rewrite:
-> ${i.fixed}
-*Reason:* ${i.reason}
-`).join('\n')}
-
-## Formatting Issues
-${gradeResult.formattingIssues.map(i => `- ${i}`).join('\n')}
+## Impact Improvements
+${gradeResult.impactIssues.map(issue => `### Before\n> ${issue.original}\n\n### After\n> ${issue.fixed}\n\n*Why: ${issue.reason}*\n`).join('\n---\n')}
 `;
 
-    const blob = new Blob([mdContent], { type: 'text/markdown' });
+    const blob = new Blob([mdContent], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `ATS_Report_${gradeResult.role.replace(/\s+/g, '_')}.md`;
+    a.download = `ATS-Report-${gradeResult.role.replace(/\s+/g, '-')}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -186,33 +172,33 @@ ${gradeResult.formattingIssues.map(i => `- ${i}`).join('\n')}
     if (score >= 60) return "text-amber-400";
     return "text-rose-400";
   };
-  
+
   const getScoreStroke = (score: number) => {
-    if (score >= 80) return "#34d399";
-    if (score >= 60) return "#fbbf24";
-    return "#fb7185";
+    if (score >= 80) return "#10b981";
+    if (score >= 60) return "#f59e0b";
+    return "#f43f5e";
   };
 
   const renderMiniGauge = (label: string, score: number) => (
-    <div className="flex flex-col items-center bg-black/40 shadow-inner p-4 rounded-xl border border-white/5">
-      <div className="relative w-16 h-16 shrink-0 mb-3">
+    <div className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white/[0.02] border border-white/[0.05]">
+      <div className="relative w-14 h-14">
         <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="8" className="text-white/5" />
+          <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" strokeWidth="8" className="text-white/5" />
           <circle 
-            cx="50" cy="50" r="45" fill="none" 
+            cx="50" cy="50" r="42" fill="none" 
             stroke={getScoreStroke(score)} 
             strokeWidth="8" 
-            strokeDasharray={`${2 * Math.PI * 45}`} 
-            strokeDashoffset={`${2 * Math.PI * 45 * (1 - score / 100)}`}
+            strokeDasharray={`${2 * Math.PI * 42}`} 
+            strokeDashoffset={`${2 * Math.PI * 42 * (1 - score / 100)}`}
             strokeLinecap="round"
             className="transition-all duration-1000 ease-out" 
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className={`text-sm font-bold ${getScoreColor(score)}`}>{score}</span>
+          <span className={`text-xs font-mono font-bold ${getScoreColor(score)}`}>{score}</span>
         </div>
       </div>
-      <span className="text-[10px] uppercase font-mono text-slate-400 text-center">{label}</span>
+      <span className="text-[10px] uppercase font-mono text-slate-400 text-center font-semibold">{label}</span>
     </div>
   );
 
@@ -225,19 +211,19 @@ ${gradeResult.formattingIssues.map(i => `- ${i}`).join('\n')}
     ] as const;
 
     return (
-      <div className="flex overflow-x-auto gap-2 mb-6 border-b border-white/[0.06] pb-2 hide-scrollbar">
+      <div className="flex overflow-x-auto gap-2 mb-6 border-b border-white/[0.06] pb-2 custom-scrollbar">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all shrink-0 ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all shrink-0 cursor-pointer ${
               activeTab === tab.id 
-                ? "bg-white/10 text-white" 
-                : "text-slate-400 hover:text-white hover:bg-white/5"
+                ? "bg-accentPrimary/15 border border-accentPrimary/30 text-accentPrimary shadow-sm" 
+                : "text-slate-400 hover:text-white hover:bg-white/[0.03]"
             }`}
           >
-            <tab.icon className="w-4 h-4" />
-            {tab.label}
+            <tab.icon className="w-3.5 h-3.5" />
+            <span>{tab.label}</span>
           </button>
         ))}
       </div>
@@ -245,71 +231,80 @@ ${gradeResult.formattingIssues.map(i => `- ${i}`).join('\n')}
   };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-6xl mx-auto space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/[0.06] pb-6">
-        <div>
-          <span className="text-xs uppercase font-mono tracking-widest text-slate-500">Career Tool</span>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">AI Resume ATS Grader V3</h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Simulate a FAANG Applicant Tracking System to find missing keywords, evaluate action verbs, and fix impact.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button 
-            onClick={() => setShowHistory(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-black/40 hover:bg-white/10 hover:shadow-lg text-slate-300 rounded-lg text-sm font-medium transition-all border border-white/[0.08] hover:scale-[1.02]"
-          >
-            <History className="w-4 h-4" />
-            Past Scans
-          </button>
-          {gradeResult && (
+    <div className="max-w-6xl mx-auto space-y-8 pb-12">
+      {/* Header Banner */}
+      <SpotlightCard className="p-6 sm:p-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-accentPrimary font-bold bg-accentPrimary/10 border border-accentPrimary/25 px-2.5 py-0.5 rounded-md">
+                ATS Recruiter Engine
+              </span>
+              <span className="text-[10px] font-mono text-slate-500">• FAANG Heuristics</span>
+            </div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-white">AI Resume ATS Grader</h1>
+            <p className="text-xs sm:text-sm text-slate-400 max-w-xl leading-relaxed">
+              Simulate technical recruiter algorithms to detect missing keywords, quantify impact statements, and polish phrasing.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
             <button 
-              onClick={downloadMarkdown}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg text-sm font-medium transition-colors border border-emerald-500/20"
+              onClick={() => setShowHistory(true)}
+              className="flex items-center gap-2 px-3.5 py-2 bg-white/[0.03] hover:bg-white/[0.08] text-slate-300 hover:text-white rounded-xl text-xs font-mono font-bold transition-all border border-white/[0.08] cursor-pointer"
             >
-              <Download className="w-4 h-4" />
-              Export .md
+              <History className="w-3.5 h-3.5" />
+              <span>Past Scans</span>
             </button>
-          )}
+            {gradeResult && (
+              <button 
+                onClick={downloadMarkdown}
+                className="flex items-center gap-2 px-3.5 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 rounded-xl text-xs font-mono font-bold transition-colors border border-emerald-500/30 cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export Report</span>
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      </SpotlightCard>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Side: Input (4 cols) */}
         <div className="lg:col-span-4 space-y-6">
-          <GlassCard className="space-y-4">
-            <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider border-b border-white/[0.06] pb-3 flex items-center gap-2">
-              <Search className="w-4 h-4 text-slate-400" /> Analysis Config
+          <SpotlightCard className="p-6 space-y-4">
+            <h3 className="text-xs font-bold text-white uppercase font-mono tracking-wider border-b border-white/[0.06] pb-3 flex items-center gap-2">
+              <Search className="w-4 h-4 text-accentPrimary" /> Target Criteria
             </h3>
             
-            <div>
-              <label className="text-[10px] uppercase font-mono text-slate-500 block mb-2">Target Role</label>
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase font-mono text-slate-400 block font-semibold">Target Role</label>
               <input
                 type="text"
                 value={targetRole}
                 onChange={(e) => setTargetRole(e.target.value)}
-                placeholder="e.g. Frontend Developer"
-                className="w-full bg-black/60 shadow-inner border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-sm text-white placeholder-slate-600 focus:outline-none transition-colors"
+                placeholder="e.g. Fullstack Engineer"
+                className="w-full bg-darkCard/60 border border-white/[0.08] focus:border-accentPrimary rounded-xl py-2 px-3 text-xs text-white placeholder-slate-600 focus:outline-none transition-colors"
               />
             </div>
             
-            <div>
-              <label className="text-[10px] uppercase font-mono text-slate-500 block mb-2">Tech Stack / Focus (Optional)</label>
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase font-mono text-slate-400 block font-semibold">Tech Focus (Optional)</label>
               <input
                 type="text"
                 value={techStack}
                 onChange={(e) => setTechStack(e.target.value)}
-                placeholder="e.g. MERN, AWS, Python"
-                className="w-full bg-black/60 shadow-inner border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-sm text-white placeholder-slate-600 focus:outline-none transition-colors"
+                placeholder="e.g. React, Node.js, Go, Distributed Systems"
+                className="w-full bg-darkCard/60 border border-white/[0.08] focus:border-accentPrimary rounded-xl py-2 px-3 text-xs text-white placeholder-slate-600 focus:outline-none transition-colors"
               />
             </div>
 
-            <div>
-              <label className="text-[10px] uppercase font-mono text-slate-500 block mb-2">Experience Level</label>
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase font-mono text-slate-400 block font-semibold">Experience Level</label>
               <select
                 value={experienceLevel}
                 onChange={(e) => setExperienceLevel(e.target.value)}
-                className="w-full bg-black/60 shadow-inner border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-sm text-white focus:outline-none transition-colors appearance-none"
+                className="w-full bg-darkCard/60 border border-white/[0.08] focus:border-accentPrimary rounded-xl py-2 px-3 text-xs text-white focus:outline-none transition-colors font-mono cursor-pointer"
               >
                 <option>Entry Level / New Grad</option>
                 <option>Junior (1-3 yrs)</option>
@@ -318,39 +313,39 @@ ${gradeResult.formattingIssues.map(i => `- ${i}`).join('\n')}
               </select>
             </div>
             
-            <div className="pt-2 border-t border-white/5 mt-4">
+            <div className="pt-2 border-t border-white/[0.06] mt-4">
               <ResumeParser 
                 resumeText={resumeText}
                 setResumeText={setResumeText}
                 resumeFileName={resumeFileName}
                 setResumeFileName={setResumeFileName}
                 title="Resume Input"
-                description="Upload PDF or paste text. Processed locally."
+                description="Upload PDF or paste text. Evaluated in sandbox."
               />
             </div>
-          </GlassCard>
+          </SpotlightCard>
 
           <button
             onClick={handleGradeResume}
             disabled={isGrading || !resumeText}
-            className="w-full px-6 py-4 bg-accentPrimary hover:bg-accentPrimary/90 text-black rounded-xl font-bold shadow-[0_0_20px_rgba(var(--color-accent-primary),0.4)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="w-full py-3.5 bg-accentPrimary hover:bg-accentPrimary/90 text-slate-950 rounded-xl font-bold font-mono text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(var(--accent-rgb),0.3)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
           >
             {isGrading ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Analyzing Resume...
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Evaluating Metrics...</span>
               </>
             ) : (
               <>
-                <Star className="w-5 h-5" />
-                Scan Resume
+                <Star className="w-4 h-4 fill-current" />
+                <span>Scan ATS Compatibility</span>
               </>
             )}
           </button>
           
           {error && (
-            <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs p-4 rounded-lg flex gap-2 items-start">
-              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+            <div className="bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs p-4 rounded-xl flex gap-2.5 items-start">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
               <p>{error}</p>
             </div>
           )}
@@ -358,18 +353,20 @@ ${gradeResult.formattingIssues.map(i => `- ${i}`).join('\n')}
 
         {/* Right Side: Results (8 cols) */}
         <div className="lg:col-span-8 space-y-6">
-          <GlassCard className="h-full min-h-[500px]">
-            <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider border-b border-white/[0.06] pb-3 flex items-center gap-2 mb-4">
-              <FileText className="w-4 h-4 text-slate-400" /> ATS Report Details
+          <SpotlightCard className="p-6 h-full min-h-[500px]">
+            <h3 className="text-xs font-bold text-white uppercase font-mono tracking-wider border-b border-white/[0.06] pb-3 flex items-center gap-2 mb-4">
+              <FileText className="w-4 h-4 text-accentPrimary" /> Comprehensive Diagnostic Report
             </h3>
             
             {isGrading ? (
-              <div className="flex flex-col items-center justify-center h-[400px] opacity-60">
+              <div className="flex flex-col items-center justify-center h-[400px]">
                 <div className="relative">
-                  <div className="w-16 h-16 border-4 border-accentPrimary/30 rounded-full animate-ping absolute inset-0" />
+                  <div className="w-16 h-16 border-4 border-accentPrimary/20 rounded-full animate-ping absolute inset-0" />
                   <div className="w-16 h-16 border-4 border-accentPrimary rounded-full border-t-transparent animate-spin" />
                 </div>
-                <p className="text-xs font-mono text-accentPrimary mt-6 uppercase tracking-widest">Parsing Structure & Metrics...</p>
+                <p className="text-xs font-mono text-accentPrimary mt-6 uppercase tracking-widest animate-pulse font-bold">
+                  Extracting Keywords & Action Verbs...
+                </p>
               </div>
             ) : gradeResult ? (
               <div>
@@ -378,82 +375,85 @@ ${gradeResult.formattingIssues.map(i => `- ${i}`).join('\n')}
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeTab}
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.18 }}
                   >
                     {activeTab === "overview" && (
                       <div className="space-y-6">
-                        <div className="flex items-center gap-8 bg-black/30 p-6 rounded-xl border border-white/5">
+                        <div className="flex flex-col sm:flex-row items-center gap-6 bg-white/[0.02] p-6 rounded-2xl border border-white/[0.05]">
                           <div className="relative w-28 h-28 shrink-0">
                             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                              <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="8" className="text-white/10" />
+                              <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" strokeWidth="8" className="text-white/5" />
                               <circle 
-                                cx="50" cy="50" r="45" fill="none" 
+                                cx="50" cy="50" r="42" fill="none" 
                                 stroke={getScoreStroke(gradeResult.scores.overall)} 
                                 strokeWidth="8" 
-                                strokeDasharray={`${2 * Math.PI * 45}`} 
-                                strokeDashoffset={`${2 * Math.PI * 45 * (1 - gradeResult.scores.overall / 100)}`}
+                                strokeDasharray={`${2 * Math.PI * 42}`} 
+                                strokeDashoffset={`${2 * Math.PI * 42 * (1 - gradeResult.scores.overall / 100)}`}
                                 strokeLinecap="round"
                                 className="transition-all duration-1000 ease-out" 
                               />
                             </svg>
                             <div className="absolute inset-0 flex items-center justify-center flex-col">
-                              <span className={`text-3xl font-extrabold ${getScoreColor(gradeResult.scores.overall)}`}>{gradeResult.scores.overall}</span>
+                              <span className={`text-3xl font-extrabold font-mono ${getScoreColor(gradeResult.scores.overall)}`}>
+                                {gradeResult.scores.overall}
+                              </span>
+                              <span className="text-[9px] font-mono text-slate-500 uppercase">Match</span>
                             </div>
                           </div>
-                          <div>
-                            <h4 className="text-xl font-bold text-white mb-2">Overall ATS Match</h4>
-                            <p className="text-slate-300 text-sm leading-relaxed">{gradeResult.summary}</p>
+                          <div className="space-y-2 text-center sm:text-left">
+                            <h4 className="text-lg font-bold text-white">Overall ATS Alignment</h4>
+                            <p className="text-slate-300 text-xs leading-relaxed">{gradeResult.summary}</p>
                           </div>
                         </div>
                         
-                        <div className="grid grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                           {renderMiniGauge("Keywords", gradeResult.scores.keywords)}
                           {renderMiniGauge("Impact", gradeResult.scores.impact)}
                           {renderMiniGauge("Clarity", gradeResult.scores.clarity)}
-                          {renderMiniGauge("Verbs", gradeResult.scores.verbs)}
+                          {renderMiniGauge("Action Verbs", gradeResult.scores.verbs)}
                         </div>
                       </div>
                     )}
 
                     {activeTab === "keywords" && (
-                      <div className="space-y-8">
+                      <div className="space-y-6">
                         <div>
-                          <h4 className="flex items-center gap-2 text-rose-400 font-bold mb-4">
-                            <XCircle className="w-5 h-5" /> Missing Keywords
+                          <h4 className="flex items-center gap-2 text-rose-400 font-bold text-xs uppercase font-mono mb-3">
+                            <XCircle className="w-4 h-4" /> Missing Keywords
                           </h4>
                           {gradeResult.missingKeywords.length > 0 ? (
                             <div className="flex flex-wrap gap-2">
                               {gradeResult.missingKeywords.map((kw, i) => (
-                                <span key={i} className="px-3 py-1 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs rounded-full">
+                                <span key={i} className="px-3 py-1 bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs rounded-lg font-mono">
                                   {kw}
                                 </span>
                               ))}
                             </div>
                           ) : (
-                            <p className="text-sm text-slate-400 italic">Excellent! No major keywords missing.</p>
+                            <p className="text-xs text-slate-400 italic font-mono">Clean! No critical keywords missing.</p>
                           )}
-                          <p className="text-xs text-slate-500 mt-4">Add these naturally to bypass ATS filters.</p>
+                          <p className="text-[10px] text-slate-500 font-mono mt-3">Integrate these technical keywords naturally into project descriptions.</p>
                         </div>
                         
-                        <div className="h-px bg-white/5" />
+                        <div className="h-px bg-white/[0.06]" />
 
                         <div>
-                          <h4 className="flex items-center gap-2 text-emerald-400 font-bold mb-4">
-                            <CheckCircle className="w-5 h-5" /> Found Keywords
+                          <h4 className="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase font-mono mb-3">
+                            <CheckCircle className="w-4 h-4" /> Found Matched Keywords
                           </h4>
                           {gradeResult.foundKeywords.length > 0 ? (
                             <div className="flex flex-wrap gap-2">
                               {gradeResult.foundKeywords.map((kw, i) => (
-                                <span key={i} className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs rounded-full">
+                                <span key={i} className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-xs rounded-lg font-mono">
                                   {kw}
                                 </span>
                               ))}
                             </div>
                           ) : (
-                            <p className="text-sm text-slate-400 italic">No significant matching keywords found.</p>
+                            <p className="text-xs text-slate-400 italic font-mono">No matching domain keywords found.</p>
                           )}
                         </div>
                       </div>
@@ -463,25 +463,25 @@ ${gradeResult.formattingIssues.map(i => `- ${i}`).join('\n')}
                       <div className="space-y-4">
                         {gradeResult.impactIssues.length > 0 ? (
                           gradeResult.impactIssues.map((issue, i) => (
-                            <div key={i} className="bg-black/50 shadow-inner border border-white/10 rounded-xl overflow-hidden">
-                              <div className="p-4 bg-rose-500/5 border-b border-white/5">
-                                <span className="text-[10px] uppercase font-mono text-rose-400 mb-1 block">Before (Weak)</span>
-                                <p className="text-sm text-slate-300">"{issue.original}"</p>
+                            <div key={i} className="bg-white/[0.015] border border-white/[0.06] rounded-2xl overflow-hidden">
+                              <div className="p-3.5 bg-rose-500/5 border-b border-white/[0.04]">
+                                <span className="text-[9px] uppercase font-mono text-rose-400 mb-1 block font-bold">Original Bullet (Passive / Non-Quantified)</span>
+                                <p className="text-xs text-slate-300 italic">"{issue.original}"</p>
                               </div>
-                              <div className="p-4 bg-emerald-500/5 border-b border-white/5">
-                                <span className="text-[10px] uppercase font-mono text-emerald-400 mb-1 block">After (Strong)</span>
-                                <p className="text-sm text-white font-medium">"{issue.fixed}"</p>
+                              <div className="p-3.5 bg-emerald-500/5 border-b border-white/[0.04]">
+                                <span className="text-[9px] uppercase font-mono text-emerald-400 mb-1 block font-bold">Suggested Rewrite (Active + Metrics)</span>
+                                <p className="text-xs text-white font-medium">"{issue.fixed}"</p>
                               </div>
-                              <div className="p-3 bg-black/40 flex gap-2 items-start">
-                                <Award className="w-4 h-4 text-accentPrimary shrink-0 mt-0.5" />
-                                <p className="text-xs text-slate-400">{issue.reason}</p>
+                              <div className="p-3 bg-black/30 flex gap-2 items-start text-xs text-slate-400 font-mono">
+                                <Award className="w-3.5 h-3.5 text-accentPrimary shrink-0 mt-0.5" />
+                                <p className="text-[11px]">{issue.reason}</p>
                               </div>
                             </div>
                           ))
                         ) : (
-                          <div className="text-center py-8">
-                            <CheckCircle className="w-12 h-12 text-emerald-500/50 mx-auto mb-3" />
-                            <p className="text-slate-300">All bullet points show strong impact and metrics.</p>
+                          <div className="text-center py-12 space-y-2">
+                            <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto" />
+                            <p className="text-slate-300 text-xs font-mono">All bullet points show quantifiable metrics and strong agency.</p>
                           </div>
                         )}
                       </div>
@@ -489,38 +489,36 @@ ${gradeResult.formattingIssues.map(i => `- ${i}`).join('\n')}
 
                     {activeTab === "formatting" && (
                       <div className="space-y-6">
-                        <div className="grid grid-cols-2 gap-4">
-                           <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-xl">
-                            <h5 className="text-[10px] uppercase font-mono text-rose-400 mb-2">Weak Verbs Used</h5>
-                            <div className="flex flex-wrap gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="bg-rose-500/5 border border-rose-500/20 p-4 rounded-2xl space-y-2">
+                            <h5 className="text-[10px] uppercase font-mono text-rose-400 font-bold">Weak Action Verbs</h5>
+                            <div className="flex flex-wrap gap-1.5">
                               {gradeResult.actionVerbs.weak.length > 0 ? gradeResult.actionVerbs.weak.map((v, i) => (
-                                <span key={i} className="px-2 py-1 bg-black/30 text-rose-200 text-xs rounded">{v}</span>
-                              )) : <span className="text-xs text-slate-400">None found</span>}
+                                <span key={i} className="px-2.5 py-1 bg-black/40 text-rose-300 text-xs rounded-lg font-mono">{v}</span>
+                              )) : <span className="text-xs text-slate-500 font-mono">None detected</span>}
                             </div>
-                           </div>
-                           <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl">
-                            <h5 className="text-[10px] uppercase font-mono text-emerald-400 mb-2">Strong Verbs Used</h5>
-                            <div className="flex flex-wrap gap-2">
+                          </div>
+                          <div className="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-2xl space-y-2">
+                            <h5 className="text-[10px] uppercase font-mono text-emerald-400 font-bold">Strong Power Verbs</h5>
+                            <div className="flex flex-wrap gap-1.5">
                               {gradeResult.actionVerbs.strong.length > 0 ? gradeResult.actionVerbs.strong.map((v, i) => (
-                                <span key={i} className="px-2 py-1 bg-black/30 text-emerald-200 text-xs rounded">{v}</span>
-                              )) : <span className="text-xs text-slate-400">None found</span>}
+                                <span key={i} className="px-2.5 py-1 bg-black/40 text-emerald-300 text-xs rounded-lg font-mono">{v}</span>
+                              )) : <span className="text-xs text-slate-500 font-mono">None detected</span>}
                             </div>
-                           </div>
+                          </div>
                         </div>
 
-                        <h4 className="text-sm font-bold text-white mb-2 pt-4 border-t border-white/5">Parseability Issues</h4>
-                        <div className="space-y-3">
+                        <div className="space-y-3 pt-4 border-t border-white/[0.06]">
+                          <h4 className="text-xs font-bold text-white uppercase font-mono tracking-wider">Formatting & Parseability</h4>
                           {gradeResult.formattingIssues.length > 0 ? (
                             gradeResult.formattingIssues.map((issue, i) => (
-                              <div key={i} className="flex gap-3 bg-black/30 p-4 rounded-xl border border-white/5">
-                                <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
-                                <p className="text-sm text-slate-300 leading-relaxed">{issue}</p>
+                              <div key={i} className="flex gap-3 bg-white/[0.02] p-3.5 rounded-xl border border-white/[0.05] text-xs text-slate-300 items-start">
+                                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                                <p>{issue}</p>
                               </div>
                             ))
                           ) : (
-                            <div className="text-center py-4">
-                              <p className="text-slate-400 text-sm">No major formatting or parseability issues detected.</p>
-                            </div>
+                            <p className="text-slate-400 text-xs font-mono">No parseability or format issues detected.</p>
                           )}
                         </div>
                       </div>
@@ -529,52 +527,51 @@ ${gradeResult.formattingIssues.map(i => `- ${i}`).join('\n')}
                 </AnimatePresence>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-[400px] text-slate-500 text-center px-6">
-                <CheckCircle className="w-12 h-12 mb-4 opacity-20" />
-                <p className="text-sm font-medium">Upload a resume and click Scan to generate an interactive JSON report.</p>
-                <p className="text-xs mt-2 opacity-60 max-w-xs">The AI will extract keywords, rate impact, and suggest precise bullet point rewrites.</p>
+              <div className="flex flex-col items-center justify-center h-[380px] text-slate-500 text-center px-6 space-y-3">
+                <CheckCircle className="w-12 h-12 text-slate-700" />
+                <p className="text-xs font-medium text-slate-400 font-mono">Upload a resume and trigger ATS scan to generate structured feedback.</p>
               </div>
             )}
-          </GlassCard>
+          </SpotlightCard>
         </div>
       </div>
       
       {/* History Modal */}
       <AnimatePresence>
         {showHistory && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-2xl bg-dark/95 border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
-            >
-              <div className="p-4 border-b border-white/10 flex items-center justify-between bg-black/20">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <History className="w-5 h-5 text-accentPrimary" /> Scan History
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-fade-in">
+            <SpotlightCard className="w-full max-w-2xl border border-white/[0.12] shadow-2xl p-6 flex flex-col max-h-[80vh]">
+              <div className="border-b border-white/[0.06] pb-4 flex items-center justify-between">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2 font-mono uppercase">
+                  <History className="w-4 h-4 text-accentPrimary" /> Previous Resume Scans
                 </h3>
-                <button onClick={() => setShowHistory(false)} className="text-slate-400 hover:text-white transition-colors">
-                  <X className="w-5 h-5" />
+                <button
+                  onClick={() => setShowHistory(false)}
+                  className="text-slate-400 hover:text-white p-1 rounded-lg border border-white/[0.08] cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
                 </button>
               </div>
-              <div className="p-6 overflow-y-auto space-y-4">
+              <div className="py-4 overflow-y-auto space-y-3 custom-scrollbar">
                 {(!state.atsReports || state.atsReports.length === 0) ? (
-                  <p className="text-center text-slate-500 py-8 text-sm">No past scans found.</p>
+                  <p className="text-center text-slate-500 py-8 text-xs font-mono">No saved scans found.</p>
                 ) : (
                   state.atsReports.map((report) => (
-                    <div key={report.id} className="flex items-center justify-between bg-black/40 border border-white/5 p-4 rounded-xl hover:border-white/10 transition-colors">
+                    <div key={report.id} className="flex items-center justify-between bg-white/[0.02] border border-white/[0.05] p-3.5 rounded-xl hover:border-white/[0.1] transition-all">
                       <div>
                         <div className="flex items-center gap-3 mb-1">
-                          <span className={`text-lg font-bold ${getScoreColor(report.scores.overall)}`}>{report.scores.overall}</span>
-                          <span className="text-white font-medium">{report.role}</span>
+                          <span className={`text-base font-bold font-mono ${getScoreColor(report.scores.overall)}`}>
+                            {report.scores.overall}
+                          </span>
+                          <span className="text-white text-xs font-semibold">{report.role}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-slate-400">
+                        <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
                           <span>{new Date(report.timestamp).toLocaleDateString()}</span>
-                          <span>&bull;</span>
+                          <span>•</span>
                           <span>{report.level}</span>
                           {report.focus && (
                             <>
-                              <span>&bull;</span>
+                              <span>•</span>
                               <span className="text-accentPrimary">{report.focus}</span>
                             </>
                           )}
@@ -585,18 +582,18 @@ ${gradeResult.formattingIssues.map(i => `- ${i}`).join('\n')}
                           setGradeResult(report);
                           setShowHistory(false);
                         }}
-                        className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-sm font-medium transition-colors"
+                        className="px-3.5 py-1.5 bg-accentPrimary/15 hover:bg-accentPrimary/25 text-accentPrimary border border-accentPrimary/30 rounded-xl text-xs font-mono font-bold transition-colors cursor-pointer"
                       >
-                        View
+                        Inspect
                       </button>
                     </div>
                   ))
                 )}
               </div>
-            </motion.div>
+            </SpotlightCard>
           </div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 };

@@ -215,14 +215,390 @@ def build_system_prompt() -> str:
     )
 
 
+TOPIC_SUBTHEMES: Dict[str, List[str]] = {
+    # Quantitative Aptitude
+    "Clocks": [
+        "Angle between hands at specific hours and minutes (e.g. 3:40, 8:20, 10:15, reflex angles)",
+        "Hands coinciding, at right angles (90 deg), or opposite (180 deg) between given hour intervals",
+        "Clocks gaining or losing time (fast/slow clock rate discrepancy over hours and days)",
+        "Faulty clock compared against correct standard time with start and check timestamps",
+        "Mirror reflection of clock dial showing apparent time vs actual true time",
+        "Relative angular velocity, degrees traversed per minute, and hand speed ratio problems",
+        "Two clocks running at different speeds started simultaneously, finding synchronization time",
+        "Multi-day continuous clock drift and total accumulated error calculations",
+    ],
+    "Calendars": [
+        "Finding day of the week for an exact date using odd days calculation",
+        "Same calendar repetition year rules (Leap year and normal year cycles)",
+        "Relative day calculations (If 3 days after tomorrow is Sunday, find day X days ago)",
+        "Century leap year rules and last/first days of a century",
+        "Number of odd days in multi-year periods or leap year counts across centuries",
+        "Date shifts within same month or year given weekday conditions",
+        "Future and past date projections based on elapsed days",
+        "Complex calendar constraints and day-matching logic puzzles",
+    ],
+    "Time and Work": [
+        "Basic individual and combined work completion times (A and B together)",
+        "Alternating work days by workers with different efficiencies",
+        "Workers leaving or joining midway through the project",
+        "Efficiency ratios and wage sharing proportional to work done",
+        "Pipes and Cisterns: Inlet and outlet fill/empty rates with leaks",
+        "Man-days and work-equivalence equations (e.g. M men and W women)",
+        "Negative work or destruction rates combined with construction",
+        "Multi-stage project completion with variable worker capacities",
+    ],
+    "Time Speed Distance": [
+        "Average speed over different journey segments and harmonic mean",
+        "Relative speed of two bodies moving towards or away from each other",
+        "Trains passing stationary poles, platforms, tunnels, or other moving trains",
+        "Boats and Streams: Upstream, downstream speed and river currents",
+        "Races and Games of skill: Head starts in distance or time",
+        "Late and early arrival scenarios with changing speeds",
+        "Circular tracks: First meeting point and starting point meetings",
+        "Stoppages and fuel/delay impact on overall speed and journey duration",
+    ],
+    "Profit and Loss": [
+        "Basic Cost Price, Selling Price, and Profit/Loss Percentage calculations",
+        "Marked Price, Trade Discounts, and Successive Discount schemes",
+        "Dishonest dealer using false weights and faulty measures",
+        "Selling two items at same price with equal percentage gain and loss",
+        "Break-even analysis and profit maximization with mixed quantities",
+        "Free article promotions (e.g. Buy X Get Y Free) and effective discount",
+        "Multi-party successive sales (A sells to B, B sells to C at markup)",
+        "Damaged goods, overhead expenses, and adjusted profit margins",
+    ],
+    "Simple & Compound Interest": [
+        "Simple Interest direct formula, time, rate, and principal calculations",
+        "Compound Interest compounded annually, half-yearly, and quarterly",
+        "Difference between Compound Interest and Simple Interest for 2 and 3 years",
+        "Sum doubling/tripling in N years under SI and CI rules",
+        "Installments and loan amortization under compound interest",
+        "Variable interest rates in successive years on the same principal",
+        "Equal annual installments to clear a debt under simple and compound interest",
+        "Continuous or multi-part investment yielding equal interest amounts",
+    ],
+    "Percentages": [
+        "Basic percentage change, increase, and decrease calculations",
+        "Successive percentage changes and effective overall change (a + b + ab/100)",
+        "Price consumption and expenditure compensation problems",
+        "Population growth and depreciation rate models over consecutive years",
+        "Exam pass/fail score criteria and aggregate percentage benchmarks",
+        "Income, tax brackets, expenditure, and savings percentage distributions",
+        "Voter turnout, valid votes, and winning margin percentages in elections",
+        "Fraction to percentage conversions and comparative ratio-percentage problems",
+    ],
+    "Ratio and Proportion": [
+        "Compounded ratios, duplicate ratios, and mean proportional calculations",
+        "Dividing sums of money into proportional parts among multiple beneficiaries",
+        "Third and fourth proportional numbers given ratios",
+        "Coin problems: Coins of different denominations in given ratios",
+        "Income and expenditure ratios with fixed or variable savings amounts",
+        "Direct and inverse variation relationships (x proportional to y or 1/y)",
+        "Adding or subtracting quantities to transform ratio from a:b to c:d",
+        "Partnership profit sharing based on capital investment and time duration",
+    ],
+    "Averages": [
+        "Arithmetic mean, weighted average, and missing observation calculations",
+        "Inclusion/exclusion: Average weight changes when a person leaves or joins",
+        "Incorrect entry replacement: Recalculating true average after spotting error",
+        "Batting and bowling averages of cricketers over matches and innings",
+        "Average speed over round trips and multi-segment travel",
+        "Classroom grade averages with weighted marks per subject",
+        "Combined average of multiple distinct groups or subsets",
+        "Sequential and consecutive number series average properties",
+    ],
+    "Permutation and Combination": [
+        "Linear arrangement of letters with vowel/consonant grouping constraints",
+        "Word formation where specific letters never occur together",
+        "Committee formation from groups of men and women with quota constraints",
+        "Handshakes, diagonals of polygons, and straight line intersection points",
+        "Circular permutations with distinguishable vs indistinguishable positions",
+        "Number formation using given digits with divisibility rules (e.g. divisible by 5)",
+        "Arranging items with repetitions and identical elements (n! / p!q!)",
+        "Distribution of identical and distinct objects into boxes or groups",
+    ],
+    "Probability": [
+        "Single and multiple coin tossing probability distributions",
+        "Rolling single, pair, or three dice with specific sum and face outcomes",
+        "Drawing cards from standard 52-card deck (suits, face cards, honors)",
+        "Drawing colored balls from urns with and without replacement",
+        "Independent and dependent events: P(A and B) and conditional probability P(A|B)",
+        "Mutually exclusive events, union probability P(A or B), and complementary events",
+        "At least one success problems using 1 - P(none) formulation",
+        "Target shooting, problem solving by multiple individuals independently",
+    ],
+    "Number System": [
+        "Divisibility rules for 2, 3, 4, 7, 8, 9, 11, 13, and composite divisors",
+        "Finding unit digit and tens digit in large power expressions (cyclicity of powers)",
+        "Remainder theorem and modulo arithmetic (Fermat, Euler remainder concepts)",
+        "HCF and LCM relationships: Product = HCF * LCM, bells ringing together",
+        "Number of factors, prime factor decomposition, sum of factors, odd/even factors",
+        "Trailing zeros in factorials and large algebraic multiplications",
+        "Sum of first N natural numbers, squares, cubes, and AP/GP series formulas",
+        "Recurring decimals conversion to vulgar fractions and rational/irrational proofs",
+    ],
+    "Mensuration (Area and Perimeter)": [
+        "2D area and perimeter of Triangles (Heron's formula, equilateral, isosceles)",
+        "Rectangles, Squares, and Parallelograms: Area, diagonal, and perimeter relations",
+        "Circles, Semicircles, and Sectors: Arc length, sector area, and shaded regions",
+        "Path surrounding or inside a garden / running track area calculations",
+        "Trapezium and Rhombus: Area using height and diagonals",
+        "3D Volume and Surface Area of Cubes, Cuboids, and Cylinders",
+        "Cones, Spheres, and Hemispheres: Total vs curved surface areas and melting/recasting",
+        "Cost estimation: Fencing perimeter, carpeting area, and painting walls (4 walls area)",
+    ],
+    "Ages Problems": [
+        "Present age ratios and future age projections after N years",
+        "Past age conditions: Age ratio X years ago vs present age equations",
+        "Parent-child age multiplier equations (father is 3 times son's age)",
+        "Sum and difference of ages among multiple siblings or family members",
+        "Average age of family before and after birth of child or marriage",
+        "Three-generation age comparison problems (Grandfather, Father, Son)",
+        "Quadratic or product-of-ages relationship solving",
+        "Age proportion shifts over multiple time checkpoints",
+    ],
+    "Boats and Streams": [
+        "Downstream speed (u + v) and Upstream speed (u - v) fundamental equations",
+        "Finding speed of boat in still water and speed of water current",
+        "Round-trip journey: Time taken to go upstream and return downstream",
+        "Distance covered when time taken upstream is K times time downstream",
+        "Swimmer vs river current velocity and drift across flow",
+        "Mid-river meeting points of two boats travelling in opposite directions",
+        "Fuel consumption and motor power adjustments against river flow",
+        "Variable current speeds along different river stretches",
+    ],
+    "Mixtures and Alligations": [
+        "Rule of Alligation: Finding mixing ratio of two ingredients at different prices",
+        "Dilution: Repeated replacement of liquid with water from a container",
+        "Mixing two alloys containing metals in different initial ratios",
+        "Milk and water concentration adjustments by adding pure milk or water",
+        "Weighted average cost price of combined mixture and desired profit margin",
+        "Three-ingredient alligation and compound mixture balancing",
+        "Alcohol and solution purity percentages in chemical blending",
+        "Profit on mixture sold at cost price of pure ingredient (dishonest vendor)",
+    ],
+
+    # Logical Reasoning
+    "Blood Relations": [
+        "Single-line direct dialogue pointing ('Pointing to a photograph, a man said...')",
+        "Coded blood relations with symbols (e.g. P + Q means P is mother of Q)",
+        "Multi-generation family tree puzzles with professions and relations",
+        "Maternal vs paternal relations (uncle, aunt, nephew, niece, cousins)",
+        "In-law relationships and marital lineage deductions",
+        "Complex family structure constraint solving with genders and relations",
+        "Indirect generational chains ('Only daughter of my mother's husband...')",
+        "Deciding minimum people in a family given relational constraints",
+    ],
+    "Direction Sense": [
+        "Sequential turn navigation (Walks 10m North, turns right 5m, turns left...)",
+        "Shortest displacement distance from starting point (Pythagoras theorem)",
+        "Compass direction rotation (e.g. North-East becomes South...)",
+        "Shadow problems at Sunrise and Sunset (Morning/Evening shadow alignments)",
+        "Clock dial directional orientations (Hour hand pointing East at 4:30...)",
+        "Two people starting from same point in opposite directions with turns",
+        "Angular turns: 45 degree, 90 degree, 135 degree clockwise and anticlockwise",
+        "Multi-city geographic relative positioning puzzles",
+    ],
+    "Number & Letter Series": [
+        "Arithmetic difference, alternating difference, and double difference series",
+        "Geometric multiplication and division patterns with incremental multipliers",
+        "Squares, cubes, and prime number offset series (n^2 + 1, n^3 - n)",
+        "Fibonacci and cumulative addition series patterns",
+        "Alternating and interleaved dual-sequence series",
+        "Alphabet letter gap position series with forward and backward ranks",
+        "Alpha-numeric combined pattern sequences (e.g. 2B, 4D, 8H...)",
+        "Wrong number identification in a mathematically structured series",
+    ],
+    "Coding & Decoding": [
+        "Letter shifting: Fixed and progressive forward/backward alphabet offset codes",
+        "Direct letter-to-letter substitution mappings",
+        "Number and symbol coding for words based on letter positions",
+        "Sentence and word deciphering ('pic vic nic' means 'winter is cold')",
+        "Matrix coding: Row and column coordinate deciphering",
+        "Reverse alphabet opposite letter coding (A <-> Z, B <-> Y, C <-> X)",
+        "Vowel/consonant alternating coding logic with positional math",
+        "Complex condition-based coding rules with boundary symbols",
+    ],
+    "Syllogism": [
+        "Two-statement standard syllogisms (All A are B, Some B are C)",
+        "Three-statement chains with universal and particular premises",
+        "Negative statements and definite non-overlap (No A is B, Some A are not C)",
+        "'Possibility' conclusions vs 'Definite' conclusions analysis",
+        "'Either-Or' complementary pair conditions (All/Some-Not, Some/No)",
+        "'Only a few' and 'Only' modern syllogism rule deductions",
+        "Venn diagram intersection and non-intersection verification",
+        "Reverse syllogism: Given conclusions, determine valid premise set",
+    ],
+    "Seating Arrangement": [
+        "Linear single-row seating with all facing North or South",
+        "Linear dual-row seating with parallel rows facing each other",
+        "Circular table seating: All facing inward towards center",
+        "Circular table seating: Mixed inward and outward facing directions",
+        "Square / rectangular table seating (corners vs edges)",
+        "Floor and building flat distribution puzzles with numbered storeys",
+        "Circular arrangement combined with single attribute (colors, professions)",
+        "Linear arrangement with variable empty / vacant seat constraints",
+    ],
+    "Statement & Conclusion": [
+        "Direct logical consequence from given premise without external assumptions",
+        "Cause-and-effect conclusions based strictly on statement text",
+        "Universal generalizations vs specific qualified factual conclusions",
+        "Government policy and economic statement impact conclusions",
+        "Scientific and health study conclusion validations",
+        "Social and educational initiative outcomes analysis",
+        "Multiple conclusions evaluation (Only I follows, Only II follows, Both, Neither)",
+        "Identifying unjustified leaps or over-generalized invalid conclusions",
+    ],
+    "Statement & Assumption": [
+        "Implicit unstated beliefs necessary for a statement to hold true",
+        "Public notices, warnings, and advertisements implicit assumptions",
+        "Government and organizational announcements baseline assumptions",
+        "Cause-action rationale: Why was the specific step proposed",
+        "Differentiating between valid assumption vs desired consequence",
+        "Evaluating extreme assumptions ('Always', 'Never', 'Only')",
+        "Personal opinion statements vs institutional policy assumptions",
+        "Multiple assumptions validity testing (Assumption I / II is implicit)",
+    ],
+    "Non verbal reasoning": [
+        "Mirror images of geometric patterns, numbers, and letter clusters",
+        "Water images (vertical inversion) of alphanumeric figures",
+        "Paper folding and punch hole pattern unfolding visualization",
+        "Cube unfolding and opposite face identification in dice",
+        "Figure completion: Finding missing quadrant of complex geometric figure",
+        "Embedded figures: Identifying hidden pattern within complex background",
+        "Figure series progression: Clockwise rotation and symbol addition",
+        "Analogy and classification of abstract shapes and spatial designs",
+    ],
+    "Puzzles (Logic)": [
+        "Day and month scheduling puzzles with people and events",
+        "Multi-attribute grid puzzles: Matching Name, City, Profession, and Vehicle",
+        "Floor and flat puzzle with multiple parameters per resident",
+        "Box stacking puzzle: Height and position sequencing constraints",
+        "Blood relation combined with professions and table seating",
+        "Truth-teller and liar logic deduction puzzles",
+        "Sequential order and ranking puzzle with comparison inequalities (A > B > C)",
+        "Constraint elimination and matrix matching logic problems",
+    ],
+
+    # Data Interpretation
+    "Tabulation": [
+        "Complex data tables: Percentage growth between years",
+        "Sales, revenue, expenditure, and net profit comparisons across companies",
+        "Student enrollment, pass percentage, and gender ratios in schools",
+        "Production vs demand table analysis across manufacturing plants",
+        "Demographic tables: Population age groups and literacy rate stats",
+        "Import/Export valuation and trade balance ratio calculations",
+        "Average and total computations across multiple tabular columns",
+        "Identifying maximum, minimum, and highest percentage change in table",
+    ],
+    "Bar Graphs": [
+        "Single bar graphs: Direct quantity comparison and year-on-year growth",
+        "Multiple grouped bar graphs: Comparing sales of two or more products",
+        "Stacked / Subdivided bar graphs: Composition percentages within totals",
+        "Percentage bar graphs: Comparing relative shares across categories",
+        "Positive and negative deviation bar charts (Profit/Loss over years)",
+        "Ratio between two distinct categories across multiple graph periods",
+        "Average bar value and trend slope over multi-year periods",
+        "Projection and future estimation based on past bar trends",
+    ],
+    "Pie Charts": [
+        "Single pie chart: Sector percentage share and central angle (360 deg = 100%)",
+        "Converting degree measures to absolute numeric quantities",
+        "Two pie charts: Total expenditure distribution vs individual category breakup",
+        "Pie chart + Table combination: Departmental cost and employee share",
+        "Household budget percentage splits and savings vs expense comparisons",
+        "Market share pie chart: Top brand dominance and growth shifts",
+        "Ratio of values between two distinct pie sectors",
+        "Combined pie chart and bar chart multi-source analytical problems",
+    ],
+    "Line Graphs": [
+        "Single line graph: Trend analysis, peaks, troughs, and inflection points",
+        "Multiple line graphs: Comparative production of two companies over time",
+        "Percentage increase and decrease rates along graph segments",
+        "Intersection points of lines: Finding when two entities had equal output",
+        "Distance-time and speed-time graph interpretations with slopes",
+        "Import vs Export line graphs: Finding trade surplus and deficit years",
+        "Average output and maximum rate of growth in consecutive intervals",
+        "Continuous time-series analysis and future extrapolation",
+    ],
+
+    # Verbal Ability
+    "Synonyms": [
+        "High-frequency vocabulary synonyms for campus placement exams",
+        "Contextual synonyms where word meaning depends on surrounding sentence",
+        "Academic and formal terminology synonyms (e.g., pragmatic, ubiquitous)",
+        "Nuanced emotional and descriptive vocabulary matches",
+        "Business and corporate communication vocabulary synonyms",
+        "Identifying closest meaning among subtly different option choices",
+        "Prefix and root-word based synonym identification",
+        "Archaic vs contemporary vocabulary pairs",
+    ],
+    "Antonyms": [
+        "Direct opposite vocabulary pairs for competitive exams",
+        "Contextual antonyms in structured sentences",
+        "Tone and register opposites (optimistic vs cynical, benevolent vs malevolent)",
+        "Prefix-based antonyms (e.g. credible vs incredible, rational vs irrational)",
+        "Abstract noun and conceptual opposites",
+        "Action verbs and behavioral opposites in professional contexts",
+        "Gradable vs absolute antonym distinctions",
+        "Identifying exact opposite while avoiding partial synonyms",
+    ],
+    "Reading Comprehension": [
+        "Central theme and primary purpose identification of passage",
+        "Direct factual questions based on explicit textual evidence",
+        "Inference and implicit conclusion questions ('What can be inferred...')",
+        "Tone and attitude of the author (Analytical, Objective, Critical, Laudatory)",
+        "Vocabulary in context: Meaning of word as used in paragraph",
+        "Strengthening or weakening the author's argument based on passage logic",
+        "Title suggestion and summarizing paragraph intent",
+        "Structure and rhetorical flow analysis of the reading text",
+    ],
+    "Error Detection": [
+        "Subject-Verb Agreement errors (singular/plural noun with compound subjects)",
+        "Tense inconsistency and incorrect conditional verb forms",
+        "Preposition errors and phrasal verb misuses",
+        "Pronoun antecedent agreement and case errors (who vs whom, each other)",
+        "Modifier placement: Dangling and misplaced modifiers",
+        "Parallelism errors in conjunctions and listed series",
+        "Redundancy and tautology errors in formal sentence structure",
+        "Article usage (a, an, the) with countable and uncountable nouns",
+    ],
+    "Sentence Rearrangement / Para Jumbles": [
+        "Standard 4-sentence rearrangement (P, Q, R, S) into coherent paragraph",
+        "Fixed first and last sentences (S1 ... S6) with intermediate ordering",
+        "Identifying introductory topic sentence and final concluding sentence",
+        "Noun-pronoun link tracking to establish sequential sentence pairs",
+        "Chronological and cause-and-effect transition connector sequencing",
+        "Grammar connector clues (However, Therefore, On the contrary, Moreover)",
+        "Finding the odd sentence out that does not belong in the paragraph",
+        "Narrative story and logical argument flow reconstruction",
+    ],
+
+    "_default": [
+        "Direct formula calculation with varied non-standard numerical values",
+        "Multi-step word problem with real-world contextual scenario",
+        "Inverse / reverse calculation (given final outcome/ratio, determine starting values)",
+        "Rate of change, gain/loss, speed discrepancy, or percentage shift variations",
+        "Boundary condition, extreme limits, or threshold scenario",
+        "Ratio, fraction, or proportional comparison problem",
+        "Multi-stage sequential operations and compound relationships",
+        "Complex multi-stage deduction or constraint problem",
+    ],
+}
+
+
 def build_user_prompt(
     category: str,
     topic: str,
     batch_size: int,
     used_questions: List[str],
+    batch_index: int = 1,
 ) -> str:
-    recent_questions = "\n".join(f"- {q}" for q in used_questions[-15:]) or "- none"
+    recent_questions = "\n".join(f"- {q[:100]}" for q in used_questions[-25:]) or "- none"
     needs_svg = topic in TOPICS_WITH_DIAGRAMS
+    themes = TOPIC_SUBTHEMES.get(topic, TOPIC_SUBTHEMES["_default"])
+    angle = themes[(batch_index - 1) % len(themes)]
+    seed_token = uuid.uuid4().hex[:6]
 
     svg_instruction = ""
     if needs_svg:
@@ -241,15 +617,20 @@ Generate exactly {batch_size} UNIQUE Multiple Choice Questions (MCQs).
 
 Category: {category}
 Topic: {topic}
+Batch #{batch_index} Theme Focus: {angle}
+Variation Seed: {seed_token}
 
 Requirements:
+- MANDATORY THEME FOCUS: Every question in this batch MUST be specifically about: '{angle}'. Do NOT generate generic or out-of-theme questions.
+- Batch Diversity: Use varied non-standard numerical values, distinct entities, and fresh situational setups.
 - Exactly 4 clear options: A, B, C, D with distinct values.
 - Exactly one correctOption ("A", "B", "C", or "D").
-- Detailed explanation and stepByStep derivation array.
+- Keep "explanation" concise (1 to 3 sentences only, stating formula and final substitution). NEVER output scratchpads, internal monologues, or reasoning trials.
+- Keep "stepByStep" to 2-4 short calculation steps.
 - Varied difficulty: Easy, Medium, Hard.
 - Formatting rule: Inside question text, explanations, and SVG attributes, use single quotes (') instead of unescaped double quotes (") for quoted speech or tags.
 {svg_instruction}
-- Avoid duplicating these recent questions:
+- Do NOT repeat or rephrase these previously generated questions:
 {recent_questions}
 
 Return strictly valid JSON in this exact structure:
@@ -330,12 +711,13 @@ def extract_json(raw_text: str) -> Any:
             try:
                 q_match = re.search(r'"question"\s*:\s*"([\s\S]*?)"\s*,', block)
                 corr_match = re.search(r'"correctOption"\s*:\s*"([A-D])"', block)
-                expl_match = re.search(r'"explanation"\s*:\s*"([\s\S]*?)"\s*,', block)
+                expl_match = re.search(r'"explanation"\s*:\s*["\']([\s\S]*?)["\']\s*,', block)
                 svg_match = re.search(r'"svgDiagram"\s*:\s*"(<svg[\s\S]*?</svg>)"', block)
                 
                 opts = []
-                for opt_m in re.finditer(r'\{\s*"key"\s*:\s*"([A-D])"\s*,\s*"text"\s*:\s*"([^"]*)"\s*\}', block):
-                    opts.append({"key": opt_m.group(1), "text": opt_m.group(2)})
+                # Support options even when LLM forgets closing brace '}' or appends extra text
+                for opt_m in re.finditer(r'\{\s*"key"\s*:\s*"([A-D])"[^}]*?"text"\s*:\s*"([^"\n\r]*)', block):
+                    opts.append({"key": opt_m.group(1), "text": opt_m.group(2).replace('\\"', '"').strip()})
                     
                 if q_match:
                     questions.append({
@@ -343,7 +725,7 @@ def extract_json(raw_text: str) -> Any:
                         "options": opts,
                         "correctOption": corr_match.group(1) if corr_match else "A",
                         "explanation": expl_match.group(1).replace('\\"', '"') if expl_match else "Detailed explanation provided above.",
-                        "svgDiagram": svg_match.group(1).replace('\\"', '"') if svg_match else None,
+                        "svgDiagram": svg_match.group(1) if svg_match else None,
                         "stepByStep": ["Step 1: Analyze problem statement.", "Step 2: Derive final answer."]
                     })
             except Exception:
@@ -433,6 +815,7 @@ def generate_batch(
                 topic=topic,
                 batch_size=batch_size,
                 used_questions=used_questions,
+                batch_index=batch_index,
             ),
         },
     ]
@@ -446,21 +829,36 @@ def generate_batch(
                 print(f"{Colors.DIM}  -> {status_prefix}: Streaming from {model_name}...{Colors.RESET}", end="\r")
 
             t0 = time.time()
-            extra_body: Dict[str, Any] = {
-                "chat_template_kwargs": {"enable_thinking": enable_thinking}
+            api_params: Dict[str, Any] = {
+                "model": model_name,
+                "messages": messages,
+                "temperature": 0.85,
+                "top_p": 0.95,
+                "max_tokens": 4096 if not enable_thinking else 8192,
+                "stream": True,
             }
-            if enable_thinking:
-                extra_body["reasoning_budget"] = 4096
 
-            stream = client.chat.completions.create(
-                model=model_name,
-                messages=messages,
-                temperature=0.8 if enable_thinking else 0.2,
-                top_p=0.95,
-                max_tokens=16384,
-                extra_body=extra_body,
-                stream=True,
-            )
+            # Explicitly control thinking template kwargs for Nemotron and compatible models
+            if "nemotron" in model_name.lower():
+                api_params["extra_body"] = {
+                    "chat_template_kwargs": {"enable_thinking": bool(enable_thinking)}
+                }
+                if enable_thinking:
+                    api_params["extra_body"]["reasoning_budget"] = 4096
+            elif enable_thinking:
+                api_params["extra_body"] = {
+                    "chat_template_kwargs": {"enable_thinking": True}
+                }
+
+            try:
+                stream = client.chat.completions.create(**api_params)
+            except Exception as api_err:
+                # If model does not support extra_body (e.g. Llama 3.3 / Mistral / OpenAI), fallback without extra_body
+                if "extra_body" in api_params:
+                    api_params.pop("extra_body", None)
+                    stream = client.chat.completions.create(**api_params)
+                else:
+                    raise api_err
 
             reasoning_chunks: List[str] = []
             content_chunks: List[str] = []
@@ -473,13 +871,13 @@ def generate_batch(
                 if reasoning:
                     reasoning_chunks.append(reasoning)
                     if not progress_callback:
-                        print(f"{Colors.DIM}  -> {status_prefix}: Thinking ({len(reasoning_chunks)} tokens)...{Colors.RESET}", end="\r")
+                        print(f"{Colors.DIM}  -> {status_prefix}: Thinking ({len(reasoning_chunks)} tokens)...{Colors.RESET}", end="\r", flush=True)
 
                 if delta.content is not None:
                     content_chunks.append(delta.content)
                     total_chars = sum(len(c) for c in content_chunks)
                     if not progress_callback:
-                        print(f"{Colors.CYAN}  -> {status_prefix}: Generating JSON ({total_chars} chars)...{Colors.RESET}", end="\r")
+                        print(f"{Colors.CYAN}  -> {status_prefix}: Generating JSON ({total_chars} chars)...{Colors.RESET}", end="\r", flush=True)
 
             elapsed = time.time() - t0
             raw = "".join(content_chunks)
@@ -516,7 +914,7 @@ def generate_batch(
                 if progress_callback:
                     progress_callback(success_msg)
                 else:
-                    print(f"\r{Colors.GREEN}  [OK] {success_msg}{Colors.RESET}                   ")
+                    print(f"\r{Colors.GREEN}  [OK] {success_msg}{Colors.RESET}                   ", flush=True)
                 return cleaned
 
             raise ValueError("No valid questions parsed from model output.")
@@ -525,7 +923,7 @@ def generate_batch(
             if progress_callback:
                 progress_callback(err_msg)
             else:
-                print(f"\r{Colors.YELLOW}  [RETRY] {err_msg}{Colors.RESET}                   ")
+                print(f"\r{Colors.YELLOW}  [RETRY] {err_msg}{Colors.RESET}                   ", flush=True)
             time.sleep(2)
 
     return []
@@ -544,22 +942,23 @@ def generate_full_set(
     all_questions: List[Dict[str, Any]] = []
     used_questions: List[str] = []
     batch_index = 1
+    stale_batches = 0
 
     while len(all_questions) < total_questions:
         remaining = total_questions - len(all_questions)
-        curr_batch = min(batch_size, remaining)
+        req_batch = min(batch_size, max(remaining, 3))
 
-        status_str = f"Progress: {len(all_questions)}/{total_questions} questions | Generating batch {batch_index} ({curr_batch} items)..."
+        status_str = f"Progress: {len(all_questions)}/{total_questions} questions | Generating batch {batch_index} ({remaining} needed)..."
         if progress_callback:
             progress_callback(len(all_questions), status_str)
         else:
-            print(f"\n{Colors.BOLD}{Colors.CYAN}[{len(all_questions)}/{total_questions}]{Colors.RESET} Generating batch {batch_index} ({curr_batch} questions)...")
+            print(f"\n{Colors.BOLD}{Colors.CYAN}[{len(all_questions)}/{total_questions}]{Colors.RESET} Generating batch {batch_index} ({remaining} remaining)...")
 
         batch = generate_batch(
             client=client,
             category=category,
             topic=topic,
-            batch_size=curr_batch,
+            batch_size=req_batch,
             used_questions=used_questions,
             batch_index=batch_index,
             model_name=model_name,
@@ -567,6 +966,7 @@ def generate_full_set(
             progress_callback=(lambda msg: progress_callback(len(all_questions), msg)) if progress_callback else None,
         )
 
+        before_len = len(all_questions)
         existing = {normalize_text(q["question"]) for q in all_questions}
         for item in batch:
             norm = normalize_text(item["question"])
@@ -577,9 +977,21 @@ def generate_full_set(
                 if len(all_questions) >= total_questions:
                     break
 
+        added = len(all_questions) - before_len
+        if added > 0:
+            stale_batches = 0
+            if not progress_callback:
+                print(f"  {Colors.CYAN}--> Added {added} unique questions (Total: {len(all_questions)}/{total_questions}){Colors.RESET}")
+        else:
+            stale_batches += 1
+            if not progress_callback:
+                print(f"  {Colors.YELLOW}--> 0 new questions added from batch {batch_index} (duplicates). Retrying with broader seed...{Colors.RESET}")
+
         batch_index += 1
-        if batch_index > 35:
+        if batch_index > (total_questions * 2 + 10) or stale_batches >= 5:
             break
+
+    return all_questions[:total_questions]
 
     return all_questions[:total_questions]
 
@@ -838,6 +1250,7 @@ def main() -> None:
     parser.add_argument("--total", type=int, default=DEFAULT_TOTAL_QUESTIONS, help="Total questions")
     parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE, help="Batch size per call")
     parser.add_argument("--model", type=str, default=DEFAULT_MODEL, help="NVIDIA / OpenAI model name")
+    parser.add_argument("--all-topics", action="store_true", help="Generate questions across all catalog topics sequentially")
     parser.add_argument("--thinking", action="store_true", help="Enable deep reasoning/thinking mode")
     parser.add_argument("--output", type=str, help="Custom output JSON path")
     parser.add_argument("--list-topics", action="store_true", help="List all available topics")
@@ -858,6 +1271,29 @@ def main() -> None:
     if args.gui:
         app = ThreadedQuestionGeneratorApp(client, args.model, enable_thinking=args.thinking)
         app.run()
+    elif args.all_topics:
+        print_banner()
+        print(f"Generating {args.total} questions for ALL catalog topics using '{args.model}'...\n")
+        all_topics_list = []
+        for cat, topics in TOPIC_CATALOG.items():
+            for t in topics:
+                all_topics_list.append((cat, t["name"]))
+
+        for idx, (cat, topic_name) in enumerate(all_topics_list, 1):
+            out_path = DEFAULT_OUTPUT_DIR / f"{slugify(topic_name)}.json"
+            print(f"\n{Colors.BOLD}{Colors.MAGENTA}=== [{idx}/{len(all_topics_list)}] {cat} > {topic_name} ==={Colors.RESET}")
+            questions = generate_full_set(
+                client=client,
+                category=cat,
+                topic=topic_name,
+                total_questions=args.total,
+                batch_size=args.batch_size,
+                model_name=args.model,
+                enable_thinking=args.thinking
+            )
+            save_output(out_path, cat, topic_name, questions, args.model)
+            print(f"{Colors.GREEN}[DONE] Saved {len(questions)} questions to {out_path.name}{Colors.RESET}")
+        print(f"\n{Colors.BOLD}{Colors.GREEN}🎉 All {len(all_topics_list)} topics generated successfully!{Colors.RESET}\n")
     elif args.topic:
         out_path = Path(args.output) if args.output else (DEFAULT_OUTPUT_DIR / f"{slugify(args.topic)}.json")
         print_banner()

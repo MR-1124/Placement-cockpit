@@ -27,8 +27,14 @@ import {
   Check,
   RotateCcw,
   Pause,
-  ChevronDown
+  ChevronDown,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX
 } from "lucide-react";
+import { speechRecognitionEngine, speechSynthesisEngine } from "../lib/speechEngine";
+import { audioTelemetry } from "../lib/audioTelemetry";
 
 // Private MarkdownRenderer removed (Bug #7 fix).
 // Now using shared MarkdownRenderer from components/MarkdownRenderer.tsx
@@ -230,6 +236,54 @@ export const InterviewSimulatorView: React.FC = () => {
   const [activeMobileTab, setActiveMobileTab] = useState<"chat" | "editor">("chat");
   const [showPreBrief, setShowPreBrief] = useState(false);
 
+  // Voice & Speech Mode States
+  const [isVoiceOutputEnabled, setIsVoiceOutputEnabled] = useState<boolean>(() => {
+    return state.settings.voiceEnabled ?? false;
+  });
+  const [isListening, setIsListening] = useState(false);
+  const [speechTranscript, setSpeechTranscript] = useState("");
+  const [speechError, setSpeechError] = useState<string | null>(null);
+  const [isInterviewerSpeaking, setIsInterviewerSpeaking] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      speechRecognitionEngine.stop();
+      speechSynthesisEngine.stop();
+    };
+  }, []);
+
+  const handleToggleListening = () => {
+    audioTelemetry.click();
+    if (isListening) {
+      speechRecognitionEngine.stop();
+      setIsListening(false);
+    } else {
+      setSpeechError(null);
+      setSpeechTranscript("");
+      const success = speechRecognitionEngine.start(
+        (interim) => {
+          setSpeechTranscript(interim);
+          setChatInput(interim);
+        },
+        (final) => {
+          setSpeechTranscript(final);
+          setChatInput(final);
+        },
+        (err) => {
+          setSpeechError(err);
+          setIsListening(false);
+        },
+        () => {
+          setIsListening(false);
+        }
+      );
+      if (success) {
+        setIsListening(true);
+        audioTelemetry.check();
+      }
+    }
+  };
+
   useEffect(() => {
     if (activeSession && activeSession.timeLeft === 2700 && activeSession.chatHistory.length === 0) {
       setTimeout(() => setShowPreBrief(true), 0);
@@ -418,7 +472,14 @@ export const InterviewSimulatorView: React.FC = () => {
     if (!textToSend.trim() || isAiResponding || !activeSession) return;
 
     const messageText = textToSend;
+    speechSynthesisEngine.stop();
+    setIsInterviewerSpeaking(false);
+    if (isListening) {
+      speechRecognitionEngine.stop();
+      setIsListening(false);
+    }
     setChatInput("");
+    setSpeechTranscript("");
     setStreamingDelta("");
     
     // Add user message to history
@@ -605,6 +666,18 @@ CRITICAL INSTRUCTION: You MUST act strictly as the interviewer. DO NOT output an
         nextPhase,
         nextSubStatus
       );
+
+      audioTelemetry.sonar();
+
+      if (isVoiceOutputEnabled) {
+        setIsInterviewerSpeaking(true);
+        speechSynthesisEngine.speak(cleanedResponse, {
+          rate: state.settings.voiceRate || 1.0,
+          onStart: () => setIsInterviewerSpeaking(true),
+          onEnd: () => setIsInterviewerSpeaking(false),
+          onError: () => setIsInterviewerSpeaking(false)
+        });
+      }
     } catch (err: unknown) {
       console.error(err);
       addInterviewChatMessage("assistant", `Failed to get a response from the interviewer. Error details: ${(err as Error).message}`);
@@ -1164,21 +1237,50 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
               {/* Left side: Dialogue & Chat Panel (5 Columns) */}
               <div className={`${isEditorMaximized ? "hidden" : "lg:col-span-5"} ${activeMobileTab === "chat" ? "flex" : "hidden"} lg:flex flex-col h-[650px] bg-darkCard/80 border border-white/[0.06] rounded-2xl overflow-hidden backdrop-blur-md`}>
                 <div className="px-4 py-3 border-b border-white/[0.06] bg-white/[0.01] flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-2">
-                  <UserCheck className="w-4 h-4 text-accentPrimary" />
-                  <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
-                    {activeSession.currentPhase === "intro" ? "HR Panel" :
-                     activeSession.currentPhase === "dsa" ? "Code Reviewer Panel" :
-                     activeSession.currentPhase === "core" ? "Core CS Panel" :
-                     activeSession.currentPhase === "puzzles" ? "Logic Panel" :
-                     (activeSession.currentPhase as string) === "evaluating" ? "Evaluator Panel" :
-                     "Interviewer Panel"}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <UserCheck className="w-4 h-4 text-accentPrimary" />
+                    <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                      {activeSession.currentPhase === "intro" ? "HR Panel" :
+                       activeSession.currentPhase === "dsa" ? "Code Reviewer Panel" :
+                       activeSession.currentPhase === "core" ? "Core CS Panel" :
+                       activeSession.currentPhase === "puzzles" ? "Logic Panel" :
+                       (activeSession.currentPhase as string) === "evaluating" ? "Evaluator Panel" :
+                       "Interviewer Panel"}
+                    </span>
+                    {isInterviewerSpeaking && (
+                      <span className="flex items-center gap-1 ml-2 px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[9px] font-mono font-bold animate-pulse">
+                        <Volume2 className="w-3 h-3" /> Speaking...
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {/* Voice Output Toggle Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        audioTelemetry.click();
+                        const nextVal = !isVoiceOutputEnabled;
+                        setIsVoiceOutputEnabled(nextVal);
+                        if (!nextVal) {
+                          speechSynthesisEngine.stop();
+                          setIsInterviewerSpeaking(false);
+                        }
+                      }}
+                      className={`px-2 py-1 rounded-lg border text-[10px] font-mono flex items-center gap-1.5 transition-all cursor-pointer ${
+                        isVoiceOutputEnabled
+                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                          : "bg-white/[0.02] border-white/[0.08] text-slate-500 hover:text-slate-300"
+                      }`}
+                      title={isVoiceOutputEnabled ? "Interviewer Voice: ON (click to mute)" : "Interviewer Voice: OFF (click to enable)"}
+                    >
+                      {isVoiceOutputEnabled ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
+                      <span className="hidden sm:inline">{isVoiceOutputEnabled ? "Voice ON" : "Voice Muted"}</span>
+                    </button>
+                    <span className="text-[10px] font-mono bg-white/[0.04] px-2 py-1 rounded text-slate-400">
+                      {activeSession.interviewerPersonality}
+                    </span>
+                  </div>
                 </div>
-                <span className="text-[10px] font-mono bg-white/[0.04] px-2 py-0.5 rounded text-slate-400">
-                  {activeSession.interviewerPersonality}
-                </span>
-              </div>
 
               {/* Chat Conversation History Area */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4 select-text">
@@ -1299,16 +1401,57 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
                     ))}
                   </div>
                 )}
+                {/* Live Speech Recognition Banner */}
+                {isListening && (
+                  <div className="flex items-center justify-between px-3 py-2 mb-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono animate-pulse">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+                      <span className="font-bold shrink-0">Listening:</span>
+                      <span className="truncate text-slate-200 italic">{speechTranscript || "Speak your answer clearly into the mic..."}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleToggleListening}
+                      className="text-[10px] uppercase font-bold text-red-400 hover:text-white underline cursor-pointer shrink-0 ml-2"
+                    >
+                      Stop
+                    </button>
+                  </div>
+                )}
+                {speechError && (
+                  <div className="text-[10px] text-rose-400 font-mono mb-2 px-1 flex items-center justify-between">
+                    <span>⚠️ {speechError}</span>
+                    <button type="button" onClick={() => setSpeechError(null)} className="underline text-slate-400 hover:text-white ml-2">Dismiss</button>
+                  </div>
+                )}
+
                 <div className="flex gap-2 items-end">
                   <textarea
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     disabled={isAiResponding || isSessionPaused}
-                    placeholder="Type response... (Enter to send, Shift+Enter for new line)"
+                    placeholder={isListening ? "Listening to your voice..." : "Type response or click mic to speak... (Enter to send)"}
                     rows={2}
                     className="flex-1 min-w-0 bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-xs text-white placeholder-slate-600 focus:outline-none transition-colors resize-none overflow-y-auto max-h-32"
                   />
+
+                  {/* Microphone Voice Answer Button */}
+                  <button
+                    type="button"
+                    onClick={handleToggleListening}
+                    disabled={isAiResponding || isSessionPaused}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all cursor-pointer mb-0.5 border ${
+                      isListening
+                        ? "bg-red-500 text-white border-red-400 animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.5)]"
+                        : "bg-white/[0.04] border-white/[0.08] hover:border-accentPrimary/40 text-slate-300 hover:text-white"
+                    }`}
+                    title={isListening ? "Stop Microphone" : "Speak Answer (Speech-to-Text)"}
+                    aria-label="Voice Answer"
+                  >
+                    {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+                  </button>
+
                   <button
                     onClick={() => handleSendChatMessage()}
                     disabled={isAiResponding || !chatInput.trim() || isSessionPaused}

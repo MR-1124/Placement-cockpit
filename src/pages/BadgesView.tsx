@@ -1,12 +1,11 @@
-import { motion } from "framer-motion";
 import React from "react";
 import { useAppState } from "../context/AppStateContext";
-
-import { GlassCard } from "../components/Common";
+import { SpotlightCard } from "../components/Common";
+import { Trophy, CheckCircle2, Lock } from "lucide-react";
 
 export const BadgesView: React.FC = () => {
   const state = useAppState(s => s.state);
-const curriculum = useAppState(s => s.curriculum);
+  const curriculum = useAppState(s => s.curriculum);
 
   const DEFAULT_BADGES = curriculum.DEFAULT_BADGES;
 
@@ -14,7 +13,6 @@ const curriculum = useAppState(s => s.curriculum);
     return state.unlockedBadges.includes(badgeId);
   };
 
-  // Pre-calculate metrics for progress tracking
   const dsaCount = state.dsaTopics.flatMap(t => t.problems).filter(p => p.isCompleted).length;
   const devCount = state.devCategories.flatMap(c => c.skills).filter(t => t.learned).length;
   const logCount = state.aiLogs.length;
@@ -35,10 +33,9 @@ const curriculum = useAppState(s => s.curriculum);
   
   let revisionCount = 0;
   state.dsaTopics.forEach(t => t.problems.forEach(p => {
-    if (p.isCompleted && p.revisionInterval && p.revisionInterval > 3) revisionCount++; // Assuming > Level 1 is a successful revision
+    if (p.isCompleted && p.revisionInterval && p.revisionInterval > 3) revisionCount++;
   }));
   
-  // A rough mock for readinessScore since we don't calculate it globally here yet
   const readinessScore = Math.min(100, Math.round(((dsaCount/40) * 50) + ((devCount/12) * 50)));
 
   const getProgressString = (badge: any) => {
@@ -51,25 +48,40 @@ const curriculum = useAppState(s => s.curriculum);
     if (badge.requirement.includes("streak >= 7")) return `${streak} / 7 days`;
     if (badge.requirement.includes("revisionCount >= 10")) return `${revisionCount} / 10 topics`;
     if (badge.requirement.includes("readinessScore >= 85")) return `${readinessScore} / 85 score`;
-    return "Locked";
+    return "In Progress";
   };
 
+  const unlockedCount = DEFAULT_BADGES.filter(b => isBadgeUnlocked(b.id)).length;
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/[0.06] pb-6">
-        <div>
-          <span className="text-xs uppercase font-mono tracking-widest text-slate-500">Gamification Cabin</span>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">Achievements & Badges</h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Stay motivated. Complete objectives in DSA, Full Stack, habit consistency, and AI avoidance to unlock credentials.
-          </p>
+    <div className="space-y-8 pb-12">
+      {/* Header Banner */}
+      <SpotlightCard className="p-6 sm:p-8">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-accentPrimary font-bold bg-accentPrimary/10 border border-accentPrimary/25 px-2.5 py-0.5 rounded-md">
+                Gamification Vault
+              </span>
+              <span className="text-[10px] font-mono text-slate-500">• Placement Credentials</span>
+            </div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-white">Achievements & Badges</h1>
+            <p className="text-xs sm:text-sm text-slate-400 max-w-xl leading-relaxed">
+              Earn milestone credentials by proving consistency across DSA algorithms, fullstack architectures, and zero-AI sessions.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 bg-white/[0.02] border border-white/[0.06] p-3.5 rounded-2xl">
+            <div className="text-right">
+              <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">Unlocked</span>
+              <span className="text-xl font-bold font-mono text-white">{unlockedCount} / {DEFAULT_BADGES.length}</span>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 font-mono font-bold text-xs shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+              <Trophy className="w-6 h-6" />
+            </div>
+          </div>
         </div>
-      </div>
+      </SpotlightCard>
 
       {/* Badges Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -77,61 +89,66 @@ const curriculum = useAppState(s => s.curriculum);
           const unlocked = isBadgeUnlocked(badge.id);
 
           return (
-            <GlassCard
+            <SpotlightCard
               key={badge.id}
-              className={`p-6 border flex flex-col justify-between items-start gap-4 transition-all relative overflow-hidden ${
+              className={`p-6 flex flex-col justify-between items-start gap-4 transition-all relative overflow-hidden ${
                 unlocked
-                  ? "border-accentPrimary/20 bg-accentPrimary/[0.02] shadow-lg shadow-accentPrimary/[0.02]"
-                  : "border-white/[0.02] bg-white/[0.002] opacity-50"
+                  ? "border-accentPrimary/30 bg-accentPrimary/[0.03] shadow-[0_0_20px_rgba(var(--accent-rgb),0.1)]"
+                  : "border-white/[0.04] bg-white/[0.01] opacity-60 hover:opacity-100"
               }`}
             >
-              {/* Unlock Indicator Glow */}
-              {unlocked && (
-                <div className="absolute top-0 right-0 w-16 h-16 bg-accentPrimary/10 blur-xl rounded-full -mr-4 -mt-4" />
-              )}
-
               {/* Top Row: Icon + Lock/Unlock badge */}
               <div className="flex justify-between items-start w-full">
                 <div
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl select-none ${
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl select-none transition-transform group-hover:scale-110 ${
                     unlocked
-                      ? "bg-accentPrimary/10 border border-accentPrimary/20 shadow-inner"
-                      : "bg-white/[0.02] border border-white/[0.04] grayscale"
+                      ? "bg-accentPrimary/15 border border-accentPrimary/30 shadow-[0_0_20px_rgba(var(--accent-rgb),0.2)]"
+                      : "bg-white/[0.02] border border-white/[0.06] grayscale opacity-50"
                   }`}
                 >
                   {badge.icon}
                 </div>
                 
-                <span className={`text-[9px] font-mono border px-2 py-0.5 rounded uppercase tracking-wider ${
+                <span className={`text-[9px] font-mono border px-2.5 py-1 rounded-lg uppercase tracking-wider font-bold flex items-center gap-1.5 ${
                   unlocked
-                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-glow"
-                    : "bg-slate-500/10 text-slate-500 border-slate-500/10"
+                    ? "neon-pill-emerald"
+                    : "bg-white/[0.03] text-slate-500 border-white/[0.06]"
                 }`}>
-                  {unlocked ? "Unlocked" : "Locked"}
+                  {unlocked ? (
+                    <>
+                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                      <span>Unlocked</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-3 h-3 text-slate-500" />
+                      <span>Locked</span>
+                    </>
+                  )}
                 </span>
               </div>
 
               {/* Text Block */}
               <div className="space-y-1.5 z-10">
-                <h3 className={`text-sm font-bold ${unlocked ? "text-white" : "text-slate-500"}`}>
+                <h3 className={`text-sm font-bold ${unlocked ? "text-white" : "text-slate-400"}`}>
                   {badge.name}
                 </h3>
-                <p className="text-xs text-slate-400 leading-normal">
+                <p className="text-xs text-slate-400 leading-relaxed">
                   {badge.description}
                 </p>
               </div>
 
               {/* Requirement description */}
-              <div className="w-full border-t border-white/[0.04] pt-3 flex items-center justify-between text-[10px] font-mono text-slate-500">
-                <span>Objective</span>
-                <span className={unlocked ? "text-slate-400" : "text-amber-500/80 font-bold tracking-tight"}>
-                  {unlocked ? "Unlocked" : `Progress: ${getProgressString(badge)}`}
+              <div className="w-full border-t border-white/[0.05] pt-3.5 flex items-center justify-between text-[10px] font-mono">
+                <span className="text-slate-500 uppercase">Requirement</span>
+                <span className={unlocked ? "text-emerald-400 font-bold" : "text-amber-400 font-bold"}>
+                  {unlocked ? "Completed (+100 XP)" : `Progress: ${getProgressString(badge)}`}
                 </span>
               </div>
-            </GlassCard>
+            </SpotlightCard>
           );
         })}
       </div>
-    </motion.div>
+    </div>
   );
 };

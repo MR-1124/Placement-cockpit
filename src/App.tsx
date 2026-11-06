@@ -20,7 +20,9 @@ const CompanyRoadmapsView = React.lazy(() => import("./pages/CompanyRoadmapsView
 const ResumeGraderView = React.lazy(() => import("./pages/ResumeGraderView").then(module => ({ default: module.ResumeGraderView })));
 const FeedbackView = React.lazy(() => import("./pages/FeedbackView").then(module => ({ default: module.FeedbackView })));
 const SkillTreeView = React.lazy(() => import("./pages/SkillTreeView").then(module => ({ default: module.SkillTreeView })));
+const SystemDesignView = React.lazy(() => import("./pages/SystemDesignView").then(module => ({ default: module.SystemDesignView })));
 
+import { audioTelemetry } from "./lib/audioTelemetry";
 import { DashboardView } from "./pages/DashboardView";
 import { RoadmapView } from "./pages/RoadmapView";
 import { SettingsView } from "./pages/SettingsView";
@@ -67,7 +69,11 @@ import {
   Target,
   Sun,
   Moon,
-  Search
+  Search,
+  Activity,
+  Volume2,
+  VolumeX,
+  Network
 } from "lucide-react";
 
 
@@ -434,6 +440,7 @@ const AppContent: React.FC = () => {
         { id: "dsa", name: "DSA Tracker", icon: Code2 },
         { id: "skilltree", name: "DSA Skill Tree", icon: GitFork },
         { id: "practice", name: "Practice Arena", icon: Target },
+        { id: "system-design", name: "System Design", icon: Network },
         { id: "dev", name: "Full Stack", icon: Layers },
         { id: "projects", name: "Projects", icon: FolderGit2 },
         { id: "aptitude", name: "Aptitude Prep", icon: ClipboardList }
@@ -496,6 +503,8 @@ const AppContent: React.FC = () => {
         return <SkillTreeView />;
       case "practice":
         return <PracticeView />;
+      case "system-design":
+        return <SystemDesignView />;
       case "aptitude":
         return <AptitudeView />;
       case "dev":
@@ -602,7 +611,7 @@ const AppContent: React.FC = () => {
         </div>
 
         {/* Sidebar Nav Items */}
-        <nav className={`flex-1 py-3 space-y-4 overflow-y-auto overflow-x-hidden custom-scrollbar ${collapsed ? "px-2" : "px-4"}`}>
+        <nav className={`flex-1 py-3 space-y-4 overflow-y-auto overflow-x-hidden custom-scrollbar ${collapsed ? "px-2" : "px-3"}`}>
           {navigationCategories.map((category, catIdx) => {
             const hasVisibleItems = category.items.length > 0;
             if (!hasVisibleItems) return null;
@@ -611,8 +620,8 @@ const AppContent: React.FC = () => {
               <div key={category.title} className="space-y-1">
                 {/* Category Header */}
                 {!collapsed ? (
-                  <div className="text-[10px] font-bold font-mono tracking-widest text-slate-500 uppercase px-3 pt-3 pb-1 select-none pointer-events-none">
-                    {category.title}
+                  <div className="text-[9px] font-bold font-mono tracking-widest text-slate-500 uppercase px-3 pt-3 pb-1 select-none pointer-events-none flex items-center justify-between">
+                    <span>{category.title}</span>
                   </div>
                 ) : catIdx > 0 ? (
                   <div className="h-px bg-white/[0.04] my-2 mx-1 select-none pointer-events-none" />
@@ -626,28 +635,34 @@ const AppContent: React.FC = () => {
                     <button
                       key={item.id}
                       onClick={() => setActiveTab(item.id)}
-                      className={`group relative w-full flex items-center ${collapsed ? "justify-center" : "gap-3"} px-3 py-2.5 rounded-lg text-xs font-semibold tracking-wide transition-all border ${
+                      className={`group relative w-full flex items-center ${collapsed ? "justify-center" : "gap-3"} px-3 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-colors cursor-pointer select-none ${
                         active
-                          ? "bg-accentPrimary/5 border-accentPrimary/20 text-white"
-                          : "bg-transparent border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/[0.01]"
+                          ? "text-white font-bold"
+                          : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
                       }`}
                     >
-                      {collapsed && active && (
-                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r bg-accentPrimary shadow-[0_0_8px_var(--accent-color)]" />
+                      {/* Gliding Active Pill Indicator */}
+                      {active && (
+                        <motion.div
+                          layoutId="active-sidebar-pill"
+                          className="absolute inset-0 bg-accentPrimary/10 border border-accentPrimary/30 rounded-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_0_15px_rgba(var(--accent-rgb),0.12)]"
+                          transition={{ type: "spring", stiffness: 220, damping: 24 }}
+                        />
                       )}
-                      <Icon className={`w-4 h-4 shrink-0 ${active ? "text-accentPrimary" : "text-slate-500"}`} />
-                      {!collapsed && <span className="truncate">{item.name}</span>}
+
+                      <Icon className={`w-4 h-4 shrink-0 relative z-10 transition-transform group-hover:scale-110 ${active ? "text-accentPrimary" : "text-slate-400 group-hover:text-slate-200"}`} />
+                      {!collapsed && <span className="truncate relative z-10">{item.name}</span>}
                       
                       {/* Tooltip for Collapsed Mode */}
                       {collapsed && (
-                        <div className="absolute left-full ml-4 px-2 py-1 bg-darkCard border border-white/10 rounded text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 transition-opacity">
+                        <div className="absolute left-full ml-3 px-2.5 py-1 bg-darkCard border border-white/10 rounded-lg text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 transition-all shadow-xl">
                           {item.name}
                         </div>
                       )}
 
-                      {/* Active Indicator LED (Expanded Mode) */}
+                      {/* Active Indicator Dot (Expanded Mode) */}
                       {!collapsed && active && (
-                        <div className="w-1 h-1 rounded-full bg-accentPrimary ml-auto shadow-[0_0_8px_var(--accent-color)]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-accentPrimary ml-auto relative z-10 shadow-[0_0_8px_var(--accent-color)]" />
                       )}
                     </button>
                   );
@@ -658,15 +673,15 @@ const AppContent: React.FC = () => {
         </nav>
 
         {/* Sidebar Footer Metrics card */}
-        <div className={`border-t border-white/[0.06] bg-black/20 flex flex-col items-center justify-center transition-all ${collapsed ? "py-4 gap-4" : "p-4 space-y-4"}`}>
+        <div className={`border-t border-white/[0.06] bg-black/20 flex flex-col items-center justify-center transition-all ${collapsed ? "py-4 gap-4" : "p-4 space-y-3"}`}>
           {collapsed ? (
-            <div className="flex flex-col items-center gap-4 w-full">
+            <div className="flex flex-col items-center gap-3 w-full">
               {/* Collapsed Level */}
               <div className="group relative w-full flex justify-center">
-                <div className="w-10 h-10 rounded-full bg-accentPrimary/10 border border-accentPrimary/20 flex flex-col items-center justify-center cursor-pointer hover:bg-accentPrimary/20 hover:scale-105 transition-all shadow-[0_0_10px_rgba(var(--color-accent-primary),0.1)]">
-                  <span className="text-[9px] font-bold text-accentPrimary leading-none">L{level}</span>
+                <div className="w-9 h-9 rounded-xl bg-accentPrimary/10 border border-accentPrimary/20 flex flex-col items-center justify-center cursor-pointer hover:bg-accentPrimary/20 hover:scale-105 transition-all shadow-[0_0_10px_rgba(var(--accent-rgb),0.1)]">
+                  <span className="text-[10px] font-bold text-accentPrimary leading-none">L{level}</span>
                 </div>
-                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-4 px-3 py-2.5 bg-slate-900 border border-white/10 rounded-xl text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 shadow-2xl transition-all flex flex-col gap-1.5 min-w-[140px]">
+                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3.5 py-3 bg-slate-900 border border-white/10 rounded-xl text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 shadow-2xl transition-all flex flex-col gap-1.5 min-w-[150px]">
                   <div className="flex justify-between items-center">
                     <span className="text-accentPrimary font-bold text-[11px] uppercase tracking-wider">Level {level}</span>
                   </div>
@@ -683,11 +698,11 @@ const AppContent: React.FC = () => {
               
               {/* Collapsed Streak */}
               <div className="group relative w-full flex justify-center">
-                <div className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/20 flex flex-col items-center justify-center cursor-pointer hover:bg-amber-500/20 hover:scale-105 transition-all shadow-[0_0_10px_rgba(245,158,11,0.1)]">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex flex-col items-center justify-center cursor-pointer hover:bg-amber-500/20 hover:scale-105 transition-all shadow-[0_0_10px_rgba(245,158,11,0.1)]">
                   <span className="text-xs mb-0.5 animate-pulse">🔥</span>
                   <span className="text-[9px] font-bold text-amber-500 leading-none">{state.streak}</span>
                 </div>
-                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-4 px-3 py-2.5 bg-slate-900 border border-white/10 rounded-xl text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 shadow-2xl transition-all flex flex-col gap-1.5 min-w-[140px]">
+                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3.5 py-3 bg-slate-900 border border-white/10 rounded-xl text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 shadow-2xl transition-all flex flex-col gap-1.5 min-w-[150px]">
                   <span className="text-amber-500 font-bold text-[11px] uppercase tracking-wider">🔥 {state.streak} Day Streak</span>
                   <span className="text-white text-[10px]">Readiness Score</span>
                   <div className="flex justify-between text-[9px] text-slate-400 font-mono mt-1">
@@ -701,30 +716,30 @@ const AppContent: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="w-full space-y-4">
+            <div className="w-full space-y-3">
               {/* Level Progress */}
-              <div className="space-y-1.5 group cursor-pointer">
+              <div className="space-y-1.5 group cursor-pointer" onClick={() => setActiveTab("profile")}>
                 <div className="flex justify-between items-center text-[10px] font-mono">
                   <span className="text-accentPrimary font-bold uppercase tracking-wider truncate mr-2 group-hover:text-white transition-colors">Lvl {level}: {levelTitle}</span>
-                  <span className="text-slate-500 shrink-0">{state.xp} XP</span>
+                  <span className="text-slate-400 font-bold shrink-0">{state.xp} XP</span>
                 </div>
-                <div className="h-1.5 w-full bg-black/60 rounded-full overflow-hidden border border-white/[0.04] shadow-inner relative">
+                <div className="h-1.5 w-full bg-black/60 rounded-full overflow-hidden border border-white/[0.04] p-[0.5px]">
                   <div
-                    className="absolute inset-y-0 left-0 bg-accentPrimary rounded-full transition-all duration-500 shadow-[0_0_10px_var(--color-accent-primary)]"
+                    className="h-full bg-accentPrimary rounded-full transition-all duration-500 shadow-[0_0_8px_var(--accent-color)]"
                     style={{ width: `${xpProgress}%` }}
                   />
                 </div>
               </div>
 
               {/* Streak & Readiness */}
-              <div className="space-y-1.5 group cursor-pointer">
-                <div className="flex justify-between items-center text-[10px] font-mono text-slate-500">
-                  <span className="truncate group-hover:text-amber-400 transition-colors">Streak: <span className="text-amber-500 font-bold">🔥 {state.streak}d</span></span>
-                  <span className="shrink-0 ml-2 group-hover:text-emerald-400 transition-colors">Readiness: <span className="text-white font-bold">{readinessScore}%</span></span>
+              <div className="space-y-1.5 group cursor-pointer" onClick={() => setActiveTab("dashboard")}>
+                <div className="flex justify-between items-center text-[10px] font-mono text-slate-400">
+                  <span className="truncate group-hover:text-amber-400 transition-colors">Streak: <span className="text-amber-400 font-bold">🔥 {state.streak}d</span></span>
+                  <span className="shrink-0 ml-2 group-hover:text-emerald-400 transition-colors">Readiness: <span className="text-emerald-400 font-bold">{readinessScore}%</span></span>
                 </div>
-                <div className="h-1.5 w-full bg-black/60 rounded-full overflow-hidden border border-white/[0.04] shadow-inner relative">
+                <div className="h-1.5 w-full bg-black/60 rounded-full overflow-hidden border border-white/[0.04] p-[0.5px]">
                   <div
-                    className="absolute inset-y-0 left-0 bg-emerald-500 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]"
+                    className="h-full bg-emerald-500 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"
                     style={{ width: `${readinessScore}%` }}
                   />
                 </div>
@@ -734,60 +749,186 @@ const AppContent: React.FC = () => {
         </div>
       </aside>
 
-      {/* Mobile Top Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-darkCard/80 border-b border-white/[0.06] backdrop-blur-md flex justify-between items-center px-4 z-30 select-none">
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded bg-accentPrimary flex items-center justify-center font-bold text-white text-[10px] shadow">
-            P
-          </div>
-          <span className="font-extrabold text-white text-xs tracking-tight">Placement Cockpit</span>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {/* Quick Search */}
-          <button
-            onClick={() => setIsCommandPaletteOpen(true)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer"
-            aria-label="Open Command Palette"
-          >
-            <Search className="w-4 h-4 text-accentPrimary" />
-          </button>
-
-          {/* Theme Toggle Button */}
-          <button
-            onClick={toggleTheme}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer"
-            aria-label="Toggle Theme"
-          >
-            {state.settings.theme === "light" ? (
-              <Moon className="w-4 h-4 text-amber-500" />
-            ) : (
-              <Sun className="w-4 h-4 text-amber-400" />
-            )}
-          </button>
-
-          {/* Quick Streak */}
-          <div className="flex items-center gap-1 font-mono text-xs text-amber-500 font-bold bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10">
-            <Flame className="w-3.5 h-3.5 fill-amber-500/10" />
-            <span>{state.streak}d</span>
+      {/* Main App Container */}
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen relative z-10">
+        {/* Top Desktop Telemetry Bar */}
+        <header className="hidden lg:flex h-16 border-b border-white/[0.06] bg-darkCard/40 backdrop-blur-md sticky top-0 z-20 px-8 items-center justify-between select-none">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-mono uppercase tracking-widest text-slate-500">Cockpit /</span>
+            <h2 className="text-sm font-bold text-white tracking-tight capitalize">
+              {navigationItems.find(i => i.id === activeTab)?.name || activeTab}
+            </h2>
           </div>
 
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="text-slate-400 hover:text-white transition-colors"
-            aria-label={mobileMenuOpen ? "Close Menu" : "Open Menu"}
-          >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-        </div>
-      </header>
+          <div className="flex items-center gap-3">
+            {/* Quick Command Launcher */}
+            <button
+              onClick={() => setIsCommandPaletteOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] hover:border-accentPrimary/40 text-slate-400 hover:text-white transition-all text-xs font-mono cursor-pointer"
+            >
+              <Search className="w-3.5 h-3.5 text-accentPrimary" />
+              <span className="text-[11px] font-sans text-slate-400">Search command...</span>
+              <kbd className="text-[9px] px-1.5 py-0.5 rounded bg-black/40 border border-white/10 text-slate-400">Ctrl K</kbd>
+            </button>
 
-      {/* Mobile Navigation Drawer Dropdown */}
-      {mobileMenuOpen && (
-        <div
-          className="lg:hidden absolute top-16 left-0 right-0 bg-darkCard/95 border-b border-white/[0.08] p-4 grid grid-cols-2 gap-3 z-40 backdrop-blur-md animate-slide-up"
-        >
-          {navigationItems.map(item => {
+            {/* Streak Counter Pill */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 font-mono text-xs font-bold shadow-[0_0_10px_rgba(245,158,11,0.1)]">
+              <Flame className="w-3.5 h-3.5 fill-amber-500/20 text-amber-500 animate-pulse" />
+              <span>{state.streak} Days</span>
+            </div>
+
+            {/* Readiness Index Pill */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-xs font-bold shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+              <Activity className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{readinessScore}% Ready</span>
+            </div>
+
+            {/* Focus Session Trigger */}
+            <button
+              onClick={() => setFocusSession({ isOpen: true, active: null })}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accentPrimary/10 hover:bg-accentPrimary/20 border border-accentPrimary/20 text-accentPrimary font-mono text-xs font-semibold transition-all cursor-pointer shadow-[0_0_10px_rgba(var(--accent-rgb),0.1)]"
+            >
+              <Target className="w-3.5 h-3.5" />
+              <span>Focus Mode</span>
+            </button>
+
+            {/* Audio Telemetry Toggle */}
+            <button
+              onClick={() => {
+                const nextVal = !(state.settings.soundEnabled ?? true);
+                updateSettings({ soundEnabled: nextVal });
+                audioTelemetry.setMuted(!nextVal);
+                if (nextVal) audioTelemetry.check();
+              }}
+              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.05] border border-transparent hover:border-white/[0.08] transition-all cursor-pointer"
+              title={state.settings.soundEnabled ?? true ? "Mute Cybernetic Audio" : "Enable Cybernetic Audio"}
+            >
+              {state.settings.soundEnabled ?? true ? (
+                <Volume2 className="w-4 h-4 text-emerald-400" />
+              ) : (
+                <VolumeX className="w-4 h-4 text-slate-500" />
+              )}
+            </button>
+
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.05] border border-transparent hover:border-white/[0.08] transition-all cursor-pointer"
+              title={`Switch Theme`}
+            >
+              {state.settings.theme === "light" ? (
+                <Moon className="w-4 h-4 text-amber-500" />
+              ) : (
+                <Sun className="w-4 h-4 text-amber-400" />
+              )}
+            </button>
+          </div>
+        </header>
+
+        {/* Mobile Top Header */}
+        <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-darkCard/80 border-b border-white/[0.06] backdrop-blur-md flex justify-between items-center px-4 z-30 select-none">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded bg-accentPrimary flex items-center justify-center font-bold text-white text-[10px] shadow">
+              P
+            </div>
+            <span className="font-extrabold text-white text-xs tracking-tight">Placement Cockpit</span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {/* Quick Search */}
+            <button
+              onClick={() => setIsCommandPaletteOpen(true)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer"
+              aria-label="Open Command Palette"
+            >
+              <Search className="w-4 h-4 text-accentPrimary" />
+            </button>
+
+            {/* Audio Toggle */}
+            <button
+              onClick={() => {
+                const nextVal = !(state.settings.soundEnabled ?? true);
+                updateSettings({ soundEnabled: nextVal });
+                audioTelemetry.setMuted(!nextVal);
+                if (nextVal) audioTelemetry.check();
+              }}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer"
+              aria-label="Toggle Audio"
+            >
+              {state.settings.soundEnabled ?? true ? (
+                <Volume2 className="w-4 h-4 text-emerald-400" />
+              ) : (
+                <VolumeX className="w-4 h-4 text-slate-500" />
+              )}
+            </button>
+
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer"
+              aria-label="Toggle Theme"
+            >
+              {state.settings.theme === "light" ? (
+                <Moon className="w-4 h-4 text-amber-500" />
+              ) : (
+                <Sun className="w-4 h-4 text-amber-400" />
+              )}
+            </button>
+
+            {/* Quick Streak */}
+            <div className="flex items-center gap-1 font-mono text-xs text-amber-500 font-bold bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10">
+              <Flame className="w-3.5 h-3.5 fill-amber-500/10" />
+              <span>{state.streak}d</span>
+            </div>
+
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="text-slate-400 hover:text-white transition-colors"
+              aria-label={mobileMenuOpen ? "Close Menu" : "Open Menu"}
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
+        </header>
+
+        {/* Mobile Navigation Drawer Dropdown */}
+        {mobileMenuOpen && (
+          <div
+            className="lg:hidden absolute top-16 left-0 right-0 bg-darkCard/95 border-b border-white/[0.08] p-4 grid grid-cols-2 gap-3 z-40 backdrop-blur-md animate-slide-up"
+          >
+            {navigationItems.map(item => {
+              const Icon = item.icon;
+              const active = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-semibold transition-all ${
+                    active
+                      ? "bg-accentPrimary/10 border-accentPrimary/30 text-white shadow-[0_0_10px_rgba(var(--accent-rgb),0.1)]"
+                      : "bg-white/[0.02] border-white/[0.04] text-slate-400"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{item.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Mobile Bottom Navigation Bar */}
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-14 bg-darkCard/80 border-t border-white/[0.06] backdrop-blur-md flex justify-around items-center px-2 z-20 select-none">
+          {[
+            { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+            { id: "segments", label: "16-Week", icon: Map },
+            { id: "dsa", label: "DSA", icon: Code2 },
+            { id: "dev", label: "Full Stack", icon: Layers },
+            { id: "interview", label: "Mock", icon: Speech }
+          ].map(item => {
             const Icon = item.icon;
             const active = activeTab === item.id;
             return (
@@ -797,63 +938,32 @@ const AppContent: React.FC = () => {
                   setActiveTab(item.id);
                   setMobileMenuOpen(false);
                 }}
-                className={`flex items-center gap-2.5 p-3 rounded-lg border text-xs font-semibold ${
-                  active
-                    ? "bg-accentPrimary/5 border-accentPrimary/20 text-white"
-                    : "bg-white/[0.005] border-white/[0.04] text-slate-500"
+                className={`flex flex-col items-center justify-center flex-1 py-1 text-[9px] font-semibold transition-all ${
+                  active ? "text-accentPrimary" : "text-slate-500 hover:text-slate-300"
                 }`}
               >
-                <Icon className="w-4 h-4" />
-                <span>{item.name}</span>
+                <Icon className="w-4 h-4 mb-0.5" />
+                <span>{item.label}</span>
               </button>
             );
           })}
-        </div>
-      )}
+        </nav>
 
-      {/* Mobile Bottom Navigation Bar (For Critical Dashboard elements) */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-14 bg-darkCard/80 border-t border-white/[0.06] backdrop-blur-md flex justify-around items-center px-2 z-20 select-none">
-        {[
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          { id: "segments", label: "16-Week", icon: Map },
-          { id: "dsa", label: "DSA", icon: Code2 },
-          { id: "dev", label: "Full Stack", icon: Layers },
-          { id: "interview", label: "Mock", icon: Speech }
-        ].map(item => {
-          const Icon = item.icon;
-          const active = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => {
-                setActiveTab(item.id);
-                setMobileMenuOpen(false);
-              }}
-              className={`flex flex-col items-center justify-center flex-1 py-1 text-[9px] font-semibold transition-all ${
-                active ? "text-accentPrimary" : "text-slate-500 hover:text-slate-300"
-              }`}
+        {/* Main Content Area with Smooth Page Motion Transition */}
+        <main className="flex-1 w-full pt-20 lg:pt-8 pb-24 px-4 sm:px-6 md:px-8 lg:px-10 z-10 overflow-y-auto max-w-7xl mx-auto">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 12, scale: 0.995 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.995 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             >
-              <Icon className="w-4 h-4 mb-0.5" />
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
-      </nav>
-
-      {/* Main Contents Area */}
-      <main className="flex-1 w-full min-h-screen pt-20 pb-24 px-4 sm:px-6 md:px-8 lg:pt-8 lg:pb-8 lg:px-12 z-10 overflow-y-auto max-w-7xl mx-auto">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
-            {renderView()}
-          </motion.div>
-        </AnimatePresence>
-      </main>
+              {renderView()}
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
 
       {/* Floating Chat Bubble */}
       <button

@@ -2,7 +2,8 @@ import { motion } from "framer-motion";
 import React, { useState } from "react";
 import { useAppState } from "../context/AppStateContext";
 import { SkillDrawerPanel } from "../components/SkillDrawerPanel";
-import { GlassCard, ProgressBar } from "../components/Common";
+import { GlassCard, ProgressBar, SpotlightCard } from "../components/Common";
+import { audioTelemetry } from "../lib/audioTelemetry";
 import type { DevCategory, DevSkill } from "../data/curriculum";
 import { nvidiaFetch } from "../lib/nvidiaApi";
 import {
@@ -502,7 +503,7 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
             const catTotal = cat.skills.length;
             const catPercent = Math.round((catCompleted / catTotal) * 100);
             return (
-              <GlassCard key={cat.id} className="p-4 flex flex-col justify-between gap-3 relative overflow-hidden">
+              <SpotlightCard key={cat.id} className="p-4 flex flex-col justify-between gap-3 relative overflow-hidden">
                 <div className="flex justify-between items-center z-10">
                   <span className="text-xs font-bold text-slate-300">{cat.name}</span>
                   {catPercent === 100 && <Medal className="w-4 h-4 text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />}
@@ -513,8 +514,8 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
                 <div className="z-10">
                   <ProgressBar percentage={catPercent} height={4} colorClass={catPercent === 100 ? "bg-yellow-500" : "bg-accentPrimary"} />
                 </div>
-              </GlassCard>
-            )
+              </SpotlightCard>
+            );
           })}
         </div>
       )}
@@ -525,7 +526,10 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
           {["All", "Frontend", "Backend", "Database", "Systems & Deployment"].map(catName => (
             <button
               key={catName}
-              onClick={() => setActiveCategoryFilter(catName)}
+              onClick={() => {
+                audioTelemetry.click();
+                setActiveCategoryFilter(catName);
+              }}
               className={`px-4 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 activeCategoryFilter === catName
                   ? "bg-white/[0.08] text-white shadow-sm border border-white/[0.04]"
@@ -539,7 +543,10 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
 
         <div className="flex gap-1 bg-white/[0.02] border border-white/[0.04] p-1 rounded-xl shrink-0 self-end sm:self-auto">
           <button
-            onClick={() => setViewMode("timeline")}
+            onClick={() => {
+              audioTelemetry.click();
+              setViewMode("timeline");
+            }}
             className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
               viewMode === "timeline" ? "bg-white/[0.08] text-white" : "text-slate-500 hover:text-slate-300"
             }`}
@@ -549,7 +556,10 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
             <span>Path Timeline</span>
           </button>
           <button
-            onClick={() => setViewMode("board")}
+            onClick={() => {
+              audioTelemetry.click();
+              setViewMode("board");
+            }}
             className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
               viewMode === "board" ? "bg-white/[0.08] text-white" : "text-slate-500 hover:text-slate-300"
             }`}

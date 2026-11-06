@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-08-18T20:44:06.068058+00:00",
+  "generated_at_utc": "2026-08-18T20:51:00.386642+00:00",
   "provider": "NVIDIA NIM / OpenAI",
   "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
   "category": "Logical Reasoning",
@@ -7,48 +7,47 @@
   "question_count": 4,
   "questions": [
     {
-      "id": "q-blood_relations-23783",
-      "question": "If A is the brother of B, B is the sister of C, and C is the mother of D, how is A related to D?",
+      "id": "q-blood_relations-83980",
+      "question": "Pointing to a photograph, a man said, \"The lady in the photograph is my nephew's maternal grandmother.\" How is the lady in the photograph related to the man?",
       "subtopic": "Blood Relations",
       "difficulty": "Easy",
       "options": [
         {
           "key": "A",
-          "text": "Uncle"
+          "text": "Sister"
         },
         {
           "key": "B",
-          "text": "Father"
+          "text": "Mother"
         },
         {
           "key": "C",
-          "text": "Brother"
+          "text": "Maternal Aunt"
         },
         {
           "key": "D",
-          "text": "Nephew"
+          "text": "Grandmother"
         }
       ],
-      "correctOption": "A",
-      "explanation": "A is the brother of B, and B is the sister of C. This makes A the brother of C. Since C is the mother of D, A is the maternal uncle of D.",
+      "correctOption": "B",
+      "explanation": "The lady is the maternal grandmother of the man's nephew. The nephew is the son of the man's sibling. Therefore, the lady is the mother of the man's sibling, which makes her the man's mother.",
       "stepByStep": [
-        "Step 1: Identify the gender and relationship of A with respect to B. A is the brother of B.",
-        "Step 2: Identify the relationship of B with respect to C. B is the sister of C, which makes A the brother of C.",
-        "Step 3: Identify the relationship of C with respect to D. C is the mother of D.",
-        "Step 4: Combine the relationships. Since A is the brother of C and C is the mother of D, A is the maternal uncle of D."
+        "Step 1: Identify the nephew. The nephew is the son of the man's brother or sister.",
+        "Step 2: Identify the maternal grandmother. The maternal grandmother of the nephew is the mother of the nephew's mother.",
+        "Step 3: Connect the relations. Since the nephew's mother is the man's sister, the lady in the photograph is the man's mother."
       ],
-      "svgDiagram": "<svg viewBox='0 0 400 250' xmlns='http://www.w3.org/2000/svg'><rect width='400' height='250' fill='#0f172a'/><text x='200' y='50' text-anchor='middle' fill='#e2e8f0' font-size='20' font-family='sans-serif'>Family Tree Diagram</text><text x='100' y='100' fill='#10b981' font-size='16' font-family='sans-serif'>A</text><text x='300' y='100' fill='#10b981' font-size='16' font-family='sans-serif'>B</text><text x='200' y='150' fill='#10b981' font-size='16' font-family='sans-serif'>C</text><text x='200' y='200' fill='#10b981' font-size='16' font-family='sans-serif'>D</text><line x1='100' y1='100' x2='200' y2='150' stroke='#6366f1' stroke-width='2.5'/><line x1='300' y1='100' x2='200' y2='150' stroke='#6366f1' stroke-width='2.5'/><line x1='200' y1='150' x2='200' y2='200' stroke='#6366f1' stroke-width='2.5'/></svg>",
+      "svgDiagram": "<svg viewBox=\"0 0 400 250\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"400\" height=\"250\" fill=\"#0f172a\"/><text x=\"200\" y=\"50\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-size=\"16\">The Lady</text><text x=\"200\" y=\"100\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-size=\"14\">is the Mother</text><line x1=\"200\" y1=\"120\" x2=\"200\" y2=\"180\" stroke=\"#10b981\" stroke-width=\"2.5\"/><text x=\"200\" y=\"180\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-size=\"14\">Man</text><text x=\"200\" y=\"200\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-size=\"14\">(Man's Mother)</text></svg>",
       "estimatedTimeSec": 60
     },
     {
-      "id": "q-blood_relations-23783",
-      "question": "Pointing to a photograph, a man said, \"She is the daughter of the only son of my father\". How is the person in the photograph related to the man?",
+      "id": "q-blood_relations-83980",
+      "question": "If A is the brother of B, C is the sister of A, and D is the brother of C, then how is D related to B?",
       "subtopic": "Blood Relations",
       "difficulty": "Medium",
       "options": [
         {
           "key": "A",
-          "text": "Daughter"
+          "text": "Brother"
         },
         {
           "key": "B",
@@ -56,90 +55,92 @@
         },
         {
           "key": "C",
+          "text": "Cousin"
+        },
+        {
+          "key": "D",
+          "text": "Nephew"
+        }
+      ],
+      "correctOption": "A",
+      "explanation": "Since A is the brother of B, and D is the brother of C (who is the sister of A), D and A are siblings. Therefore, D is also the brother of B.",
+      "stepByStep": [
+        "Step 1: Establish the relationship between A and B. A is the brother of B.",
+        "Step 2: Establish the relationship between A and C. C is the sister of A, making A and C siblings.",
+        "Step 3: Establish the relationship between C and D. D is the brother of C.",
+        "Step 4: Conclude the relationship between D and B. Since D and A are brothers, and A is the brother of B, D must also be the brother of B."
+      ],
+      "svgDiagram": "<svg viewBox=\"0 0 400 250\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"400\" height=\"250\" fill=\"#0f172a\"/><text x=\"200\" y=\"50\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-size=\"16\">Family Tree</text><circle cx=\"100\" cy=\"100\" r=\"15\" fill=\"#10b981\"/><text x=\"100\" y=\"105\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-size=\"12\">A</text><text x=\"95\" y=\"95\" fill=\"#e2e8f0\" font-size=\"10\">Brother</text><text x=\"105\" y=\"95\" fill=\"#e2e8f0\" font-size=\"10\">to</text><circle cx=\"300\" cy=\"100\" r=\"15\" fill=\"#10b981\"/><text x=\"300\" y=\"105\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-size=\"12\">B</text><line x1=\"130\" y1=\"100\" x2=\"270\" y2=\"100\" stroke=\"#6366f1\" stroke-width=\"2.5\"/><circle cx=\"200\" cy=\"100\" r=\"15\" fill=\"#10b981\"/><text x=\"200\" y=\"105\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-size=\"12\">C</text><text x=\"195\" y=\"95\" fill=\"#e2e8f0\" font-size=\"10\">Sister</text><text x=\"205\" y=\"95\" fill=\"#e2e8f0\" font-size=\"10\">to</text><circle cx=\"200\" cy=\"150\" r=\"15\" fill=\"#10b981\"/><text x=\"200\" y=\"155\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-size=\"12\">D</text><line x1=\"200\" y1=\"150\" x2=\"200\" y2=\"100\" stroke=\"#6366f1\" stroke-width=\"2.5\"/></svg>",
+      "estimatedTimeSec": 60
+    },
+    {
+      "id": "q-blood_relations-60386",
+      "question": "Pointing to a photograph, a person said, \"The lady in the photograph is my nephew's maternal grandmother.\" How is the lady in the photograph related to the person?",
+      "subtopic": "Blood Relations",
+      "difficulty": "Easy",
+      "options": [
+        {
+          "key": "A",
+          "text": "Sister"
+        },
+        {
+          "key": "B",
+          "text": "Mother"
+        },
+        {
+          "key": "C",
+          "text": "Maternal Aunt"
+        },
+        {
+          "key": "D",
+          "text": "Grandmother"
+        }
+      ],
+      "correctOption": "C",
+      "explanation": "The lady in the photograph is the maternal grandmother of the person's nephew. The maternal grandmother of a nephew is the person's maternal aunt (the sister of the person's mother).",
+      "stepByStep": [
+        "Step 1: Identify the nephew. The person's nephew could be the son of the person's sibling or the person themselves if they are male. Here, we consider the person has a sibling.",
+        "Step 2: The lady is the maternal grandmother of this nephew. \"Maternal\" means from the mother's side. Therefore, the lady is the mother of the nephew's mother.",
+        "Step 3: The nephew's mother is the person's sister (if the nephew is the person's nephew through the person's sibling) or the person's own daughter (if the person is the parent). In either case, the lady is the person's maternal aunt.",
+        "Step 4: Conclusion: The lady is the maternal aunt of the person."
+      ],
+      "svgDiagram": "<svg viewBox=\"0 0 400 250\" xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"250\" style=\"background-color: #0f172a;\">\n  <circle cx=\"200\" cy=\"120\" r=\"80\" fill=\"#0f172a\" stroke=\"#6366f1\" stroke-width=\"2.5\"/>\n  <text x=\"200\" y=\"105\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-size=\"14\" font-family=\"sans-serif\">Photograph Lady</text>\n  <line x1=\"200\" y1=\"120\" x2=\"200\" y2=\"180\" stroke=\"#10b981\" stroke-width=\"2.5\"/>\n  <text x=\"200\" y=\"195\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-size=\"12\" font-family=\"sans-serif\">Person</text>\n  <line x1=\"200\" y1=\"120\" x2=\"200\" y2=\"60\" stroke=\"#10b981\" stroke-width=\"2.5\"/>\n  <text x=\"200\" y=\"70\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-size=\"12\" font-family=\"sans-serif\">Nephew</text>\n  <text x=\"200\" y=\"145\" text-anchor=\"middle\" fill=\"#6366f1\" font-size=\"14\" font-family=\"sans-serif\">Maternal Aunt</text>\n</svg>",
+      "estimatedTimeSec": 60
+    },
+    {
+      "id": "q-blood_relations-60386",
+      "question": "If P is the brother of Q, R is the sister of P, S is the brother of R, and T is the sister of S, how is T related to Q?",
+      "subtopic": "Blood Relations",
+      "difficulty": "Hard",
+      "options": [
+        {
+          "key": "A",
+          "text": "Sister"
+        },
+        {
+          "key": "B",
+          "text": "Cousin"
+        },
+        {
+          "key": "C",
           "text": "Niece"
         },
         {
           "key": "D",
-          "text": "Granddaughter"
-        }
-      ],
-      "correctOption": "B",
-      "explanation": "The only son of the man's father is the man himself. Therefore, the person in the photograph is the daughter of the man. Hence, she is his sister.",
-      "stepByStep": [
-        "Step 1: Identify the \"only son of my father\". This refers to the man himself.",
-        "Step 2: The photograph shows the daughter of this person (the man).",
-        "Step 3: Therefore, the person in the photograph is the daughter of the man.",
-        "Step 4: A daughter of the man is his sister."
-      ],
-      "svgDiagram": "<svg viewBox='0 0 400 250' xmlns='http://www.w3.org/2000/svg'><rect width='400' height='250' fill='#0f172a'/><text x='200' y='50' text-anchor='middle' fill='#e2e8f0' font-size='20' font-family='sans-serif'>Relationship Diagram</text><text x='100' y='100' fill='#10b981' font-size='16' font-family='sans-serif'>Man</text><text x='300' y='100' fill='#10b981' font-size='16' font-family='sans-serif'>Photograph Person</text><text x='200' y='150' fill='#10b981' font-size='16' font-family='sans-serif'>Daughter</text><line x1='100' y1='100' x2='200' y2='150' stroke='#6366f1' stroke-width='2.5'/><line x1='300' y1='100' x2='200' y2='150' stroke='#6366f1' stroke-width='2.5'/></svg>",
-      "estimatedTimeSec": 60
-    },
-    {
-      "id": "q-blood_relations-38018",
-      "question": "If P is the brother of Q, Q is the sister of R, and R is the mother of S, how is P related to S?",
-      "subtopic": "Blood Relations",
-      "difficulty": "Easy",
-      "options": [
-        {
-          "key": "A",
-          "text": "Uncle"
-        },
-        {
-          "key": "B",
-          "text": "Father"
-        },
-        {
-          "key": "C",
-          "text": "Brother-in-law"
-        },
-        {
-          "key": "D",
-          "text": "Cousin"
+          "text": "Aunt"
         }
       ],
       "correctOption": "A",
-      "explanation": "P is the brother of Q, and Q is the sister of R. This makes R the sibling of P. Since R is the mother of S, P is the maternal uncle of S.",
+      "explanation": "T is the sister of S, S is the brother of R, R is the sister of P, and P is the brother of Q. By tracing the sibling relationships, T and Q are siblings (both children of the same parents, likely P and Q's parents).",
       "stepByStep": [
-        "Step 1: Identify the sibling chain. P is the brother of Q, and Q is the sister of R. Therefore, P and R are siblings.",
-        "Step 2: R is the mother of S. Since P is the sibling of R, P is the maternal uncle (or aunt) of R's child, S.",
-        "Step 3: Hence, P is the uncle of S."
+        "Step 1: Establish the base relationship. P is the brother of Q.",
+        "Step 2: R is the sister of P. This means R and P share the same parents, and Q is also the sibling of R (since Q is P's sibling).",
+        "Step 3: S is the brother of R. Since R is the sister of P and the sister of Q, S is the brother of both P and Q.",
+        "Step 4: T is the sister of S. Since S is the brother of Q, T is the sister of Q.",
+        "Step 5: Conclusion: T is the sister of Q."
       ],
-      "svgDiagram": "<svg viewBox=\"0 0 400 250\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"400\" height=\"250\" fill=\"#0f172a\" /><circle cx=\"200\" cy=\"120\" r=\"30\" fill=\"#10b981\" /><text x=\"200\" y=\"120\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-size=\"14\" font-family=\"sans-serif\">P</text><text x=\"200\" y=\"145\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-size=\"12\" font-family=\"sans-serif\">Q</text><text x=\"200\" y=\"170\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-size=\"12\" font-family=\"sans-serif\">R</text><text x=\"200\" y=\"195\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-size=\"12\" font-family=\"sans-serif\">S</text><line x1=\"200\" y1=\"150\" x2=\"200\" y2=\"195\" stroke=\"#6366f1\" stroke-width=\"2.5\" /><line x1=\"200\" y1=\"150\" x2=\"200\" y2=\"105\" stroke=\"#6366f1\" stroke-width=\"2.5\" /><text x=\"180\" y=\"110\" text-anchor=\"end\" fill=\"#e2e8f0\" font-size=\"11\" font-family=\"sans-serif\">Brother</text><text x=\"180\" y=\"175\" text-anchor=\"end\" fill=\"#e2e8f0\" font-size=\"11\" font-family=\"sans-serif\">Sister</text><text x=\"180\" y=\"195\" text-anchor=\"end\" fill=\"#e2e8f0\" font-size=\"11\" font-family=\"sans-serif\">Mother</text></svg>",
-      "estimatedTimeSec": 60
-    },
-    {
-      "id": "q-blood_relations-46068",
-      "question": "If X is the brother of Y, Y is the sister of Z, and Z is the mother of W, how is X related to W?",
-      "subtopic": "Blood Relations",
-      "difficulty": "Easy",
-      "options": [
-        {
-          "key": "A",
-          "text": "Uncle"
-        },
-        {
-          "key": "B",
-          "text": "Father"
-        },
-        {
-          "key": "C",
-          "text": "Brother"
-        },
-        {
-          "key": "D",
-          "text": "Cousin"
-        }
-      ],
-      "correctOption": "A",
-      "explanation": "X is the maternal uncle of W.",
-      "stepByStep": [
-        "Step 1: Identify the family structure. X is the brother of Y, meaning X and Y are siblings.",
-        "Step 2: Y is the sister of Z, confirming Y and Z are also siblings. Thus, X, Y, and Z are brothers and sisters.",
-        "Step 3: Z is the mother of W, making Z the parent and W the child.",
-        "Step 4: Since X is the brother of Z (Z's sibling), X is the uncle of Z's child, W."
-      ],
-      "svgDiagram": "<svg viewBox=\"0 0 400 250\" xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"250\" style=\"background-color: #0f172a;\"><rect width=\"400\" height=\"250\" fill=\"#0f172a\" /><text x=\"200\" y=\"40\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-family=\"Arial\" font-size=\"16\">Family Tree Diagram</text><circle cx=\"150\" cy=\"120\" r=\"30\" fill=\"#10b981\" /><text x=\"150\" y=\"125\" text-anchor=\"middle\" fill=\"#0f172a\" font-family=\"Arial\" font-size=\"12\">X (Brother)</text><circle cx=\"250\" cy=\"120\" r=\"30\" fill=\"#10b981\" /><text x=\"250\" y=\"125\" text-anchor=\"middle\" fill=\"#0f172a\" font-family=\"Arial\" font-size=\"12\">Y (Sister)</text><circle cx=\"350\" cy=\"120\" r=\"30\" fill=\"#10b981\" /><text x=\"350\" y=\"125\" text-anchor=\"middle\" fill=\"#0f172a\" font-family=\"Arial\" font-size=\"12\">Z (Mother)</text><circle cx=\"300\" cy=\"200\" r=\"30\" fill=\"#6366f1\" /><text x=\"300\" y=\"205\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-family=\"Arial\" font-size=\"12\">W (Child)</text><line x1=\"150\" y1=\"150\" x2=\"300\" y2=\"200\" stroke=\"#6366f1\" stroke-width=\"2.5\" /><line x1=\"250\" y1=\"150\" x2=\"300\" y2=\"200\" stroke=\"#6366f1\" stroke-width=\"2.5\" /><line x1=\"350\" y1=\"150\" x2=\"300\" y2=\"200\" stroke=\"#6366f1\" stroke-width=\"2.5\" /></svg>",
-      "estimatedTimeSec": 60
+      "svgDiagram": "<svg viewBox=\"0 0 400 250\" xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"250\" style=\"background-color: #0f172a;\">\n  <g fill=\"#0f172a\" stroke=\"#6366f1\" stroke-width=\"2.5\">\n    <circle cx=\"100\" cy=\"120\" r=\"20\"/>\n    <text x=\"100\" y=\"125\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-size=\"12\" font-family=\"sans-serif\">P</text>\n    <circle cx=\"300\" cy=\"120\" r=\"20\"/>\n    <text x=\"300\" y=\"125\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-size=\"12\" font-family=\"sans-serif\">Q</text>\n    <line x1=\"100\" y1=\"120\" x2=\"300\" y2=\"120\" stroke=\"#10b981\" stroke-width=\"2.5\"/>\n    <circle cx=\"150\" cy=\"200\" r=\"20\"/>\n    <text x=\"150\" y=\"205\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-size=\"12\" font-family=\"sans-serif\">R</text>\n    <circle cx=\"250\" cy=\"200\" r=\"20\"/>\n    <text x=\"250\" y=\"205\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-size=\"12\" font-family=\"sans-serif\">S</text>\n    <line x1=\"150\" y1=\"200\" x2=\"250\" y2=\"200\" stroke=\"#10b981\" stroke-width=\"2.5\"/>\n    <circle cx=\"200\" cy=\"300\" r=\"20\"/>\n    <text x=\"200\" y=\"305\" text-anchor=\"middle\" fill=\"#e2e8f0\" font-size=\"12\" font-family=\"sans-serif\">T</text>\n  </g>\n  <text x=\"200\" y=\"50\" text-anchor=\"middle\" fill=\"#6366f1\" font-size=\"16\" font-family=\"sans-serif\">Family Tree</text>\n</svg>",
+      "estimatedTimeSec": 90
     }
   ]
 }

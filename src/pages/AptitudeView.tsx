@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppState } from "../context/AppStateContext";
 import { GlassCard } from "../components/Common";
+import { audioTelemetry } from "../lib/audioTelemetry";
 import { MarkdownRenderer } from "../components/MarkdownRenderer";
 import { SvgDiagramRenderer } from "../components/SvgDiagramRenderer";
 import { nvidiaFetch } from "../lib/nvidiaApi";
@@ -237,6 +238,7 @@ Return the explanation in clean, highly readable Markdown format. Do not use con
 
   const handleSelectOption = (optionKey: "A" | "B" | "C" | "D") => {
     if (checkedQuestions[currentQuestionIdx] || revealedQuestions[currentQuestionIdx]) return;
+    audioTelemetry.click();
     setSelectedAnswers(prev => ({
       ...prev,
       [currentQuestionIdx]: optionKey
@@ -251,6 +253,11 @@ Return the explanation in clean, highly readable Markdown format. Do not use con
     setCheckedQuestions(prev => ({ ...prev, [currentQuestionIdx]: true }));
     
     const isCorrect = selected === activeQ.correctOption;
+    if (isCorrect) {
+      audioTelemetry.check();
+    } else {
+      audioTelemetry.alert();
+    }
     setQuestionStatuses(prev => ({
       ...prev,
       [currentQuestionIdx]: isCorrect ? "correct" : "incorrect"
@@ -258,6 +265,7 @@ Return the explanation in clean, highly readable Markdown format. Do not use con
   };
 
   const handleRevealAnswer = () => {
+    audioTelemetry.click();
     setRevealedQuestions(prev => ({ ...prev, [currentQuestionIdx]: true }));
     setQuestionStatuses(prev => ({
       ...prev,
@@ -268,6 +276,7 @@ Return the explanation in clean, highly readable Markdown format. Do not use con
   const completeQuiz = () => {
     if (!selectedTopic) return;
     setQuizTimerActive(false);
+    audioTelemetry.levelUp();
 
     let correctCount = 0;
     const answersRecord: Record<number, { selected: string; correct: boolean }> = {};

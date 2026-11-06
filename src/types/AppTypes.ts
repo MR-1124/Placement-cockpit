@@ -112,6 +112,10 @@ export interface AppSettings {
     githubToken?: string;
     githubLastSynced?: string;
   };
+  soundEnabled?: boolean;
+  soundVolume?: number; // 0.0 - 1.0
+  voiceEnabled?: boolean; // TTS for AI interviewer
+  voiceRate?: number; // 0.8 - 1.4
 }
 
 export interface ChatMessage {

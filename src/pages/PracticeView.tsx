@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppState } from "../context/AppStateContext";
-import { GlassCard } from "../components/Common";
+import { SpotlightCard, MetricBadge, ShimmerSkeleton } from "../components/Common";
 import { MarkdownRenderer } from "../components/MarkdownRenderer";
 import { nvidiaFetch } from "../lib/nvidiaApi";
 import {
@@ -20,11 +20,11 @@ import {
   ListTodo,
   AlertCircle
 } from "lucide-react";
+import confetti from "canvas-confetti";
 
 export const PracticeView: React.FC = () => {
   const { state, markPracticeProblemSolved, curriculum, confirmAction } = useAppState();
   
-  // Flatten all problems from default DSA topics
   const allProblems = React.useMemo(() => {
     const flat: any[] = [];
     const seenIds = new Set();
@@ -44,7 +44,6 @@ export const PracticeView: React.FC = () => {
     return flat;
   }, [curriculum.DEFAULT_DSA_TOPICS]);
 
-  // List of all unique tags from problems for filtering
   const allTags = React.useMemo(() => {
     const tags = new Set<string>();
     allProblems.forEach(p => {
@@ -55,27 +54,22 @@ export const PracticeView: React.FC = () => {
     return Array.from(tags).sort();
   }, [allProblems]);
 
-  // State definitions
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDifficulty, setSelectedDifficulty] = useState("All");
   const [selectedTag, setSelectedTag] = useState("All");
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [activeQuestion, setActiveQuestion] = useState<any | null>(null);
 
-  // Active question AI details
   const [aiDescription, setAiDescription] = useState<string | null>(null);
   const [loadingAi, setLoadingAi] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
-  // Timer states
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
   const timerRef = useRef<any>(null);
 
-  // Solved details check
   const solvedRecord = state.practiceProblemsSolved || {};
   
-  // Today's solved logic helper
   const getTodayString = () => {
     const d = new Date();
     return d.toISOString().split("T")[0];
@@ -84,18 +78,15 @@ export const PracticeView: React.FC = () => {
   const todaySolvedList = React.useMemo(() => {
     const todayStr = getTodayString();
     return Object.entries(solvedRecord).filter(([_, info]: any) => {
-      return info.timestamp.startsWith(todayStr);
+      return info.timestamp?.startsWith(todayStr);
     }).map(([id, _]) => {
       return allProblems.find(p => p.id === id);
     }).filter(Boolean);
   }, [solvedRecord, allProblems]);
 
-  // Handle active question selection and AI load
   useEffect(() => {
     if (activeQuestion) {
-      // Start loading dynamic description
       loadAiProblemStatement(activeQuestion);
-      // Reset timer
       setTimeElapsed(0);
       setTimerRunning(false);
       if (timerRef.current) clearInterval(timerRef.current);
@@ -107,7 +98,6 @@ export const PracticeView: React.FC = () => {
     }
   }, [activeQuestion]);
 
-  // Active timer loop
   useEffect(() => {
     if (timerRunning) {
       timerRef.current = setInterval(() => {
@@ -123,7 +113,7 @@ export const PracticeView: React.FC = () => {
 
   const loadAiProblemStatement = async (problem: any) => {
     if (!state.sessionNvidiaKey) {
-      setAiError("NVIDIA API Key not found. Please set your API Key in Settings to get dynamic AI problem descriptions.");
+      setAiError("NVIDIA API Key not found. Please configure your key in Settings to activate AI problem breakdown.");
       return;
     }
     setLoadingAi(true);
@@ -182,20 +172,18 @@ Provide key observations, potential corner cases, or optimization hints in bulle
       }
     } catch (err: any) {
       console.error(err);
-      setAiError(err.message || "Failed to generate problem statement dynamically. You can still solve it on the platform.");
+      setAiError(err.message || "Failed to generate problem statement dynamically.");
     } finally {
       setLoadingAi(false);
     }
   };
 
-  // Format stopwatch output
   const formatTime = (secs: number) => {
     const mins = Math.floor(secs / 60);
     const remainingSecs = secs % 60;
     return `${mins.toString().padStart(2, "0")}:${remainingSecs.toString().padStart(2, "0")}`;
   };
 
-  // Filtered problems list
   const filteredProblems = React.useMemo(() => {
     return allProblems.filter(p => {
       const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -212,10 +200,8 @@ Provide key observations, potential corner cases, or optimization hints in bulle
     });
   }, [allProblems, searchQuery, selectedDifficulty, selectedTag, selectedStatus, solvedRecord]);
 
-  // Solve button redirection URL
   const getSolveUrl = (problem: any) => {
     if (problem.url) return problem.url;
-    // Fallback search Google
     return `https://www.google.com/search?q=${encodeURIComponent(problem.name + " " + (problem.source || "LeetCode") + " practice")}`;
   };
 
@@ -223,7 +209,7 @@ Provide key observations, potential corner cases, or optimization hints in bulle
     if (timeElapsed > 0 || timerRunning) {
       confirmAction({
         title: "Abort Practice?",
-        message: "You have started the timer for practice. Do you want to abort practice of this question or continue the practice and stay on this page?",
+        message: "Your active practice session is running. Do you want to abort or continue practicing?",
         confirmText: "Abort Practice",
         cancelText: "Continue Practice",
         severity: "warning",
@@ -240,185 +226,199 @@ Provide key observations, potential corner cases, or optimization hints in bulle
     if (!activeQuestion) return;
     markPracticeProblemSolved(activeQuestion.id, timeElapsed);
     setTimerRunning(false);
-    // Return back to main grid
+    confetti({
+      particleCount: 60,
+      spread: 60,
+      origin: { y: 0.6 },
+      colors: ["#10b981", "#8b5cf6", "#f59e0b"]
+    });
     setActiveQuestion(null);
   };
 
-  // Helper stats calculation
   const totalSolvedCount = Object.keys(solvedRecord).length;
   const totalPracticeXp = totalSolvedCount * 50;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 pb-12">
       <AnimatePresence mode="wait">
         {!activeQuestion ? (
-          // ----------------------------------------------------
-          // GRID / LISTING VIEW
-          // ----------------------------------------------------
           <motion.div
             key="grid"
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.25 }}
-            className="space-y-6"
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.22 }}
+            className="space-y-8"
           >
-            {/* Header section with Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <GlassCard className="p-5 flex items-center justify-between border-white/[0.04] bg-white/[0.01]">
+            {/* Header Telemetry Banner */}
+            <SpotlightCard className="p-6 sm:p-8">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-6">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-accentPrimary font-bold bg-accentPrimary/10 border border-accentPrimary/25 px-2.5 py-0.5 rounded-md">
+                      Live Problem Arena
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-500">• Timed Assessment Drills</span>
+                  </div>
+                  <h1 className="text-3xl font-extrabold tracking-tight text-white">
+                    Coding Practice Arena
+                  </h1>
+                  <p className="text-xs sm:text-sm text-slate-400 max-w-xl leading-relaxed">
+                    Practice problems with dynamic AI breakdowns, active stopwatch tracking, and instant XP reward telemetry.
+                  </p>
+                </div>
+              </div>
+            </SpotlightCard>
+
+            {/* Top Stats Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <SpotlightCard className="p-5 flex items-center justify-between">
                 <div className="space-y-1">
-                  <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest font-bold">Total Solved</span>
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold">Total Solved</span>
                   <h3 className="text-2xl font-bold text-white tracking-tight">{totalSolvedCount}</h3>
                 </div>
-                <div className="p-3 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400">
+                <div className="p-3 rounded-xl bg-accentPrimary/15 border border-accentPrimary/30 text-accentPrimary">
                   <Trophy className="w-5 h-5" />
                 </div>
-              </GlassCard>
+              </SpotlightCard>
 
-              <GlassCard className="p-5 flex items-center justify-between border-white/[0.04] bg-white/[0.01]">
+              <SpotlightCard className="p-5 flex items-center justify-between">
                 <div className="space-y-1">
-                  <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest font-bold">Today's Solves</span>
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold">Today's Solves</span>
                   <h3 className="text-2xl font-bold text-emerald-400 tracking-tight">{todaySolvedList.length}</h3>
                 </div>
-                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
                   <Flame className="w-5 h-5 animate-pulse" />
                 </div>
-              </GlassCard>
+              </SpotlightCard>
 
-              <GlassCard className="p-5 flex items-center justify-between border-white/[0.04] bg-white/[0.01]">
+              <SpotlightCard className="p-5 flex items-center justify-between">
                 <div className="space-y-1">
-                  <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest font-bold">Practice XP</span>
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold">Practice XP</span>
                   <h3 className="text-2xl font-bold text-amber-400 tracking-tight">+{totalPracticeXp}</h3>
                 </div>
-                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                <div className="p-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400">
                   <Award className="w-5 h-5" />
                 </div>
-              </GlassCard>
+              </SpotlightCard>
 
-              <GlassCard className="p-5 flex items-center justify-between border-white/[0.04] bg-white/[0.01]">
+              <SpotlightCard className="p-5 flex items-center justify-between">
                 <div className="space-y-1">
-                  <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest font-bold">Today's Target</span>
-                  <h3 className="text-base font-bold text-slate-300">
-                    {todaySolvedList.length >= 3 ? "Target Met! 🎉" : `${todaySolvedList.length} / 3 solved`}
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold">Today's Target</span>
+                  <h3 className="text-sm font-bold text-slate-200">
+                    {todaySolvedList.length >= 3 ? "Daily Goal Met! 🎉" : `${todaySolvedList.length} / 3 Completed`}
                   </h3>
                 </div>
-                <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+                <div className="p-3 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-400">
                   <ListTodo className="w-5 h-5" />
                 </div>
-              </GlassCard>
+              </SpotlightCard>
             </div>
 
             {/* Today's Solved Items Panel */}
             {todaySolvedList.length > 0 && (
-              <GlassCard className="p-4 border-emerald-500/10 bg-emerald-950/[0.01] rounded-2xl">
+              <SpotlightCard className="p-5 border-emerald-500/20 bg-emerald-950/[0.02]">
                 <div className="flex items-center gap-2 mb-3">
                   <Flame className="w-4 h-4 text-emerald-400 animate-pulse" />
-                  <span className="text-xs font-bold text-white uppercase tracking-wider">Today's Solved List</span>
+                  <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">Today's Solved Stream</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {todaySolvedList.map((prob: any) => (
                     <div
                       key={prob.id}
-                      className="px-3 py-1.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-1.5"
+                      className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-xs font-semibold flex items-center gap-2"
                     >
-                      <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+                      <CheckCircle className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
                       <span>{prob.name}</span>
                     </div>
                   ))}
                 </div>
-              </GlassCard>
+              </SpotlightCard>
             )}
 
             {/* Search and Filters */}
-            <GlassCard className="p-4 border-white/[0.04] bg-white/[0.005] rounded-2xl flex flex-col md:flex-row gap-4 items-center justify-between">
-              {/* Search input */}
+            <SpotlightCard className="p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
               <div className="relative w-full md:w-96">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <Search className="w-4 h-4 text-slate-500" />
-                </div>
+                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Search problem name or tags..."
-                  className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-xl py-2.5 pl-10 pr-4 text-xs text-white focus:outline-none placeholder-slate-600 transition-colors"
+                  placeholder="Search problem title or tags..."
+                  className="w-full bg-darkCard/60 border border-white/[0.08] focus:border-accentPrimary rounded-xl py-2 pl-10 pr-4 text-xs text-white focus:outline-none transition-colors"
                 />
               </div>
 
-              {/* Filters list */}
-              <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
-                {/* Status Filter */}
+              <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+                {/* Status */}
                 <div className="relative shrink-0">
                   <select
                     value={selectedStatus}
                     onChange={e => setSelectedStatus(e.target.value)}
-                    className="bg-black/40 border border-white/[0.08] rounded-xl py-2 pl-3 pr-8 text-xs text-white focus:outline-none cursor-pointer appearance-none"
+                    className="bg-darkCard border border-white/[0.08] rounded-xl py-2 pl-3 pr-8 text-xs text-white focus:outline-none cursor-pointer appearance-none font-mono"
                   >
                     <option value="All">All Status</option>
                     <option value="Solved">Solved</option>
                     <option value="Unsolved">Unsolved</option>
                   </select>
-                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                 </div>
 
-                {/* Difficulty Filter */}
+                {/* Difficulty */}
                 <div className="relative shrink-0">
                   <select
                     value={selectedDifficulty}
                     onChange={e => setSelectedDifficulty(e.target.value)}
-                    className="bg-black/40 border border-white/[0.08] rounded-xl py-2 pl-3 pr-8 text-xs text-white focus:outline-none cursor-pointer appearance-none"
+                    className="bg-darkCard border border-white/[0.08] rounded-xl py-2 pl-3 pr-8 text-xs text-white focus:outline-none cursor-pointer appearance-none font-mono"
                   >
                     <option value="All">All Difficulties</option>
                     <option value="Easy">Easy</option>
                     <option value="Medium">Medium</option>
                     <option value="Hard">Hard</option>
                   </select>
-                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                 </div>
 
-                {/* Tag Filter */}
+                {/* Tag */}
                 <div className="relative shrink-0">
                   <select
                     value={selectedTag}
                     onChange={e => setSelectedTag(e.target.value)}
-                    className="bg-black/40 border border-white/[0.08] rounded-xl py-2 pl-3 pr-8 text-xs text-white focus:outline-none cursor-pointer appearance-none max-w-[150px]"
+                    className="bg-darkCard border border-white/[0.08] rounded-xl py-2 pl-3 pr-8 text-xs text-white focus:outline-none cursor-pointer appearance-none max-w-[150px] font-mono"
                   >
                     <option value="All">All Tags</option>
                     {allTags.map(tag => (
                       <option key={tag} value={tag}>{tag}</option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                 </div>
               </div>
-            </GlassCard>
+            </SpotlightCard>
 
-            {/* List container */}
+            {/* Problem Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredProblems.map((prob: any) => {
                 const isSolved = !!solvedRecord[prob.id];
                 const solveTimeStr = isSolved ? formatTime(solvedRecord[prob.id].duration) : null;
                 
-                let diffStyle = "text-blue-400 bg-blue-500/10 border-blue-500/20";
-                if (prob.difficulty === "Medium") diffStyle = "text-amber-400 bg-amber-500/10 border-amber-500/20";
-                if (prob.difficulty === "Hard") diffStyle = "text-rose-400 bg-rose-500/10 border-rose-500/20";
+                let diffVariant: "emerald" | "amber" | "rose" = "emerald";
+                if (prob.difficulty === "Medium") diffVariant = "amber";
+                if (prob.difficulty === "Hard") diffVariant = "rose";
 
                 return (
-                  <GlassCard
+                  <SpotlightCard
                     key={prob.id}
-                    className={`p-5 flex flex-col justify-between hover:border-white/[0.08] transition-all relative overflow-hidden group ${
-                      isSolved ? "bg-emerald-950/[0.005] border-emerald-500/5 hover:border-emerald-500/10" : ""
+                    className={`p-5 flex flex-col justify-between transition-all group ${
+                      isSolved ? "border-emerald-500/20 bg-emerald-950/[0.02]" : ""
                     }`}
                   >
                     <div className="space-y-3">
                       <div className="flex justify-between items-start gap-2">
-                        {/* Title and stats */}
                         <div className="space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className={`px-2 py-0.5 rounded text-[8px] font-mono font-bold uppercase border ${diffStyle}`}>
-                              {prob.difficulty}
-                            </span>
-                            <span className="text-[9px] font-bold font-mono text-slate-500 uppercase">
+                            <MetricBadge label="Diff" value={prob.difficulty} variant={diffVariant} className="py-0.5 text-[9px]" />
+                            <span className="text-[10px] font-bold font-mono text-slate-400 uppercase">
                               {prob.topicName}
                             </span>
                           </div>
@@ -427,39 +427,37 @@ Provide key observations, potential corner cases, or optimization hints in bulle
                           </h4>
                         </div>
 
-                        {/* Status Check badge */}
                         {isSolved && (
-                          <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                          <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 font-mono">
                             <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                            {solveTimeStr && <span className="font-mono text-[9px] text-slate-500 font-normal">({solveTimeStr})</span>}
+                            {solveTimeStr && <span>{solveTimeStr}</span>}
                           </div>
                         )}
                       </div>
 
-                      {/* Display tags list */}
                       {prob.tags && prob.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
                           {prob.tags.slice(0, 3).map((tag: string) => (
-                            <span key={tag} className="text-[9px] font-semibold text-slate-400 bg-white/[0.03] border border-white/[0.04] px-2 py-0.5 rounded">
-                              {tag}
+                            <span key={tag} className="text-[9px] font-mono text-slate-400 bg-white/[0.03] border border-white/[0.06] px-2 py-0.5 rounded-md">
+                              #{tag}
                             </span>
                           ))}
                         </div>
                       )}
                     </div>
 
-                    <div className="flex justify-between items-center mt-5 pt-3 border-t border-white/[0.03]">
-                      <span className="text-[9px] font-mono text-slate-500">
+                    <div className="flex justify-between items-center mt-5 pt-3 border-t border-white/[0.05]">
+                      <span className="text-[10px] font-mono text-slate-500">
                         {prob.source || "LeetCode"}
                       </span>
                       <button
                         onClick={() => setActiveQuestion(prob)}
-                        className="px-3.5 py-1.5 bg-accentPrimary/10 border border-accentPrimary/20 hover:bg-accentPrimary/20 text-accentPrimary rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                        className="px-3.5 py-1.5 bg-accentPrimary/15 hover:bg-accentPrimary/25 border border-accentPrimary/30 text-accentPrimary rounded-xl text-[10px] font-bold font-mono uppercase tracking-wider transition-all cursor-pointer hover:scale-105 active:scale-95"
                       >
                         Start Practice
                       </button>
                     </div>
-                  </GlassCard>
+                  </SpotlightCard>
                 );
               })}
 
@@ -472,44 +470,41 @@ Provide key observations, potential corner cases, or optimization hints in bulle
             </div>
           </motion.div>
         ) : (
-          // ----------------------------------------------------
-          // QUESTION DETAIL & STOPWATCH VIEW
-          // ----------------------------------------------------
+          /* Active Question & Timer Detail View */
           <motion.div
             key="detail"
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.25 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.22 }}
             className="grid grid-cols-1 lg:grid-cols-3 gap-6"
           >
-            {/* Sidebar / Left Column with Stopwatch Timer */}
+            {/* Left Stopwatch Sidebar */}
             <div className="lg:col-span-1 space-y-6">
-              {/* Back Button */}
               <button
                 onClick={handleBack}
-                className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+                className="flex items-center gap-2 text-xs font-mono font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" /> Back to Arena
               </button>
 
-              {/* Timer GlassCard */}
-              <GlassCard className="p-6 border-white/[0.06] bg-gradient-to-b from-slate-900/40 to-slate-950/60 rounded-2xl flex flex-col items-center text-center space-y-5">
+              <SpotlightCard className="p-6 flex flex-col items-center text-center space-y-5">
                 <div className="space-y-1">
-                  <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest font-bold block">Active Practice Timer</span>
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold block">
+                    Session Stopwatch
+                  </span>
                   <div className={`text-4xl font-extrabold font-mono tracking-wider ${timerRunning ? "text-accentPrimary animate-pulse" : "text-white"}`}>
                     {formatTime(timeElapsed)}
                   </div>
                 </div>
 
-                {/* Timer Control buttons */}
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setTimerRunning(!timerRunning)}
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+                    className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                       timerRunning
                         ? "bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30"
-                        : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30"
+                        : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
                     }`}
                   >
                     {timerRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
@@ -520,19 +515,18 @@ Provide key observations, potential corner cases, or optimization hints in bulle
                       setTimerRunning(false);
                       setTimeElapsed(0);
                     }}
-                    className="w-10 h-10 rounded-full flex items-center justify-center bg-slate-800 text-slate-400 border border-white/[0.06] hover:text-white hover:bg-slate-700 transition-colors cursor-pointer"
+                    className="w-11 h-11 rounded-xl flex items-center justify-center bg-darkCard text-slate-400 border border-white/[0.08] hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer"
                   >
                     <RotateCcw className="w-4 h-4" />
                   </button>
                 </div>
 
-                {/* Redirect solve and Complete actions */}
-                <div className="w-full space-y-3 pt-3 border-t border-white/[0.04]">
+                <div className="w-full space-y-3 pt-3 border-t border-white/[0.06]">
                   <a
                     href={getSolveUrl(activeQuestion)}
                     target="_blank"
                     rel="noreferrer"
-                    className="w-full flex justify-center items-center gap-2 py-2.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] rounded-xl text-xs font-bold text-white tracking-wide uppercase transition-all"
+                    className="w-full flex justify-center items-center gap-2 py-2.5 bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] rounded-xl text-xs font-mono font-bold text-white tracking-wide uppercase transition-all"
                   >
                     <span>Solve on {activeQuestion.source || "LeetCode"}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
@@ -540,57 +534,45 @@ Provide key observations, potential corner cases, or optimization hints in bulle
 
                   <button
                     onClick={handleMarkAsSolved}
-                    className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 rounded-xl text-xs font-bold text-white tracking-wide uppercase shadow-lg shadow-emerald-500/10 transition-all cursor-pointer"
+                    className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-mono font-bold tracking-wide uppercase shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all cursor-pointer hover:scale-[1.02] active:scale-95"
                   >
                     Mark as Solved (+50 XP)
                   </button>
                 </div>
-              </GlassCard>
-
-              {/* Tips panel */}
-              <GlassCard className="p-4 border-white/[0.04] bg-white/[0.01]">
-                <div className="flex gap-2 items-start text-xs leading-relaxed text-slate-400">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-accentPrimary mt-0.5" />
-                  <p>
-                    Solving questions here tracks your active timer and awards practice XP. Solves won't affect your DSA Tracker roadmap completion progress.
-                  </p>
-                </div>
-              </GlassCard>
+              </SpotlightCard>
             </div>
 
-            {/* AI-Generated problem description panel */}
+            {/* AI Breakdown Center Panel */}
             <div className="lg:col-span-2 space-y-4">
-              <GlassCard className="p-6 border-white/[0.06] rounded-2xl min-h-[400px]">
+              <SpotlightCard className="p-6 min-h-[400px]">
                 <div className="flex justify-between items-center border-b border-white/[0.06] pb-4 mb-4">
-                  <div className="space-y-0.5">
-                    <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider font-bold">AI Interactive Description</span>
+                  <div>
+                    <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider font-bold">Interactive Problem Breakdown</span>
                     <h3 className="text-lg font-bold text-white">{activeQuestion.name}</h3>
                   </div>
-                  <div className="px-2.5 py-1 bg-accentPrimary/10 border border-accentPrimary/20 rounded-md text-[9px] font-mono font-bold text-accentPrimary tracking-wider uppercase flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-accentPrimary" /> Dynamic NIM Model
+                  <div className="px-2.5 py-1 bg-accentPrimary/10 border border-accentPrimary/25 rounded-lg text-[9px] font-mono font-bold text-accentPrimary tracking-wider uppercase flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-accentPrimary" /> NVIDIA NIM
                   </div>
                 </div>
 
-                {/* Content display */}
                 {loadingAi ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 select-none">
-                    <div className="relative">
-                      <div className="w-10 h-10 border-2 border-accentPrimary/20 border-t-accentPrimary rounded-full animate-spin" />
-                      <Sparkles className="w-4 h-4 text-accentPrimary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-                    </div>
-                    <span className="text-[10px] font-mono text-slate-500 font-bold uppercase tracking-widest animate-pulse">Generating coding prompt...</span>
+                  <div className="space-y-4 py-6">
+                    <ShimmerSkeleton height="28px" width="60%" />
+                    <ShimmerSkeleton height="16px" width="90%" />
+                    <ShimmerSkeleton height="16px" width="80%" />
+                    <ShimmerSkeleton height="100px" width="100%" />
                   </div>
                 ) : aiError ? (
-                  <div className="p-4 bg-red-500/5 border border-red-500/20 text-red-400 text-xs rounded-xl space-y-3">
+                  <div className="p-4 bg-rose-500/5 border border-rose-500/20 text-rose-300 text-xs rounded-xl space-y-3">
                     <div className="flex gap-2 items-start">
-                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
                       <p>{aiError}</p>
                     </div>
                     <button
                       onClick={() => loadAiProblemStatement(activeQuestion)}
-                      className="px-3.5 py-1.5 bg-white/[0.05] hover:bg-white/[0.1] rounded-lg text-[10px] font-bold text-white transition-colors cursor-pointer"
+                      className="px-3 py-1.5 bg-white/[0.05] hover:bg-white/[0.1] rounded-lg text-xs font-semibold text-white transition-colors cursor-pointer"
                     >
-                      Retry Load
+                      Retry Generation
                     </button>
                   </div>
                 ) : aiDescription ? (
@@ -598,9 +580,9 @@ Provide key observations, potential corner cases, or optimization hints in bulle
                     <MarkdownRenderer content={aiDescription} />
                   </div>
                 ) : (
-                  <div className="text-center py-20 text-slate-500 text-xs">No description loaded.</div>
+                  <div className="text-center py-20 text-slate-500 text-xs">No problem details available.</div>
                 )}
-              </GlassCard>
+              </SpotlightCard>
             </div>
           </motion.div>
         )}

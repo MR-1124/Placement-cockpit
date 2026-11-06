@@ -2,7 +2,8 @@ import { motion } from "framer-motion";
 import React, { useState, useEffect, useRef } from "react";
 import { useAppState } from "../context/AppStateContext";
 import type { Note } from "../context/AppStateContext";
-import { GlassCard } from "../components/Common";
+import { GlassCard, SpotlightCard } from "../components/Common";
+import { audioTelemetry } from "../lib/audioTelemetry";
 import { MarkdownRenderer } from "../components/MarkdownRenderer";
 import {
   Plus,
@@ -481,7 +482,7 @@ const confirmAction = useAppState(s => s.confirmAction);
               </div>
             ) : (
               filteredNotes.map(note => (
-                <GlassCard key={note.id} className="flex flex-col justify-between p-5 space-y-4">
+                <SpotlightCard key={note.id} className="flex flex-col justify-between p-5 space-y-4">
                   <div className="space-y-3">
                     <div className="flex justify-between items-start gap-2">
                       <div className="flex flex-col gap-1.5">
@@ -492,7 +493,10 @@ const confirmAction = useAppState(s => s.confirmAction);
                       </div>
                       <div className="flex items-center gap-1">
                         <button
-                          onClick={() => setEditingNote(note)}
+                          onClick={() => {
+                            audioTelemetry.click();
+                            setEditingNote(note);
+                          }}
                           className="text-slate-500 hover:text-white p-1 transition-colors"
                           title="Edit Note"
                         >
@@ -500,13 +504,17 @@ const confirmAction = useAppState(s => s.confirmAction);
                         </button>
                         <button
                           onClick={() => {
+                            audioTelemetry.alert();
                             confirmAction({
                               title: "Delete Note",
                               message: "Are you sure you want to delete this note? This action cannot be undone.",
                               confirmText: "Delete",
                               cancelText: "Cancel",
                               severity: "danger",
-                              onConfirm: () => deleteNote(note.id)
+                              onConfirm: () => {
+                                deleteNote(note.id);
+                                audioTelemetry.click();
+                              }
                             });
                           }}
                           className="text-slate-500 hover:text-rose-500 p-1 transition-colors"
@@ -534,7 +542,10 @@ const confirmAction = useAppState(s => s.confirmAction);
                       {note.tags.map(tag => (
                         <span
                           key={tag}
-                          onClick={() => setSelectedTag(tag)}
+                          onClick={() => {
+                            audioTelemetry.click();
+                            setSelectedTag(tag);
+                          }}
                           className="bg-white/[0.02] border border-white/[0.04] text-[9px] px-1 py-0.2 rounded hover:text-white cursor-pointer"
                         >
                           #{tag}
@@ -542,7 +553,7 @@ const confirmAction = useAppState(s => s.confirmAction);
                       ))}
                     </div>
                   </div>
-                </GlassCard>
+                </SpotlightCard>
               ))
             )}
           </div>

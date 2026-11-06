@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useAppState } from "../context/AppStateContext";
-import { GlassCard } from "../components/Common";
+import { GlassCard, SpotlightCard } from "../components/Common";
+import { audioTelemetry } from "../lib/audioTelemetry";
 import roadmapsData from "../data/roadmaps.json";
 import { 
   ArrowRight, CheckCircle, Code2, 
@@ -60,10 +61,17 @@ export const CompanyRoadmapsView: React.FC<{ setActiveTab?: (tab: string) => voi
           {catalogRoadmaps.map(rawRoadmap => {
             const segments = getRoadmapDisplay(rawRoadmap);
             return (
-              <GlassCard key={segments.id} className="relative group overflow-hidden flex flex-col h-full cursor-pointer hover:border-accentPrimary/40 transition-all shadow-lg hover:shadow-[0_0_20px_rgba(var(--color-accent-primary),0.1)]" onClick={() => setSelectedRoadmapId(segments.id)}>
+              <SpotlightCard
+                key={segments.id}
+                className="relative group overflow-hidden flex flex-col h-full cursor-pointer hover:border-accentPrimary/40 transition-all shadow-lg hover:shadow-[0_0_20px_rgba(var(--accent-rgb),0.15)]"
+                onClick={() => {
+                  audioTelemetry.click();
+                  setSelectedRoadmapId(segments.id);
+                }}
+              >
                 <div className="flex-1">
                   <div className="flex justify-between items-start mb-4">
-                    <img src={segments.logoUrl} alt={segments.companyName} className="h-8 object-contain bg-white rounded-md p-1 opacity-90" />
+                    <img src={segments.logoUrl} alt={segments.companyName} className="h-8 object-contain bg-white rounded-md p-1 opacity-90 shadow-sm" />
                     {segments.isEnrolled ? (
                       <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1">
                         <CheckCircle className="w-3 h-3" /> Enrolled
@@ -101,12 +109,12 @@ export const CompanyRoadmapsView: React.FC<{ setActiveTab?: (tab: string) => voi
 
                 <div className="mt-6 border-t border-white/[0.06] pt-4">
                   <button 
-                    className="w-full py-2.5 bg-black/40 shadow-inner hover:bg-accentPrimary/10 border border-white/[0.06] hover:border-accentPrimary/40 rounded-lg text-xs font-semibold text-white transition-all flex items-center justify-center gap-2 group-hover:shadow-lg"
+                    className="w-full py-2.5 bg-black/40 shadow-inner hover:bg-accentPrimary/15 border border-white/[0.06] hover:border-accentPrimary/40 rounded-lg text-xs font-semibold text-white transition-all flex items-center justify-center gap-2 group-hover:shadow-lg"
                   >
                     View Curriculum <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                   </button>
                 </div>
-              </GlassCard>
+              </SpotlightCard>
             );
           })}
         </div>

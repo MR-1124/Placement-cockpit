@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useAppState } from "../context/AppStateContext";
 import type { Project } from "../context/AppStateContext";
-import { GlassCard, ProgressBar } from "../components/Common";
+import { SpotlightCard, ProgressBar } from "../components/Common";
 import {
   Plus,
   Trash2,
@@ -225,7 +225,7 @@ export const ProjectsView: React.FC = () => {
             const isExpanded = !!expandedProjects[project.id];
 
             return (
-              <GlassCard
+              <SpotlightCard
                 key={project.id}
                 className={`p-0 overflow-hidden border transition-all ${
                   isExpanded ? "border-white/[0.08]" : "border-white/[0.04]"
@@ -511,7 +511,7 @@ export const ProjectsView: React.FC = () => {
 
                   </div>
                 )}
-              </GlassCard>
+              </SpotlightCard>
             );
           })
         )}
@@ -520,7 +520,7 @@ export const ProjectsView: React.FC = () => {
       {/* Add Project Overlay Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <GlassCard className="w-full max-w-lg space-y-4 border border-white/[0.08] shadow-2xl bg-darkCard/95 my-8">
+          <SpotlightCard className="w-full max-w-lg space-y-4 border border-white/[0.08] shadow-2xl bg-darkCard/95 my-8">
             <div className="flex justify-between items-center border-b border-white/[0.06] pb-3">
               <div>
                 <span className="text-[10px] font-mono text-slate-500 uppercase">New Portfolio Item</span>
@@ -667,7 +667,7 @@ export const ProjectsView: React.FC = () => {
               </div>
 
             </form>
-          </GlassCard>
+          </SpotlightCard>
         </div>
       )}
     </motion.div>

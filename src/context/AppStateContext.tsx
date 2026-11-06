@@ -9,6 +9,7 @@ import type { UserPlan } from "../data/curriculum";
 import type { AppState, SerializedProgress, AppContextType } from "./AppStateTypes";
 import { SCHEMA_VERSION, serializeState, deserializeState, calculateReadinessScore, getLevelInfo } from "./stateMigrations";
 import { checkAndUnlockBadges } from "./badgeEngine";
+import { audioTelemetry } from "../lib/audioTelemetry";
 
 // Export context-specific types for backwards compatibility
 export type { AppState, SerializedProgress, AppContextType };
@@ -162,7 +163,11 @@ const getInitialState = (curriculum: any): AppState => ({
     },
     nvidiaApiKey: "",
     nvidiaModelName: "meta/llama-3.1-70b-instruct",
-    nvidiaInterviewerModelName: undefined
+    nvidiaInterviewerModelName: undefined,
+    soundEnabled: true,
+    soundVolume: 0.35,
+    voiceEnabled: false,
+    voiceRate: 1.0
   },
   streak: 0,
   lastActiveDate: "",
@@ -809,11 +814,13 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
   const toggleDsaProblem = (topicId: string, problemId: string) => {
     updateState(prev => {
       let xpDiff = 0;
+      let problemSolved = false;
       const dsaTopics = prev.dsaTopics.map(topic => {
         if (topic.id !== topicId) return topic;
         const problems = topic.problems.map(prob => {
           if (prob.id !== problemId) return prob;
           const isCompleted = !prob.isCompleted;
+          problemSolved = isCompleted;
           
           if (isCompleted) {
             xpDiff += prob.difficulty === "Hard" ? 100 : prob.difficulty === "Medium" ? 50 : 20;
@@ -835,6 +842,12 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         });
         return { ...topic, problems };
       });
+
+      if (problemSolved) {
+        audioTelemetry.check();
+      } else {
+        audioTelemetry.click();
+      }
 
       // Update today's streak and habits if solving first problem
       let dailyHabits = { ...prev.dailyHabits };
@@ -1046,6 +1059,12 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       const dailyHabits = { ...prev.dailyHabits, [key]: !prev.dailyHabits[key] };
       const nextVal = dailyHabits[key];
       const xpDiff = nextVal ? 10 : -10;
+
+      if (nextVal) {
+        audioTelemetry.check();
+      } else {
+        audioTelemetry.click();
+      }
       
       // If turning habit to true, evaluate streak check
       let streak = prev.streak;
@@ -1084,12 +1103,19 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
   const toggleCustomTask = (id: string) => {
     updateState(prev => {
       let xpDiff = 0;
+      let completed = false;
       const customTasks = prev.customTasks.map(task => {
         if (task.id !== id) return task;
         const isCompleted = !task.isCompleted;
+        completed = isCompleted;
         xpDiff += isCompleted ? 10 : -10;
         return { ...task, isCompleted };
       });
+      if (completed) {
+        audioTelemetry.check();
+      } else {
+        audioTelemetry.click();
+      }
       return { ...prev, customTasks, xp: Math.max(0, prev.xp + xpDiff) };
     });
   };
@@ -1346,6 +1372,12 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
   };
 
   const updateSettings = (updatedFields: Partial<AppSettings>) => {
+    if (updatedFields.soundEnabled !== undefined) {
+      audioTelemetry.setMuted(!updatedFields.soundEnabled);
+    }
+    if (updatedFields.soundVolume !== undefined) {
+      audioTelemetry.setVolume(updatedFields.soundVolume);
+    }
     updateState(prev => {
       return {
         ...prev,
