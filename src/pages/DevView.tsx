@@ -216,6 +216,7 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
   const setDevPlanActiveSkillId = useAppState(s => s.setDevPlanActiveSkillId);
   const updateDevSkillNote = useAppState(s => s.updateDevSkillNote);
   const saveDevQuizAttempt = useAppState(s => s.saveDevQuizAttempt);
+  const confirmAction = useAppState(s => s.confirmAction);
 
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>("All");
   const [viewMode, setViewMode] = useState<"timeline" | "board">("timeline");
@@ -473,10 +474,17 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
 
               <button
                 onClick={() => {
-                  if (confirm("Are you sure you want to unenroll and reset Full Stack study targets?")) {
-                    enrollInDevPlan(false);
-                    setDevPlanActiveSkillId(null);
-                  }
+                  confirmAction({
+                    title: "Unenroll from Full Stack Plan",
+                    message: "Are you sure you want to unenroll and reset Full Stack study targets?",
+                    confirmText: "Unenroll",
+                    cancelText: "Cancel",
+                    severity: "danger",
+                    onConfirm: () => {
+                      enrollInDevPlan(false);
+                      setDevPlanActiveSkillId(null);
+                    }
+                  });
                 }}
                 className="text-[10px] text-slate-500 hover:text-red-400 font-semibold transition-colors cursor-pointer"
               >

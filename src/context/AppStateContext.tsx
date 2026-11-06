@@ -1211,7 +1211,12 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       const newSkills = isCompleted 
         ? prev.completedSkills.filter(s => s !== skillId)
         : [...(prev.completedSkills || []), skillId];
-      return { ...prev, completedSkills: newSkills };
+      const xpDiff = isCompleted ? -100 : 100;
+      return { 
+        ...prev, 
+        completedSkills: newSkills,
+        xp: Math.max(0, (prev.xp || 0) + xpDiff)
+      };
     });
   };
 

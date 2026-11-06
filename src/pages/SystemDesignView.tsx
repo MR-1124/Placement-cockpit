@@ -121,6 +121,25 @@ const TEMPLATES: Record<string, { title: string; desc: string; nodes: SystemNode
   }
 };
 
+const createBlueprintNode = (bp: ComponentBlueprint): SystemNode => ({
+  id: `node-${Date.now()}`,
+  type: bp.type,
+  name: bp.name,
+  categoryName: bp.categoryName,
+  x: 100 + Math.floor(Math.random() * 200),
+  y: 100 + Math.floor(Math.random() * 180),
+  capacity: bp.defaultCapacity,
+  iconName: bp.iconName
+});
+
+const createConnection = (fromId: string, toId: string): SystemConnection => ({
+  id: `conn-${Date.now()}`,
+  fromId,
+  toId,
+  protocol: "HTTPS",
+  latency: "5ms"
+});
+
 export const SystemDesignView: React.FC = () => {
   const { state } = useAppState();
   const [nodes, setNodes] = useState<SystemNode[]>(TEMPLATES.tinyurl.nodes);
@@ -165,19 +184,9 @@ export const SystemDesignView: React.FC = () => {
 
   const handleAddBlueprint = (bp: ComponentBlueprint) => {
     audioTelemetry.click();
-    const newId = `node-${Date.now()}`;
-    const newNode: SystemNode = {
-      id: newId,
-      type: bp.type,
-      name: bp.name,
-      categoryName: bp.categoryName,
-      x: 100 + Math.floor(Math.random() * 200),
-      y: 100 + Math.floor(Math.random() * 180),
-      capacity: bp.defaultCapacity,
-      iconName: bp.iconName
-    };
+    const newNode = createBlueprintNode(bp);
     setNodes(prev => [...prev, newNode]);
-    setSelectedNodeId(newId);
+    setSelectedNodeId(newNode.id);
   };
 
   const handleDeleteNode = (id: string) => {
@@ -193,13 +202,7 @@ export const SystemDesignView: React.FC = () => {
     if (connectSourceId) {
       if (connectSourceId !== id) {
         // Create connection
-        const newConn: SystemConnection = {
-          id: `conn-${Date.now()}`,
-          fromId: connectSourceId,
-          toId: id,
-          protocol: "HTTPS",
-          latency: "5ms"
-        };
+        const newConn = createConnection(connectSourceId, id);
         setConnections(prev => [...prev, newConn]);
         audioTelemetry.check();
       }

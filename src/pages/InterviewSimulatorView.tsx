@@ -755,8 +755,14 @@ CRITICAL INSTRUCTION: You MUST act strictly as the interviewer. DO NOT output an
 
     if (!apiKey) {
       setIsEvaluating(false);
-      alert("NVIDIA API Key missing. Can't perform AI code evaluation.");
-      endInterviewSession(false);
+      confirmAction({
+        title: "NVIDIA API Key Missing",
+        message: "NVIDIA API Key is missing. Unable to perform AI code evaluation. Please configure your API key in Settings.",
+        confirmText: "Close",
+        cancelText: "Cancel",
+        severity: "info",
+        onConfirm: () => endInterviewSession(false)
+      });
       return;
     }
 
@@ -881,7 +887,14 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
       console.error("Evaluation failed", err);
 
       if ((err as Error).name === "AbortError" || (err as Error).message?.includes("timeout") || (err as Error).message?.includes("Abort")) {
-        alert("The AI evaluation timed out after 45 seconds. The API might be heavily loaded. Please click 'End Interview' to try again.");
+        confirmAction({
+          title: "Evaluation Timeout",
+          message: "The AI evaluation timed out after 45 seconds. The API might be heavily loaded. Please click 'End Interview' to try again.",
+          confirmText: "Try Again",
+          cancelText: "Dismiss",
+          severity: "info",
+          onConfirm: () => {}
+        });
         // Revert phase to allow retry
         updateInterviewSession(
           timeLeftRef.current,

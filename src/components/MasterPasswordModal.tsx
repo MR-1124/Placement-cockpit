@@ -22,7 +22,7 @@ export const MasterPasswordModal: React.FC<MasterPasswordModalProps> = ({
   const [password, setPassword] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState("");
-  const { state } = useAppState(s => s);
+  const nvidiaApiKey = useAppState(s => s.state.settings.nvidiaApiKey);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +40,7 @@ export const MasterPasswordModal: React.FC<MasterPasswordModalProps> = ({
         const encrypted = await encryptData(apiKeyInput, password);
         onSuccess(encrypted);
       } else {
-        const encryptedBlob = state.settings.nvidiaApiKey;
+        const encryptedBlob = nvidiaApiKey;
         if (!encryptedBlob) throw new Error("No encrypted key found.");
         const decrypted = await decryptData(encryptedBlob, password);
         onSuccess(decrypted);

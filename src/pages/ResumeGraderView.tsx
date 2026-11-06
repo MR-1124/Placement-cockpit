@@ -91,7 +91,14 @@ You MUST respond with ONLY a valid JSON object matching this exact structure, wi
       const data = await response.json();
       let rawText = data.choices[0].message.content;
       
-      rawText = rawText.replace(/<think>[\s\S]*?<\/think>/g, '');
+      rawText = rawText.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+
+      if (rawText.includes("```")) {
+        const codeMatch = rawText.match(/```(?:json)?([\s\S]*?)```/);
+        if (codeMatch && codeMatch[1]) {
+          rawText = codeMatch[1].trim();
+        }
+      }
       
       const startIdx = rawText.indexOf('{');
       const endIdx = rawText.lastIndexOf('}');
@@ -118,7 +125,7 @@ You MUST respond with ONLY a valid JSON object matching this exact structure, wi
         saveAtsReport(report);
       } catch (parseError) {
         console.error("JSON Parse Error:", parseError, "Raw output:", rawText);
-        throw new Error("Failed to parse ATS report data. The AI did not return valid JSON.");
+        throw new Error("Failed to parse ATS report data. The AI did not return valid JSON.", { cause: parseError });
       }
     } catch (err: any) {
       console.error(err);

@@ -147,72 +147,92 @@ export const AiTrackerView: React.FC = () => {
                 </h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div
-                    onClick={() => setTriedFirst(!triedFirst)}
+                  <label
                     className={`flex items-start gap-2.5 p-3 rounded-xl border transition-all cursor-pointer ${
                       triedFirst ? "bg-white/[0.03] border-accentPrimary/30" : "border-white/[0.04] opacity-50"
                     }`}
                   >
-                    <input type="checkbox" checked={triedFirst} onChange={() => {}} className="mt-0.5 accent-accentPrimary" />
+                    <input 
+                      type="checkbox" 
+                      checked={triedFirst} 
+                      onChange={e => setTriedFirst(e.target.checked)} 
+                      className="mt-0.5 accent-accentPrimary cursor-pointer" 
+                    />
                     <div>
                       <div className="font-bold text-white text-xs">20-Min Self Attempt First</div>
                       <p className="text-[10px] text-slate-400 leading-normal mt-0.5">Attempted solving alone before querying.</p>
                     </div>
-                  </div>
+                  </label>
 
-                  <div
-                    onClick={() => setFirstDraftSelf(!firstDraftSelf)}
+                  <label
                     className={`flex items-start gap-2.5 p-3 rounded-xl border transition-all cursor-pointer ${
                       firstDraftSelf ? "bg-white/[0.03] border-accentPrimary/30" : "border-white/[0.04] opacity-50"
                     }`}
                   >
-                    <input type="checkbox" checked={firstDraftSelf} onChange={() => {}} className="mt-0.5 accent-accentPrimary" />
+                    <input 
+                      type="checkbox" 
+                      checked={firstDraftSelf} 
+                      onChange={e => setFirstDraftSelf(e.target.checked)} 
+                      className="mt-0.5 accent-accentPrimary cursor-pointer" 
+                    />
                     <div>
                       <div className="font-bold text-white text-xs">Self-Written First Draft</div>
                       <p className="text-[10px] text-slate-400 leading-normal mt-0.5">Initial draft was manually coded.</p>
                     </div>
-                  </div>
+                  </label>
 
-                  <div
-                    onClick={() => setUnderstoodCode(!understoodCode)}
+                  <label
                     className={`flex items-start gap-2.5 p-3 rounded-xl border transition-all cursor-pointer ${
                       understoodCode ? "bg-white/[0.03] border-accentPrimary/30" : "border-white/[0.04] opacity-50"
                     }`}
                   >
-                    <input type="checkbox" checked={understoodCode} onChange={() => {}} className="mt-0.5 accent-accentPrimary" />
+                    <input 
+                      type="checkbox" 
+                      checked={understoodCode} 
+                      onChange={e => setUnderstoodCode(e.target.checked)} 
+                      className="mt-0.5 accent-accentPrimary cursor-pointer" 
+                    />
                     <div>
                       <div className="font-bold text-white text-xs">Understand Every Line</div>
                       <p className="text-[10px] text-slate-400 leading-normal mt-0.5">Able to defend time and space limits.</p>
                     </div>
-                  </div>
+                  </label>
 
-                  <div
-                    onClick={() => setCanRebuild(!canRebuild)}
+                  <label
                     className={`flex items-start gap-2.5 p-3 rounded-xl border transition-all cursor-pointer ${
                       canRebuild ? "bg-white/[0.03] border-accentPrimary/30" : "border-white/[0.04] opacity-50"
                     }`}
                   >
-                    <input type="checkbox" checked={canRebuild} onChange={() => {}} className="mt-0.5 accent-accentPrimary" />
+                    <input 
+                      type="checkbox" 
+                      checked={canRebuild} 
+                      onChange={e => setCanRebuild(e.target.checked)} 
+                      className="mt-0.5 accent-accentPrimary cursor-pointer" 
+                    />
                     <div>
                       <div className="font-bold text-white text-xs">Can Rebuild From Memory</div>
                       <p className="text-[10px] text-slate-400 leading-normal mt-0.5">Confidence to rewrite without aids.</p>
                     </div>
-                  </div>
+                  </label>
 
-                  <div
-                    onClick={() => setCopiedDirectly(!copiedDirectly)}
+                  <label
                     className={`flex items-start gap-2.5 p-3 rounded-xl border transition-all cursor-pointer sm:col-span-2 ${
                       copiedDirectly ? "bg-rose-500/10 border-rose-500/30 text-rose-300" : "border-white/[0.04] text-slate-500"
                     }`}
                   >
-                    <input type="checkbox" checked={copiedDirectly} onChange={() => {}} className="mt-0.5 accent-rose-500" />
+                    <input 
+                      type="checkbox" 
+                      checked={copiedDirectly} 
+                      onChange={e => setCopiedDirectly(e.target.checked)} 
+                      className="mt-0.5 accent-rose-500 cursor-pointer" 
+                    />
                     <div>
                       <div className={`font-bold text-xs ${copiedDirectly ? "text-rose-400" : "text-slate-400"}`}>
                         Direct Copy-Paste Detected
                       </div>
                       <p className="text-[10px] text-slate-400 leading-normal mt-0.5">Pasted AI chunks directly without typing or manual review.</p>
                     </div>
-                  </div>
+                  </label>
                 </div>
               </div>
 

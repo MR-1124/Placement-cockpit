@@ -23,7 +23,8 @@ const IconMap: Record<FlashcardIconName, any> = {
 export const FlashcardsView: React.FC = () => {
   const { 
     state, updateFlashcardReview, importFlashcards,
-    addCustomDeck, deleteCustomDeck, addFlashcards, saveFlashcardSession
+    addCustomDeck, deleteCustomDeck, addFlashcards, saveFlashcardSession,
+    confirmAction
   } = useAppState();
   
   const [activeDeck, setActiveDeck] = useState<FlashcardDeck | null>(null);
@@ -254,9 +255,14 @@ Do not include any conversational text outside the JSON array.`;
 
   const handleDeleteDeck = (e: React.MouseEvent, deckId: string) => {
     e.stopPropagation();
-    if (confirm("Are you sure you want to delete this custom deck and all its cards?")) {
-      deleteCustomDeck(deckId);
-    }
+    confirmAction({
+      title: "Delete Custom Deck",
+      message: "Are you sure you want to delete this custom deck and all its flashcards? This action cannot be undone.",
+      confirmText: "Delete Deck",
+      cancelText: "Cancel",
+      severity: "danger",
+      onConfirm: () => deleteCustomDeck(deckId)
+    });
   };
 
   if (userCards.length === 0 && (!state.customDecks || state.customDecks.length === 0)) {

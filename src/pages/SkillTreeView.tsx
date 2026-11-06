@@ -5,6 +5,7 @@ import { SKILL_TREE_NODES, type SkillNode } from "../data/skillTree";
 import { SpotlightCard } from "../components/Common";
 import * as LucideIcons from "lucide-react";
 import confetti from "canvas-confetti";
+import { audioTelemetry } from "../lib/audioTelemetry";
 
 export const SkillTreeView: React.FC<{ setActiveTab?: (tab: string) => void }> = () => {
   const { state, toggleSkill } = useAppState();
@@ -26,12 +27,15 @@ export const SkillTreeView: React.FC<{ setActiveTab?: (tab: string) => void }> =
     const willBeCompleted = !isCompleted(nodeId);
     toggleSkill(nodeId);
     if (willBeCompleted) {
+      audioTelemetry.levelUp();
       confetti({
         particleCount: 70,
         spread: 65,
         origin: { y: 0.8 },
         colors: ["#8b5cf6", "#10b981", "#3b82f6"]
       });
+    } else {
+      audioTelemetry.click();
     }
   };
 

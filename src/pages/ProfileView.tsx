@@ -56,6 +56,21 @@ export const ProfileView: React.FC = () => {
   const [targetCompanies, setTargetCompanies] = useState<string[]>(user?.targetCompanies || []);
   const [newCompany, setNewCompany] = useState("");
   
+  // Synchronize state when user data finishes loading asynchronously
+  const hasInitializedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (user && !hasInitializedRef.current) {
+      hasInitializedRef.current = true;
+      setName(user.name || "");
+      setCohort(user.cohort || "");
+      setLinkedinUrl(user.linkedinUrl || "");
+      setGithubUrl(user.githubUrl || "");
+      setResumeText(user.resumeText || "");
+      setResumeFileName(user.resumeFileName || "");
+      setTargetCompanies(user.targetCompanies || []);
+    }
+  }, [user]);
+  
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 

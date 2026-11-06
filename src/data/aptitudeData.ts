@@ -274,6 +274,19 @@ Object.entries(jsonQuestionModules).forEach(([filePath, moduleContent]) => {
   }
 });
 
+// Restore custom user-imported questions from localStorage if available
+if (typeof window !== "undefined") {
+  try {
+    const savedCustom = localStorage.getItem("custom_aptitude_questions_v1");
+    if (savedCustom) {
+      const parsedCustom = JSON.parse(savedCustom);
+      Object.assign(FILE_BASED_QUESTIONS, parsedCustom);
+    }
+  } catch (e) {
+    console.warn("Failed to restore custom aptitude questions from cache", e);
+  }
+}
+
 /**
  * Retrieve questions for a topic. First checks the dynamic JSON file bank,
  * then falls back to generated mock questions.

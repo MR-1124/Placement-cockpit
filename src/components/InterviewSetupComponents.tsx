@@ -24,6 +24,7 @@ interface InterviewSetupPanelProps {
 export const InterviewSetupPanel: React.FC<InterviewSetupPanelProps> = ({ onLaunch }) => {
   const state = useAppState(s => s.state);
 const updateUserProfile = useAppState(s => s.updateUserProfile);
+  const confirmAction = useAppState(s => s.confirmAction);
 
 
   const [selectedTopic, setSelectedTopic] = useState<string>("Any");
@@ -207,7 +208,14 @@ const updateUserProfile = useAppState(s => s.updateUserProfile);
         <button
           onClick={() => {
             if (!apiKey) {
-              alert("Please configure your Gemini API Key in the Settings tab first.");
+              confirmAction({
+                title: "NVIDIA API Key Missing",
+                message: "Please configure your NVIDIA NIM API Key in Settings before launching the mock interview.",
+                confirmText: "Understood",
+                cancelText: "Close",
+                severity: "info",
+                onConfirm: () => {}
+              });
             } else {
               handleLaunchClicked();
             }

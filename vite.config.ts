@@ -11,8 +11,11 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'vendor-react';
+            if (id.includes('@typeform')) {
+              return 'vendor-typeform';
+            }
+            if (id.includes('pdfjs-dist')) {
+              return 'vendor-pdf';
             }
             if (id.includes('framer-motion')) {
               return 'vendor-framer';
@@ -28,6 +31,9 @@ export default defineConfig({
             }
             if (id.includes('firebase')) {
               return 'vendor-firebase';
+            }
+            if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('\\react\\') || id.includes('\\react-dom\\') || id.includes('/scheduler/') || id.includes('\\scheduler\\')) {
+              return 'vendor-react';
             }
             return 'vendor-libs';
           }

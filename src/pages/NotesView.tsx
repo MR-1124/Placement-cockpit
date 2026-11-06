@@ -89,10 +89,24 @@ const confirmAction = useAppState(s => s.confirmAction);
               });
             }
           });
-          alert("Notes imported successfully!");
+          confirmAction({
+            title: "Notes Imported",
+            message: `Successfully imported ${importedNotes.length} notes!`,
+            confirmText: "Great",
+            cancelText: "Close",
+            severity: "info",
+            onConfirm: () => {}
+          });
         }
       } catch (err) {
-        alert("Failed to parse JSON file.");
+        confirmAction({
+          title: "Import Failed",
+          message: "Failed to parse JSON file. Please check file formatting.",
+          confirmText: "OK",
+          cancelText: "Close",
+          severity: "danger",
+          onConfirm: () => {}
+        });
       }
     };
     reader.readAsText(file);

@@ -446,26 +446,33 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
 
   const aiZone = getAiZone(aiDependencyScore);
 
-  const last7Days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    return d.toISOString().split("T")[0];
-  });
+  const { aiTrendData, maxQueries } = useMemo(() => {
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      return d.toISOString().split("T")[0];
+    });
 
-  const aiTrendData = last7Days.map(dateStr => {
-    const queries = state.aiLogs.filter(log => log.date === dateStr).length;
-    return { date: dateStr, queries };
-  });
+    const trend = days.map(dateStr => {
+      const queries = (state.aiLogs || []).filter(log => log.date === dateStr).length;
+      return { date: dateStr, queries };
+    });
 
-  const maxQueries = Math.max(1, ...aiTrendData.map(d => d.queries));
+    const max = Math.max(1, ...trend.map(d => d.queries));
+    return { aiTrendData: trend, maxQueries: max };
+  }, [state.aiLogs]);
 
-  const upcomingRevisions = state.dsaTopics
-    .flatMap(topic => topic.problems.map(p => ({ ...p, topicName: topic.name })))
-    .filter(p => p.nextRevisionDate)
-    .sort((a, b) => new Date(a.nextRevisionDate!).getTime() - new Date(b.nextRevisionDate!).getTime())
-    .slice(0, 5);
+  const upcomingRevisions = useMemo(() => {
+    return state.dsaTopics
+      .flatMap(topic => topic.problems.map(p => ({ ...p, topicName: topic.name })))
+      .filter(p => p.nextRevisionDate)
+      .sort((a, b) => new Date(a.nextRevisionDate!).getTime() - new Date(b.nextRevisionDate!).getTime())
+      .slice(0, 5);
+  }, [state.dsaTopics]);
 
-  const totalDsaSolved = state.dsaTopics.reduce((acc, t) => acc + t.problems.filter(p => p.isCompleted).length, 0);
+  const totalDsaSolved = useMemo(() => {
+    return state.dsaTopics.reduce((acc, t) => acc + t.problems.filter(p => p.isCompleted).length, 0);
+  }, [state.dsaTopics]);
 
   return (
     <div className="space-y-8 pb-12">

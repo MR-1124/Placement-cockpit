@@ -103,6 +103,13 @@ export const AptitudeView: React.FC = () => {
       });
 
       FILE_BASED_QUESTIONS[normalizedTopic] = formatted;
+      try {
+        const savedCustom = JSON.parse(localStorage.getItem("custom_aptitude_questions_v1") || "{}");
+        savedCustom[normalizedTopic] = formatted;
+        localStorage.setItem("custom_aptitude_questions_v1", JSON.stringify(savedCustom));
+      } catch (e) {
+        console.warn("Failed to persist custom questions", e);
+      }
       setRefreshTrigger(prev => prev + 1);
       setImportStatus(`Successfully loaded ${formatted.length} questions for "${topic}"!`);
       setTimeout(() => {

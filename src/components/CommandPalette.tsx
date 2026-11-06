@@ -48,9 +48,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
   // Focus input on open
   useEffect(() => {
     if (isOpen) {
-      setQuery("");
-      setSelectedIndex(0);
-      setTimeout(() => inputRef.current?.focus(), 50);
+      const timer = setTimeout(() => {
+        setQuery("");
+        setSelectedIndex(0);
+        inputRef.current?.focus();
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
@@ -203,6 +206,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: -20 }}
           transition={{ duration: 0.15, ease: "easeOut" }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Command Palette"
           className="relative w-full max-w-2xl bg-darkCard/95 border border-white/10 rounded-2xl shadow-2xl overflow-hidden glass-panel flex flex-col max-h-[75vh]"
           onKeyDown={handleKeyDown}
         >
@@ -212,6 +218,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
             <input
               ref={inputRef}
               type="text"
+              role="combobox"
+              aria-expanded={filteredResults.length > 0}
+              aria-controls="command-palette-results"
               placeholder="Search views, 700+ DSA problems, quick actions..."
               value={query}
               onChange={e => {
@@ -223,6 +232,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
             {query && (
               <button
                 onClick={() => setQuery("")}
+                aria-label="Clear search"
                 className="p-1 text-slate-500 hover:text-white rounded-md transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
@@ -234,7 +244,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
           </div>
 
           {/* Results List */}
-          <div ref={listRef} className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+          <div id="command-palette-results" role="listbox" aria-label="Search suggestions" ref={listRef} className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
             {filteredResults.map((item, idx) => {
               const active = idx === selectedIndex;
               const isProblem = (item as any).isProblem;
@@ -245,6 +255,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
               return (
                 <div
                   key={item.id}
+                  role="option"
+                  aria-selected={active}
                   onClick={() => {
                     if ((item as any).action) {
                       (item as any).action();

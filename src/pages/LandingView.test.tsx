@@ -17,19 +17,19 @@ vi.mock('../context/AppStateContext', () => ({
 vi.mock('framer-motion', () => ({
   motion: {
     div: ({ children, ...props }: any) => {
-      const { transition, animate, initial, exit, whileHover, whileTap, ...rest } = props;
+      const { transition, animate, initial, exit, whileHover, whileTap, whileInView, ...rest } = props;
       return <div {...rest}>{children}</div>;
     },
     span: ({ children, ...props }: any) => {
-      const { transition, animate, initial, exit, whileHover, whileTap, ...rest } = props;
+      const { transition, animate, initial, exit, whileHover, whileTap, whileInView, ...rest } = props;
       return <span {...rest}>{children}</span>;
     },
     h1: ({ children, ...props }: any) => {
-      const { transition, animate, initial, exit, whileHover, whileTap, ...rest } = props;
+      const { transition, animate, initial, exit, whileHover, whileTap, whileInView, ...rest } = props;
       return <h1 {...rest}>{children}</h1>;
     },
     p: ({ children, ...props }: any) => {
-      const { transition, animate, initial, exit, whileHover, whileTap, ...rest } = props;
+      const { transition, animate, initial, exit, whileHover, whileTap, whileInView, ...rest } = props;
       return <p {...rest}>{children}</p>;
     }
   },
