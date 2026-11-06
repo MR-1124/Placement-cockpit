@@ -78,6 +78,7 @@ import {
 
 
 import { SYSTEM_PROMPT } from "./lib/prompts";
+import { nvidiaStream } from "./lib/nvidiaApi";
 
 const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>(() => {
@@ -253,138 +254,20 @@ const AppContent: React.FC = () => {
         { role: "user", content: currentInput }
       ];
 
-      let response;
-
-      const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-      const useStream = isLocalhost;
-
-      try {
-        setChatStatus(isLocalhost ? "Connecting to local Vite dev proxy (/api-nvidia)..." : "Connecting to Netlify API proxy (/api-nvidia)...");
-        // Try local proxy endpoint first to bypass browser CORS blocks
-        response = await fetch("/api-nvidia/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: state.settings.nvidiaModelName || "meta/llama-3.1-70b-instruct",
-            messages: apiMessages,
-            temperature: 0.2,
-            max_tokens: 4096,
-            stream: useStream
-          }),
+      const finalReply = await nvidiaStream(
+        {
+          apiKey,
+          modelName: state.settings.nvidiaModelName || "meta/llama-3.1-70b-instruct",
+          messages: apiMessages as any,
+          temperature: 0.2,
+          maxTokens: 4096,
           signal: controller.signal
-        });
-
-        if (response.status === 404) {
-          throw new Error("Proxy route not configured or not found");
+        },
+        {
+          onStatus: (status) => setChatStatus(status),
+          onDelta: (text) => setStreamingResponse(text)
         }
-      } catch (proxyErr: any) {
-        if (proxyErr.name === "AbortError") {
-          throw proxyErr;
-        }
-        
-        console.warn("Proxy route failed/unavailable, trying direct API call:", proxyErr);
-        setChatStatus("Proxy unavailable. Connecting directly to NVIDIA NIM API...");
-        response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: state.settings.nvidiaModelName || "meta/llama-3.1-70b-instruct",
-            messages: apiMessages,
-            temperature: 0.2,
-            max_tokens: 4096,
-            stream: useStream
-          }),
-          signal: controller.signal
-        });
-      }
-
-      setChatStatus("Receiving response payload...");
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorJson;
-        try {
-          errorJson = JSON.parse(errorText);
-        } catch {
-          errorJson = null;
-        }
-        throw new Error(errorJson?.error?.message || `HTTP ${response.status}: Failed to fetch response from NVIDIA NIM.`);
-      }
-
-      const contentType = response.headers.get("content-type");
-      let accumulatedContent = "";
-      let accumulatedReasoning = "";
-
-      if (contentType && contentType.includes("text/event-stream")) {
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder("utf-8");
-        if (!reader) {
-          throw new Error("Response body is not readable.");
-        }
-
-        let buffer = "";
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
-
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed) continue;
-            if (trimmed === "data: [DONE]") continue;
-
-            if (trimmed.startsWith("data: ")) {
-              try {
-                const jsonStr = trimmed.slice(6);
-                const parsed = JSON.parse(jsonStr);
-                const delta = parsed.choices?.[0]?.delta;
-                
-                if (delta) {
-                  if (delta.reasoning_content) {
-                    accumulatedReasoning += delta.reasoning_content;
-                    setChatStatus("Thinking...");
-                  } else if (delta.content) {
-                    accumulatedContent += delta.content;
-                    setChatStatus("Responding...");
-                  }
-                  
-                  let responseText = "";
-                  if (accumulatedReasoning) {
-                    responseText += `<think>\n${accumulatedReasoning}\n</think>\n`;
-                  }
-                  responseText += accumulatedContent;
-                  setStreamingResponse(responseText);
-                }
-              } catch (e) {
-                console.warn("Failed to parse stream line:", trimmed, e);
-              }
-            }
-          }
-        }
-      } else {
-        // Non-streaming response fallback
-        const data = await response.json();
-        const msg = data.choices?.[0]?.message;
-        if (msg) {
-          accumulatedReasoning = msg.reasoning_content || "";
-          accumulatedContent = msg.content || "";
-        }
-      }
-
-      let finalReply = "";
-      if (accumulatedReasoning && (!accumulatedContent || !accumulatedContent.includes("<think>"))) {
-        finalReply += `<think>\n${accumulatedReasoning}\n</think>\n`;
-      }
-      finalReply += accumulatedContent || "No reply received.";
+      );
 
       addChatMessage("assistant", finalReply);
       setStreamingResponse("");
