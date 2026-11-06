@@ -93,6 +93,7 @@ export interface AppState extends BaseAppState {
   devCategories: DevCategory[];
   dailyChallenge?: DailyChallenge;
   sessionNvidiaKey?: string;
+  sessionAiKey?: string;
 }
 
 export interface SerializedProgress extends Partial<BaseAppState> {
@@ -213,6 +214,7 @@ export interface AppContextType {
   completeDailyChallenge: () => void;
   refreshDailyChallenge: () => void;
   setSessionNvidiaKey: (key: string) => void;
+  setSessionAiKey?: (key: string, provider?: import("../types/AppTypes").AiProviderId) => void;
   updateFlashcardReview: (flashcardId: string, easeFactor: number, interval: number, nextReviewDate: string, repetition: number) => void;
   enrollCompanyRoadmap: (roadmap: CompanyRoadmap) => void;
   updateRoadmapProgress: (roadmapId: string, milestoneId: string, completed: boolean) => void;

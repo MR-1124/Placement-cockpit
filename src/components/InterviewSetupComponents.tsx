@@ -37,7 +37,7 @@ const updateUserProfile = useAppState(s => s.updateUserProfile);
   const [resumeText, setResumeText] = useState(state.user?.resumeText || "");
   const [resumeFileName, setResumeFileName] = useState(state.user?.resumeFileName || "");
 
-  const apiKey = state.sessionNvidiaKey || "";
+  const apiKey = state.sessionAiKey || state.sessionNvidiaKey || "";
 
   const handleSaveIntro = () => {
     updateUserProfile({ savedIntro: tempIntro });
@@ -224,7 +224,7 @@ const updateUserProfile = useAppState(s => s.updateUserProfile);
           className="w-full h-11 bg-accentPrimary hover:bg-accentPrimary/90 disabled:bg-white/[0.02] text-white disabled:text-slate-600 border border-accentPrimary/20 disabled:border-transparent font-bold rounded-xl flex items-center justify-center gap-2 active:scale-98 transition-all shadow-lg shadow-accentPrimary/10 cursor-pointer text-xs disabled:cursor-not-allowed"
         >
           <Play className="w-4 h-4 fill-current" />
-          <span>{apiKey ? "Launch Timed Mock Interview Room" : "NVIDIA API Key Missing (Click to go to Settings)"}</span>
+          <span>{apiKey ? "Launch Timed Mock Interview Room" : "AI API Key Missing (Click to go to Settings)"}</span>
         </button>
       </GlassCard>
     </div>

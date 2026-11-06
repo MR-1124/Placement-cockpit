@@ -31,8 +31,11 @@ export const ResumeGraderView: React.FC = () => {
       setError("Please upload or paste a resume first.");
       return;
     }
-    if (!state.sessionNvidiaKey) {
-      setError("NVIDIA API key is required. Please configure it in Settings.");
+    const activeProvider = state.settings.activeAiProvider || "nvidia";
+    const activeProviderCfg = state.settings.aiProviders?.[activeProvider];
+    const apiKey = state.sessionAiKey || state.sessionNvidiaKey;
+    if (!apiKey && activeProvider !== "custom") {
+      setError(`API key for ${activeProvider.toUpperCase()} is required. Please configure it in Settings.`);
       return;
     }
 
@@ -73,11 +76,13 @@ You MUST respond with ONLY a valid JSON object matching this exact structure, wi
 
     try {
       const response = await nvidiaFetch({
-        apiKey: state.sessionNvidiaKey,
-        modelName: state.settings.nvidiaModelName,
+        provider: activeProvider,
+        apiKey: apiKey || "",
+        modelName: activeProviderCfg?.selectedModel || state.settings.nvidiaModelName,
         temperature: 0.1, 
         maxTokens: 3000,
         stream: false,
+        customBaseUrl: activeProviderCfg?.customBaseUrl,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `RESUME TEXT:\n\n${resumeText}` }

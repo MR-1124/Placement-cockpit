@@ -10,7 +10,6 @@ import {
   RefreshCw,
   Trash2,
   AlertOctagon,
-  Bot,
   CheckCircle,
   XCircle,
   Loader2,
@@ -27,6 +26,8 @@ import {
   VolumeX
 } from "lucide-react";
 import { audioTelemetry } from "../lib/audioTelemetry";
+import { AI_PROVIDERS, pingProvider } from "../lib/aiProviderApi";
+import type { AiProviderId } from "../types/AppTypes";
 
 
 const GithubIcon: React.FC<{className?: string}> = ({ className }) => (
@@ -48,84 +49,91 @@ export const SettingsView: React.FC = () => {
   const [showSeedToast, setShowSeedToast] = useState(false);
   const [showResetToast, setShowResetToast] = useState(false);
 
-  // NVIDIA NIM settings states
-  const [showApiKey] = useState(false);
+  // Multi-Provider AI Settings
+  const selectedProvider: AiProviderId = state.settings.activeAiProvider || "nvidia";
+  const currentProviderMeta = AI_PROVIDERS[selectedProvider] || AI_PROVIDERS.nvidia;
+  const currentProviderConfig = state.settings.aiProviders?.[selectedProvider] || {
+    id: selectedProvider,
+    name: currentProviderMeta.name,
+    apiKey: selectedProvider === "nvidia" ? state.settings.nvidiaApiKey : "",
+    selectedModel: currentProviderMeta.defaultModel,
+  };
+
   const [tempApiKey, setTempApiKey] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"encrypt" | "decrypt">("encrypt");
-  const [modelType, setModelType] = useState(() => {
-    const model = state.settings.nvidiaModelName || "meta/llama-3.1-70b-instruct";
-    if ([
-      "meta/llama-3.1-70b-instruct",
-      "meta/llama-3.1-405b-instruct",
-      "nvidia/llama-3.1-nemotron-70b-instruct",
-      "mistralai/mixtral-8x22b-instruct-v0.1",
-      "deepseek-ai/deepseek-r1",
-      "nvidia/nemotron-mini-4b-instruct",
-      "meta/llama-3.3-70b-instruct",
-      "nvidia/nemotron-3-nano-30b-a3b",
-      "openai/gpt-oss-120b"
-    ].includes(model)) {
-      return model;
-    }
-    return "custom";
-  });
-  const [customModel, setCustomModel] = useState(state.settings.nvidiaModelName || "meta/llama-3.1-70b-instruct");
-  
-  const [interviewerModelType, setInterviewerModelType] = useState(() => {
-    const model = state.settings.nvidiaInterviewerModelName || "default";
-    if (model === "default") return "default";
-    if ([
-      "meta/llama-3.1-70b-instruct",
-      "meta/llama-3.1-405b-instruct",
-      "nvidia/llama-3.1-nemotron-70b-instruct",
-      "mistralai/mixtral-8x22b-instruct-v0.1",
-      "deepseek-ai/deepseek-r1",
-      "nvidia/nemotron-mini-4b-instruct",
-      "meta/llama-3.3-70b-instruct",
-      "nvidia/nemotron-3-nano-30b-a3b",
-      "openai/gpt-oss-120b"
-    ].includes(model)) {
-      return model;
-    }
-    return "custom";
-  });
-  const [customInterviewerModel, setCustomInterviewerModel] = useState(
-    state.settings.nvidiaInterviewerModelName !== "default" 
-      ? (state.settings.nvidiaInterviewerModelName || "meta/llama-3.1-70b-instruct") 
-      : "meta/llama-3.1-70b-instruct"
-  );
+  const [customBaseUrl, setCustomBaseUrl] = useState(currentProviderConfig.customBaseUrl || "http://localhost:11434/v1");
   const [testStatus, setTestStatus] = useState<"idle" | "testing" | "success" | "error">("idle");
   const [testMessage, setTestMessage] = useState("");
 
+  const handleSelectProvider = (p: AiProviderId) => {
+    updateSettings({ activeAiProvider: p });
+    setTestStatus("idle");
+    setTestMessage("");
+    setTempApiKey("");
+  };
+
   const handleTestConnection = async () => {
-    const keyToTest = state.sessionNvidiaKey;
-    if (!keyToTest) {
+    const keyToTest = state.sessionAiKey || state.sessionNvidiaKey;
+    if (!keyToTest && selectedProvider !== "custom") {
       setTestStatus("error");
-      setTestMessage("API Key is empty or not unlocked.");
+      setTestMessage("API Key is empty or not unlocked for this session.");
       return;
     }
     
     setTestStatus("testing");
-    setTestMessage("Pinging NVIDIA integration endpoint...");
+    setTestMessage(`Pinging ${currentProviderMeta.name}...`);
 
-    try {
-      const res = await fetch("https://integrate.api.nvidia.com/v1/models", {
-        headers: {
-          "Authorization": `Bearer ${keyToTest}`
-        }
-      });
-      if (res.ok) {
-        setTestStatus("success");
-        setTestMessage("Connection successful!");
-      } else {
-        setTestStatus("error");
-        setTestMessage(`Connection failed: ${res.status} ${res.statusText}`);
-      }
-    } catch (err: any) {
+    const result = await pingProvider(selectedProvider, keyToTest || "", currentProviderConfig.customBaseUrl || customBaseUrl);
+    if (result.success) {
+      setTestStatus("success");
+      setTestMessage(result.message);
+    } else {
       setTestStatus("error");
-      setTestMessage(`Error: ${err.message}`);
+      setTestMessage(result.message);
     }
+  };
+
+  const handleModelChange = (modelId: string) => {
+    const updatedProviders = {
+      ...(state.settings.aiProviders || {}),
+      [selectedProvider]: {
+        ...currentProviderConfig,
+        selectedModel: modelId,
+      }
+    };
+    const patch: any = { aiProviders: updatedProviders };
+    if (selectedProvider === "nvidia") {
+      patch.nvidiaModelName = modelId;
+    }
+    updateSettings(patch);
+  };
+
+  const handleSaveCustomBaseUrl = () => {
+    const updatedProviders = {
+      ...(state.settings.aiProviders || {}),
+      [selectedProvider]: {
+        ...currentProviderConfig,
+        customBaseUrl,
+      }
+    };
+    updateSettings({ aiProviders: updatedProviders });
+  };
+
+  const handleRevokeKey = () => {
+    const updatedProviders = {
+      ...(state.settings.aiProviders || {}),
+      [selectedProvider]: {
+        ...currentProviderConfig,
+        apiKey: "",
+      }
+    };
+    const patch: any = { aiProviders: updatedProviders };
+    if (selectedProvider === "nvidia") {
+      patch.nvidiaApiKey = "";
+    }
+    updateSettings(patch);
+    setSessionNvidiaKey("");
   };
 
   const colors: { id: "violet" | "emerald" | "amber" | "rose" | "blue"; name: string; class: string }[] = [
@@ -373,220 +381,230 @@ export const SettingsView: React.FC = () => {
             </div>
           </GlassCard>
 
-          {/* NVIDIA NIM Assistant Configuration */}
-          <GlassCard className="space-y-5 rounded-[1.5rem] border-t-2 border-t-emerald-500/20">
-            <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider border-b border-white/[0.06] pb-3 flex items-center gap-2">
-              <Cpu className="w-4 h-4 text-emerald-400" /> NVIDIA NIM Mentor Config
-            </h3>
+          {/* Multi-Provider AI Assistant Configuration */}
+          <GlassCard className="space-y-6 rounded-[1.5rem] border-t-2 border-t-emerald-500/20">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
+              <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider flex items-center gap-2">
+                <Cpu className="w-4 h-4 text-emerald-400" /> Multi-Provider AI Engine
+              </h3>
+              <span className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border ${currentProviderMeta.badgeColor}`}>
+                Active: {currentProviderMeta.name}
+              </span>
+            </div>
 
             <p className="text-[11px] text-slate-400 leading-relaxed font-mono">
-              Integrate NVIDIA NIM microservices to power your side-chat technical mentor. Configure an API key from <a href="https://build.nvidia.com" target="_blank" rel="noreferrer" className="text-accentPrimary hover:underline">build.nvidia.com</a>.
+              Configure your preferred AI provider to power real-time voice interviews, ATS resume grading, AI problem breakdowns, and technical side-chat.
             </p>
 
-            <div className="space-y-6">
-              <div className="bg-black/30 border border-white/[0.04] rounded-2xl p-5 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-emerald-500 to-transparent"></div>
-                <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block mb-3 pl-2">NVIDIA API Vault</label>
-                
-                {state.settings.nvidiaApiKey ? (
-                  <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
-                        <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-emerald-400 font-mono">Vault Secured</p>
-                        <p className="text-[10px] text-emerald-400/60 font-mono mt-0.5">API Key is encrypted and stored.</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      {!state.sessionNvidiaKey && (
-                        <button
-                          onClick={() => { setModalMode("decrypt"); setIsModalOpen(true); }}
-                          className="px-4 py-2 rounded-lg bg-emerald-500 text-black text-xs font-bold transition-transform hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
-                        >
-                          Unlock Vault
-                        </button>
+            {/* Provider Selection Tabs */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
+              {(Object.keys(AI_PROVIDERS) as AiProviderId[]).map((pId) => {
+                const meta = AI_PROVIDERS[pId];
+                const isSelected = selectedProvider === pId;
+                const pConfig = state.settings.aiProviders?.[pId];
+                const hasKey = Boolean(pConfig?.apiKey || (pId === "nvidia" && state.settings.nvidiaApiKey));
+
+                return (
+                  <button
+                    key={pId}
+                    type="button"
+                    onClick={() => handleSelectProvider(pId)}
+                    className={`relative p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                      isSelected
+                        ? "bg-white/[0.08] border-accentPrimary shadow-[0_0_15px_rgba(16,185,129,0.15)] ring-1 ring-accentPrimary/40"
+                        : "bg-black/30 border-white/[0.04] hover:bg-white/[0.04] hover:border-white/[0.08]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full mb-1">
+                      <span className="text-[11px] font-bold text-white truncate">{meta.shortName}</span>
+                      {hasKey && (
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]" title="Key Configured" />
                       )}
-                      <button
-                        onClick={() => {
-                          updateSettings({ nvidiaApiKey: "" });
-                          setSessionNvidiaKey("");
-                        }}
-                        className="px-4 py-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 text-xs font-bold transition-colors"
-                      >
-                        Revoke Key
-                      </button>
                     </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Lock className="w-4 h-4 text-slate-500" />
-                      </div>
-                      <input
-                        type={showApiKey ? "text" : "password"}
-                        value={tempApiKey}
-                        onChange={(e) => setTempApiKey(e.target.value)}
-                        placeholder="nvapi-..."
-                        className="w-full bg-black/60 border border-white/[0.08] focus:border-emerald-500/50 rounded-xl py-3 pl-10 pr-4 text-sm font-mono text-emerald-100 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 transition-all shadow-inner"
-                      />
-                    </div>
+                    <span className="text-[9px] text-slate-400 font-mono truncate">{meta.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Active Provider Panel */}
+            <div className="bg-black/30 border border-white/[0.04] rounded-2xl p-5 relative overflow-hidden space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/[0.04]">
+                <div>
+                  <h4 className="text-sm font-bold text-white font-mono flex items-center gap-2">
+                    {currentProviderMeta.name} Vault
+                  </h4>
+                  <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                    Get an API key from{" "}
+                    <a href={currentProviderMeta.website} target="_blank" rel="noreferrer" className="text-accentPrimary hover:underline">
+                      {currentProviderMeta.website.replace("https://", "")}
+                    </a>
+                  </p>
+                </div>
+              </div>
+
+              {/* Custom Base URL (if applicable) */}
+              {currentProviderMeta.requiresBaseUrl && (
+                <div className="space-y-2 p-3 bg-black/40 border border-white/[0.06] rounded-xl">
+                  <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block font-mono">
+                    Custom Base URL (e.g. Ollama, vLLM, LM Studio)
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={customBaseUrl}
+                      onChange={(e) => setCustomBaseUrl(e.target.value)}
+                      placeholder="http://localhost:11434/v1"
+                      className="flex-1 bg-black/60 border border-white/[0.08] focus:border-accentPrimary rounded-lg py-2 px-3 text-xs font-mono text-white placeholder-slate-600 focus:outline-none"
+                    />
                     <button
                       type="button"
-                      disabled={!tempApiKey}
-                      onClick={() => { setModalMode("encrypt"); setIsModalOpen(true); }}
-                      className="px-4 py-3 w-full rounded-xl font-bold transition-all text-xs bg-emerald-500 hover:bg-emerald-400 text-black disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+                      onClick={handleSaveCustomBaseUrl}
+                      className="px-3 py-2 bg-white/[0.05] hover:bg-white/[0.1] text-xs font-mono text-white rounded-lg border border-white/[0.08] transition-colors"
                     >
-                      <Lock className="w-4 h-4" /> Secure & Encrypt Key
+                      Save URL
                     </button>
                   </div>
-                )}
-                
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-5 mt-5 border-t border-white/[0.04]">
+                </div>
+              )}
+
+              {/* API Key Vault Area */}
+              {currentProviderConfig?.apiKey || (selectedProvider === "nvidia" && state.settings.nvidiaApiKey) ? (
+                <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
+                      <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-emerald-400 font-mono">Vault Secured with AES-GCM-256</p>
+                      <p className="text-[10px] text-emerald-400/60 font-mono mt-0.5">
+                        {state.sessionAiKey || state.sessionNvidiaKey ? "Session Unlocked & Active" : "Key locked. Enter master password to unlock."}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    {!(state.sessionAiKey || state.sessionNvidiaKey) && (
+                      <button
+                        onClick={() => { setModalMode("decrypt"); setIsModalOpen(true); }}
+                        className="px-4 py-2 rounded-lg bg-emerald-500 text-black text-xs font-bold transition-transform hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                      >
+                        Unlock Vault
+                      </button>
+                    )}
+                    <button
+                      onClick={handleRevokeKey}
+                      className="px-4 py-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 text-xs font-bold transition-colors"
+                    >
+                      Revoke Key
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className="w-4 h-4 text-slate-500" />
+                    </div>
+                    <input
+                      type="password"
+                      value={tempApiKey}
+                      onChange={(e) => setTempApiKey(e.target.value)}
+                      placeholder={currentProviderMeta.keyPlaceholder}
+                      className="w-full bg-black/60 border border-white/[0.08] focus:border-accentPrimary rounded-xl py-3 pl-10 pr-4 text-sm font-mono text-emerald-100 placeholder-slate-600 focus:outline-none transition-all shadow-inner"
+                    />
+                  </div>
                   <button
                     type="button"
-                    onClick={handleTestConnection}
-                    disabled={testStatus === "testing" || !state.sessionNvidiaKey}
-                    className="px-4 py-2 rounded-lg font-bold transition-all text-[10px] uppercase font-mono bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.05] text-slate-300 disabled:opacity-50 flex items-center gap-2"
+                    disabled={!tempApiKey && selectedProvider !== "custom"}
+                    onClick={() => { setModalMode("encrypt"); setIsModalOpen(true); }}
+                    className="px-4 py-3 w-full rounded-xl font-bold transition-all text-xs bg-emerald-500 hover:bg-emerald-400 text-black disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
                   >
-                    {testStatus === "testing" ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-                    Ping NVIDIA Systems
+                    <Lock className="w-4 h-4" /> Secure & Encrypt Key
                   </button>
-                  
-                  <AnimatePresence mode="wait">
-                    {testStatus !== "idle" && (
-                      <motion.div 
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0 }}
-                        className={`text-[11px] font-mono flex items-center gap-2 px-3 py-1.5 rounded-lg border ${
-                          testStatus === "success" 
-                            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" 
-                            : testStatus === "error"
-                            ? "bg-rose-500/10 border-rose-500/20 text-rose-400"
-                            : "bg-blue-500/10 border-blue-500/20 text-blue-400"
-                        }`}
-                      >
-                        {testStatus === "success" ? <CheckCircle className="w-3.5 h-3.5" /> : testStatus === "error" ? <XCircle className="w-3.5 h-3.5" /> : <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                        {testMessage}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                </div>
+              )}
+
+              {/* Diagnostic Ping Button */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-white/[0.04]">
+                <button
+                  type="button"
+                  onClick={handleTestConnection}
+                  disabled={testStatus === "testing" || (!(state.sessionAiKey || state.sessionNvidiaKey) && selectedProvider !== "custom")}
+                  className="px-4 py-2 rounded-lg font-bold transition-all text-[10px] uppercase font-mono bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.05] text-slate-300 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {testStatus === "testing" ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                  Ping {currentProviderMeta.shortName} Endpoint
+                </button>
+
+                <AnimatePresence mode="wait">
+                  {testStatus !== "idle" && (
+                    <motion.div
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0 }}
+                      className={`text-[11px] font-mono flex items-center gap-2 px-3 py-1.5 rounded-lg border ${
+                        testStatus === "success"
+                          ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                          : testStatus === "error"
+                          ? "bg-rose-500/10 border-rose-500/20 text-rose-400"
+                          : "bg-blue-500/10 border-blue-500/20 text-blue-400"
+                      }`}
+                    >
+                      {testStatus === "success" ? <CheckCircle className="w-3.5 h-3.5" /> : testStatus === "error" ? <XCircle className="w-3.5 h-3.5" /> : <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                      {testMessage}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* Model Selection for Active Provider */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">
+                  {currentProviderMeta.name} Model
+                </label>
+                <div className="relative">
+                  <select
+                    value={
+                      currentProviderMeta.models.some((m) => m.id === currentProviderConfig.selectedModel)
+                        ? currentProviderConfig.selectedModel
+                        : "custom"
+                    }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val !== "custom") {
+                        handleModelChange(val);
+                      }
+                    }}
+                    className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-xl py-2.5 pl-3 pr-10 text-xs text-white focus:outline-none transition-colors appearance-none cursor-pointer hover:bg-black/60"
+                  >
+                    {currentProviderMeta.models.map((m) => (
+                      <option key={m.id} value={m.id} className="bg-[#0f0f13] text-white">
+                        {m.name} {m.badge ? `(${m.badge})` : ""}
+                      </option>
+                    ))}
+                    <option value="custom" className="bg-[#0f0f13] text-white">Custom Model Identifier...</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {/* Custom Model Input if not in predefined list */}
+              {(!currentProviderMeta.models.some((m) => m.id === currentProviderConfig.selectedModel)) && (
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Global/Mentor Model</label>
-                  <div className="relative">
-                    <select
-                      value={modelType}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setModelType(val);
-                        if (val !== "custom") {
-                          updateSettings({ nvidiaModelName: val });
-                        } else {
-                          updateSettings({ nvidiaModelName: customModel });
-                        }
-                      }}
-                      className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-xl py-2.5 pl-3 pr-10 text-xs text-white focus:outline-none transition-colors appearance-none cursor-pointer hover:bg-black/60"
-                    >
-                      <option value="meta/llama-3.3-70b-instruct" className="bg-[#0f0f13] text-white">Llama 3.3 70B (Recommended)</option>
-                      <option value="deepseek-ai/deepseek-r1" className="bg-[#0f0f13] text-white">DeepSeek R1 (Reasoning)</option>
-                      <option value="meta/llama-3.1-70b-instruct" className="bg-[#0f0f13] text-white">Llama 3.1 70B</option>
-                      <option value="meta/llama-3.1-405b-instruct" className="bg-[#0f0f13] text-white">Llama 3.1 405B</option>
-                      <option value="nvidia/llama-3.1-nemotron-70b-instruct" className="bg-[#0f0f13] text-white">Nemotron 70B</option>
-                      <option value="nvidia/nemotron-3-nano-30b-a3b" className="bg-[#0f0f13] text-white">Nemotron-3 Nano 30B</option>
-                      <option value="openai/gpt-oss-120b" className="bg-[#0f0f13] text-white">GPT OSS 120B</option>
-                      <option value="nvidia/nemotron-mini-4b-instruct" className="bg-[#0f0f13] text-white">Nemotron Mini 4B</option>
-                      <option value="mistralai/mixtral-8x22b-instruct-v0.1" className="bg-[#0f0f13] text-white">Mixtral 8x22B</option>
-                      <option value="custom" className="bg-[#0f0f13] text-white">Custom Model...</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                  </div>
+                  <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">
+                    Custom Model String
+                  </label>
+                  <input
+                    type="text"
+                    value={currentProviderConfig.selectedModel}
+                    onChange={(e) => handleModelChange(e.target.value)}
+                    placeholder="e.g. gpt-4o, claude-3-5-sonnet-20241022, etc."
+                    className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-xl py-2.5 px-3 text-xs font-mono text-white placeholder-slate-600 focus:outline-none"
+                  />
                 </div>
-                
-                {modelType === "custom" && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2">
-                    <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Custom Model Identifier</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Bot className="w-3.5 h-3.5 text-slate-500" />
-                      </div>
-                      <input
-                        type="text"
-                        value={customModel}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setCustomModel(val);
-                          updateSettings({ nvidiaModelName: val });
-                        }}
-                        placeholder="e.g. meta/llama-3.1-70b-instruct"
-                        className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-xl py-2.5 pl-9 pr-3 text-xs font-mono text-white placeholder-slate-600 focus:outline-none transition-colors shadow-inner"
-                      />
-                    </div>
-                  </motion.div>
-                )}
-
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Interviewer Model Override</label>
-                  <div className="relative">
-                    <select
-                      value={interviewerModelType}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setInterviewerModelType(val);
-                        if (val === "default") {
-                          updateSettings({ nvidiaInterviewerModelName: undefined });
-                        } else if (val !== "custom") {
-                          updateSettings({ nvidiaInterviewerModelName: val });
-                        } else {
-                          updateSettings({ nvidiaInterviewerModelName: customInterviewerModel });
-                        }
-                      }}
-                      className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-xl py-2.5 pl-3 pr-10 text-xs text-white focus:outline-none transition-colors appearance-none cursor-pointer hover:bg-black/60"
-                    >
-                      <option value="default" className="bg-[#0f0f13] text-white">Same as Global/Mentor Model</option>
-                      <option value="meta/llama-3.3-70b-instruct" className="bg-[#0f0f13] text-white">Llama 3.3 70B</option>
-                      <option value="deepseek-ai/deepseek-r1" className="bg-[#0f0f13] text-white">DeepSeek R1 (Reasoning)</option>
-                      <option value="meta/llama-3.1-70b-instruct" className="bg-[#0f0f13] text-white">Llama 3.1 70B</option>
-                      <option value="meta/llama-3.1-405b-instruct" className="bg-[#0f0f13] text-white">Llama 3.1 405B</option>
-                      <option value="nvidia/llama-3.1-nemotron-70b-instruct" className="bg-[#0f0f13] text-white">Nemotron 70B</option>
-                      <option value="nvidia/nemotron-3-nano-30b-a3b" className="bg-[#0f0f13] text-white">Nemotron-3 Nano 30B</option>
-                      <option value="openai/gpt-oss-120b" className="bg-[#0f0f13] text-white">GPT OSS 120B</option>
-                      <option value="nvidia/nemotron-mini-4b-instruct" className="bg-[#0f0f13] text-white">Nemotron Mini 4B</option>
-                      <option value="mistralai/mixtral-8x22b-instruct-v0.1" className="bg-[#0f0f13] text-white">Mixtral 8x22B</option>
-                      <option value="custom" className="bg-[#0f0f13] text-white">Custom Model...</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                  </div>
-                </div>
-                
-                {interviewerModelType === "custom" && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2">
-                    <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Custom Interviewer Identifier</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Bot className="w-3.5 h-3.5 text-slate-500" />
-                      </div>
-                      <input
-                        type="text"
-                        value={customInterviewerModel}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setCustomInterviewerModel(val);
-                          updateSettings({ nvidiaInterviewerModelName: val });
-                        }}
-                        placeholder="e.g. meta/llama-3.1-70b-instruct"
-                        className="w-full bg-black/40 border border-white/[0.08] focus:border-accentPrimary rounded-xl py-2.5 pl-9 pr-3 text-xs font-mono text-white placeholder-slate-600 focus:outline-none transition-colors shadow-inner"
-                      />
-                    </div>
-                  </motion.div>
-                )}
-              </div>
+              )}
             </div>
           </GlassCard>
 
@@ -791,9 +809,22 @@ export const SettingsView: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         mode={modalMode}
         apiKeyInput={tempApiKey}
+        encryptedData={currentProviderConfig.apiKey || (selectedProvider === "nvidia" ? state.settings.nvidiaApiKey : "")}
+        providerName={currentProviderMeta.name}
         onSuccess={(result) => {
           if (modalMode === "encrypt") {
-            updateSettings({ nvidiaApiKey: result });
+            const updatedProviders = {
+              ...(state.settings.aiProviders || {}),
+              [selectedProvider]: {
+                ...currentProviderConfig,
+                apiKey: result,
+              }
+            };
+            const patch: any = { aiProviders: updatedProviders };
+            if (selectedProvider === "nvidia") {
+              patch.nvidiaApiKey = result;
+            }
+            updateSettings(patch);
             setSessionNvidiaKey(tempApiKey);
             setTempApiKey("");
           } else {

@@ -4,6 +4,7 @@ import { useAppState } from "../context/AppStateContext";
 import { MarkdownRenderer } from "../components/MarkdownRenderer";
 import { GlassCard } from "../components/Common";
 import { SYSTEM_PROMPT } from "../lib/prompts";
+import { aiStream, AI_PROVIDERS } from "../lib/aiProviderApi";
 import {
   Bot,
   User,
@@ -50,6 +51,14 @@ const removeLastAssistantMessage = useAppState(s => s.removeLastAssistantMessage
 
   const activeSession = state.chatSessions?.[state.currentSessionId || "default-session"];
   const currentMessages = activeSession?.messages || [];
+
+  const activeProvider = state.settings.activeAiProvider || "nvidia";
+  const providerMeta = AI_PROVIDERS[activeProvider] || AI_PROVIDERS.nvidia;
+  const providerConfig = state.settings.aiProviders?.[activeProvider];
+  const apiKey = state.sessionAiKey || state.sessionNvidiaKey;
+  const hasActiveKey = Boolean(apiKey || activeProvider === "custom");
+  const activeModel = providerConfig?.selectedModel || state.settings.nvidiaModelName || providerMeta.defaultModel;
+  const activeModelShort = activeModel.split("/").pop() || activeModel;
   
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatTextAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -101,8 +110,8 @@ const removeLastAssistantMessage = useAppState(s => s.removeLastAssistantMessage
   const handleSendMessage = async (inputVal: string, isRegenerate: boolean = false) => {
     if (!inputVal.trim() && !isRegenerate) return;
     if (isLoading) return;
-    if (!state.sessionNvidiaKey) {
-      setChatError("NVIDIA API Key is missing. Please configure it in settings.");
+    if (!hasActiveKey) {
+      setChatError(`API Key for ${providerMeta.name} is missing. Please configure it in Settings.`);
       return;
     }
 
@@ -138,133 +147,22 @@ const removeLastAssistantMessage = useAppState(s => s.removeLastAssistantMessage
         apiMessages.push({ role: "user", content: inputVal });
       }
 
-      const apiKey = state.sessionNvidiaKey;
-      let response;
-      try {
-        setChatStatus("Connecting to local Vite dev proxy (/api-nvidia)...");
-        response = await fetch("/api-nvidia/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: state.settings.nvidiaModelName || "meta/llama-3.1-70b-instruct",
-            messages: apiMessages,
-            temperature: 0.2,
-            max_tokens: 4096,
-            stream: true
-          }),
-          signal: controller.signal
-        });
-
-        if (response.status === 404) {
-          throw new Error("Proxy route not found");
+      const finalReply = await aiStream(
+        {
+          provider: activeProvider,
+          apiKey: apiKey || "",
+          modelName: activeModel,
+          messages: apiMessages as any,
+          temperature: 0.2,
+          maxTokens: 4096,
+          signal: controller.signal,
+          customBaseUrl: providerConfig?.customBaseUrl,
+        },
+        {
+          onStatus: (status) => setChatStatus(status),
+          onDelta: (text) => setStreamingResponse(text),
         }
-      } catch (proxyErr: any) {
-        if (proxyErr.name === "AbortError") {
-          throw proxyErr;
-        }
-
-        console.warn("Proxy route failed, trying direct connection:", proxyErr);
-        setChatStatus("Proxy unavailable. Connecting directly to NVIDIA NIM API...");
-        response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: state.settings.nvidiaModelName || "meta/llama-3.1-70b-instruct",
-            messages: apiMessages,
-            temperature: 0.2,
-            max_tokens: 4096,
-            stream: true
-          }),
-          signal: controller.signal
-        });
-      }
-
-      setChatStatus("Receiving response payload...");
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorJson;
-        try {
-          errorJson = JSON.parse(errorText);
-        } catch {
-          errorJson = null;
-        }
-        throw new Error(errorJson?.error?.message || `HTTP ${response.status}: Failed to fetch response from NVIDIA NIM.`);
-      }
-
-      const contentType = response.headers.get("content-type");
-      let accumulatedContent = "";
-      let accumulatedReasoning = "";
-
-      if (contentType && contentType.includes("text/event-stream")) {
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder("utf-8");
-        if (!reader) {
-          throw new Error("Response body is not readable.");
-        }
-
-        let buffer = "";
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
-
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed) continue;
-            if (trimmed === "data: [DONE]") continue;
-
-            if (trimmed.startsWith("data: ")) {
-              try {
-                const jsonStr = trimmed.slice(6);
-                const parsed = JSON.parse(jsonStr);
-                const delta = parsed.choices?.[0]?.delta;
-                
-                if (delta) {
-                  if (delta.reasoning_content) {
-                    accumulatedReasoning += delta.reasoning_content;
-                    setChatStatus("Thinking...");
-                  } else if (delta.content) {
-                    accumulatedContent += delta.content;
-                    setChatStatus("Responding...");
-                  }
-                  
-                  let responseText = "";
-                  if (accumulatedReasoning) {
-                    responseText += `<think>\n${accumulatedReasoning}\n</think>\n`;
-                  }
-                  responseText += accumulatedContent;
-                  setStreamingResponse(responseText);
-                }
-              } catch (e) {
-                console.warn("Failed to parse stream line:", trimmed, e);
-              }
-            }
-          }
-        }
-      } else {
-        const data = await response.json();
-        const msg = data.choices?.[0]?.message;
-        if (msg) {
-          accumulatedReasoning = msg.reasoning_content || "";
-          accumulatedContent = msg.content || "";
-        }
-      }
-
-      let finalReply = "";
-      if (accumulatedReasoning && (!accumulatedContent || !accumulatedContent.includes("<think>"))) {
-        finalReply += `<think>\n${accumulatedReasoning}\n</think>\n`;
-      }
-      finalReply += accumulatedContent || "No reply received.";
+      );
 
       addChatMessage("assistant", finalReply);
       setStreamingResponse("");
@@ -277,8 +175,8 @@ const removeLastAssistantMessage = useAppState(s => s.removeLastAssistantMessage
         console.error(err);
         let errMsg = err.message || "An unexpected error occurred.";
         if (errMsg.includes("Failed to fetch")) {
-          errMsg = "Failed to fetch response. This is likely due to browser CORS security blocks or network issues. " +
-                   "Please verify that your internet connection is active, your NVIDIA API Key in Settings is valid, and the local Vite proxy server is running.";
+          errMsg = `Failed to connect to ${providerMeta.name}. This is likely due to browser CORS security blocks or network issues. ` +
+                   "Please verify your internet connection, API Key in Settings, and proxy configuration.";
         }
         setChatError(errMsg);
       }
@@ -592,8 +490,8 @@ const removeLastAssistantMessage = useAppState(s => s.removeLastAssistantMessage
           </div>
           
           <div className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-wider text-slate-500">
-            <span className={`w-1.5 h-1.5 rounded-full ${state.sessionNvidiaKey ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
-            <span>{state.sessionNvidiaKey ? state.settings.nvidiaModelName.split("/").pop() : "Offline mode"}</span>
+            <span className={`w-1.5 h-1.5 rounded-full ${hasActiveKey ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
+            <span>{hasActiveKey ? `${providerMeta.shortName} • ${activeModelShort}` : "Offline mode"}</span>
           </div>
         </div>
 
@@ -611,11 +509,11 @@ const removeLastAssistantMessage = useAppState(s => s.removeLastAssistantMessage
                 </p>
               </div>
 
-              {!state.sessionNvidiaKey && (
+              {!hasActiveKey && (
                 <div className="bg-amber-500/5 border border-amber-500/10 rounded-xl p-3 text-left w-full">
                   <span className="text-[10px] font-bold text-amber-500 block mb-1">Cockpit Settings Needed</span>
                   <p className="text-[9px] text-slate-400 leading-normal">
-                    AI chat requires an active API token. Go to settings tab, copy credentials from NVIDIA build catalog, and test configuration properties.
+                    AI chat requires an active API token. Go to settings tab, enter credentials for {providerMeta.name}, and test configuration properties.
                   </p>
                 </div>
               )}
@@ -777,18 +675,18 @@ const removeLastAssistantMessage = useAppState(s => s.removeLastAssistantMessage
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              disabled={isLoading || !state.sessionNvidiaKey}
+              disabled={isLoading || !hasActiveKey}
               placeholder={
-                state.sessionNvidiaKey
-                  ? "Enter query (e.g. explain sliding window, review arrays structure)..."
-                  : "NVIDIA API token key properties missing in cockpit config settings..."
+                hasActiveKey
+                  ? `Enter query for ${providerMeta.shortName} (e.g. explain sliding window, review arrays structure)...`
+                  : `API token for ${providerMeta.name} missing in cockpit config settings...`
               }
               rows={1}
               className="flex-1 min-w-0 bg-black/60 shadow-inner border border-white/[0.08] focus:border-accentPrimary rounded-xl py-2.5 px-4 text-xs text-white placeholder-slate-600 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed transition-colors resize-none overflow-y-auto max-h-[120px] leading-relaxed"
             />
             <button
               type="submit"
-              disabled={isLoading || !chatInput.trim() || !state.sessionNvidiaKey}
+              disabled={isLoading || !chatInput.trim() || !hasActiveKey}
               className="w-10 h-10 rounded-xl bg-accentPrimary hover:bg-accentPrimary/90 disabled:bg-white/[0.02] text-black disabled:text-slate-600 border border-white/[0.04] disabled:border-transparent flex items-center justify-center shrink-0 transition-all cursor-pointer shadow-[0_0_15px_rgba(var(--color-accent-primary),0.4)] hover:scale-[1.02] active:scale-95 disabled:shadow-none"
             >
               {isLoading ? (

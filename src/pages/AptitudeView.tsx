@@ -169,8 +169,11 @@ export const AptitudeView: React.FC = () => {
 
   // Load AI dynamic overview textbook contents
   const loadTopicOverview = async (topic: AptitudeTopic) => {
-    if (!state.sessionNvidiaKey) {
-      setAiError("NVIDIA API Key not found. Please set your API Key in Settings to get dynamic AI textbook overviews.");
+    const activeProvider = state.settings.activeAiProvider || "nvidia";
+    const activeProviderCfg = state.settings.aiProviders?.[activeProvider];
+    const apiKey = state.sessionAiKey || state.sessionNvidiaKey;
+    if (!apiKey && activeProvider !== "custom") {
+      setAiError(`API Key for ${activeProvider.toUpperCase()} not found. Please set your API Key in Settings to get dynamic AI textbook overviews.`);
       return;
     }
     setLoadingAi(true);
@@ -191,13 +194,15 @@ Provide:
 Return the explanation in clean, highly readable Markdown format. Do not use conversational openings or general chat preambles.`;
 
       const response = await nvidiaFetch({
-        apiKey: state.sessionNvidiaKey,
-        modelName: state.settings.nvidiaModelName || "meta/llama-3.1-70b-instruct",
+        provider: activeProvider,
+        apiKey: apiKey || "",
+        modelName: activeProviderCfg?.selectedModel || state.settings.nvidiaModelName || "meta/llama-3.3-70b-instruct",
         messages: [
           { role: "system", content: "You are a professional quantitative aptitude and logical reasoning textbook writer." },
           { role: "user", content: prompt }
         ],
-        temperature: 0.2
+        temperature: 0.2,
+        customBaseUrl: activeProviderCfg?.customBaseUrl
       });
 
       if (!response.ok) throw new Error("API call failed.");

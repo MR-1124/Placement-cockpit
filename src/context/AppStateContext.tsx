@@ -162,8 +162,54 @@ const getInitialState = (curriculum: any): AppState => ({
       badges: true
     },
     nvidiaApiKey: "",
-    nvidiaModelName: "meta/llama-3.1-70b-instruct",
+    nvidiaModelName: "meta/llama-3.3-70b-instruct",
     nvidiaInterviewerModelName: undefined,
+    activeAiProvider: "nvidia",
+    aiProviders: {
+      nvidia: {
+        id: "nvidia",
+        name: "NVIDIA NIM",
+        apiKey: "",
+        selectedModel: "meta/llama-3.3-70b-instruct",
+      },
+      groq: {
+        id: "groq",
+        name: "Groq LPU",
+        apiKey: "",
+        selectedModel: "llama-3.3-70b-versatile",
+      },
+      openai: {
+        id: "openai",
+        name: "OpenAI",
+        apiKey: "",
+        selectedModel: "gpt-4o-mini",
+      },
+      anthropic: {
+        id: "anthropic",
+        name: "Anthropic Claude",
+        apiKey: "",
+        selectedModel: "claude-3-5-sonnet-20241022",
+      },
+      gemini: {
+        id: "gemini",
+        name: "Google Gemini",
+        apiKey: "",
+        selectedModel: "gemini-2.0-flash",
+      },
+      openrouter: {
+        id: "openrouter",
+        name: "OpenRouter",
+        apiKey: "",
+        selectedModel: "meta-llama/llama-3.3-70b-instruct",
+      },
+      custom: {
+        id: "custom",
+        name: "Custom / Local Endpoint",
+        apiKey: "",
+        selectedModel: "llama3:latest",
+        customBaseUrl: "http://localhost:11434/v1",
+      },
+    },
     soundEnabled: true,
     soundVolume: 0.35,
     voiceEnabled: false,
@@ -1930,8 +1976,23 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
     });
   };
 
+  const setSessionAiKey = (key: string, provider?: import("../types/AppTypes").AiProviderId) => {
+    updateState(prev => {
+      const activeP = provider || prev.settings.activeAiProvider || "nvidia";
+      return {
+        ...prev,
+        sessionAiKey: key,
+        sessionNvidiaKey: activeP === "nvidia" || !prev.sessionNvidiaKey ? key : prev.sessionNvidiaKey,
+      };
+    });
+  };
+
   const setSessionNvidiaKey = (key: string) => {
-    updateState(prev => ({ ...prev, sessionNvidiaKey: key }));
+    updateState(prev => ({
+      ...prev,
+      sessionNvidiaKey: key,
+      sessionAiKey: prev.settings.activeAiProvider === "nvidia" || !prev.sessionAiKey ? key : prev.sessionAiKey,
+    }));
   };
 
   const refreshDailyChallenge = () => {
@@ -2251,6 +2312,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         completeDailyChallenge,
         refreshDailyChallenge,
         setSessionNvidiaKey,
+        setSessionAiKey,
         updateFlashcardReview,
         enrollCompanyRoadmap,
         updateRoadmapProgress,

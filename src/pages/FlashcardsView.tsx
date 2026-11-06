@@ -188,8 +188,11 @@ export const FlashcardsView: React.FC = () => {
 
   const handleGenerateAI = async () => {
     if (!aiTopic.trim()) return;
-    if (!state.sessionNvidiaKey) {
-      setAiError("NVIDIA API key not set. Configure it in Settings.");
+    const activeProvider = state.settings.activeAiProvider || "nvidia";
+    const activeProviderCfg = state.settings.aiProviders?.[activeProvider];
+    const apiKey = state.sessionAiKey || state.sessionNvidiaKey;
+    if (!apiKey && activeProvider !== "custom") {
+      setAiError(`API key for ${activeProvider.toUpperCase()} not set. Configure it in Settings.`);
       return;
     }
 
@@ -204,10 +207,12 @@ Do not include any conversational text outside the JSON array.`;
 
     try {
       const response = await nvidiaFetch({
-        apiKey: state.sessionNvidiaKey,
-        modelName: state.settings.nvidiaModelName,
+        provider: activeProvider,
+        apiKey: apiKey || "",
+        modelName: activeProviderCfg?.selectedModel || state.settings.nvidiaModelName || "meta/llama-3.3-70b-instruct",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.3
+        temperature: 0.3,
+        customBaseUrl: activeProviderCfg?.customBaseUrl
       });
 
       if (!response.ok) throw new Error("AI request failed");

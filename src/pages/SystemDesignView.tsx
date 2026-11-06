@@ -263,11 +263,19 @@ Provide a strict, thorough technical critique formatted as a single JSON object 
 Return ONLY valid JSON. No markdown code blocks, no preamble, no backticks.`;
 
     try {
+      const activeProvider = state.settings.activeAiProvider || "nvidia";
+      const activeProviderCfg = state.settings.aiProviders?.[activeProvider];
+      const apiKey = state.sessionAiKey || state.sessionNvidiaKey || state.settings.nvidiaApiKey || "";
+      const modelName = activeProviderCfg?.selectedModel || state.settings.nvidiaModelName || "meta/llama-3.3-70b-instruct";
+      const customBaseUrl = activeProviderCfg?.customBaseUrl;
+
       const response = await nvidiaFetch({
-        apiKey: state.sessionNvidiaKey || state.settings.nvidiaApiKey || "",
-        modelName: state.settings.nvidiaModelName || "meta/llama-3.1-70b-instruct",
+        provider: activeProvider,
+        apiKey,
+        modelName,
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.3
+        temperature: 0.3,
+        customBaseUrl
       });
 
       const resData = await response.json();

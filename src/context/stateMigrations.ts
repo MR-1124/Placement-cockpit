@@ -194,8 +194,55 @@ export const deserializeState = (serialized: Partial<SerializedProgress>, curric
         badges: true
       },
       nvidiaApiKey: serialized.settings?.nvidiaApiKey ?? "",
-      nvidiaModelName: serialized.settings?.nvidiaModelName ?? "meta/llama-3.1-70b-instruct",
-      nvidiaInterviewerModelName: serialized.settings?.nvidiaInterviewerModelName
+      nvidiaModelName: serialized.settings?.nvidiaModelName ?? "meta/llama-3.3-70b-instruct",
+      nvidiaInterviewerModelName: serialized.settings?.nvidiaInterviewerModelName,
+      activeAiProvider: serialized.settings?.activeAiProvider ?? "nvidia",
+      aiProviders: {
+        nvidia: {
+          id: "nvidia",
+          name: "NVIDIA NIM",
+          apiKey: serialized.settings?.aiProviders?.nvidia?.apiKey ?? serialized.settings?.nvidiaApiKey ?? "",
+          selectedModel: serialized.settings?.aiProviders?.nvidia?.selectedModel ?? serialized.settings?.nvidiaModelName ?? "meta/llama-3.3-70b-instruct",
+        },
+        groq: {
+          id: "groq",
+          name: "Groq LPU",
+          apiKey: serialized.settings?.aiProviders?.groq?.apiKey ?? "",
+          selectedModel: serialized.settings?.aiProviders?.groq?.selectedModel ?? "llama-3.3-70b-versatile",
+        },
+        openai: {
+          id: "openai",
+          name: "OpenAI",
+          apiKey: serialized.settings?.aiProviders?.openai?.apiKey ?? "",
+          selectedModel: serialized.settings?.aiProviders?.openai?.selectedModel ?? "gpt-4o-mini",
+        },
+        anthropic: {
+          id: "anthropic",
+          name: "Anthropic Claude",
+          apiKey: serialized.settings?.aiProviders?.anthropic?.apiKey ?? "",
+          selectedModel: serialized.settings?.aiProviders?.anthropic?.selectedModel ?? "claude-3-5-sonnet-20241022",
+        },
+        gemini: {
+          id: "gemini",
+          name: "Google Gemini",
+          apiKey: serialized.settings?.aiProviders?.gemini?.apiKey ?? "",
+          selectedModel: serialized.settings?.aiProviders?.gemini?.selectedModel ?? "gemini-2.0-flash",
+        },
+        openrouter: {
+          id: "openrouter",
+          name: "OpenRouter",
+          apiKey: serialized.settings?.aiProviders?.openrouter?.apiKey ?? "",
+          selectedModel: serialized.settings?.aiProviders?.openrouter?.selectedModel ?? "meta-llama/llama-3.3-70b-instruct",
+        },
+        custom: {
+          id: "custom",
+          name: "Custom / Local Endpoint",
+          apiKey: serialized.settings?.aiProviders?.custom?.apiKey ?? "",
+          selectedModel: serialized.settings?.aiProviders?.custom?.selectedModel ?? "llama3:latest",
+          customBaseUrl: serialized.settings?.aiProviders?.custom?.customBaseUrl ?? "http://localhost:11434/v1",
+        },
+        ...(serialized.settings?.aiProviders || {}),
+      },
     },
     streak: serialized.streak || 0,
     lastActiveDate: serialized.lastActiveDate || getTodayString(),

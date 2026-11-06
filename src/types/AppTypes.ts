@@ -95,6 +95,24 @@ export interface Note {
   updatedAt: string;
 }
 
+export type AiProviderId =
+  | "nvidia"
+  | "groq"
+  | "openai"
+  | "anthropic"
+  | "gemini"
+  | "openrouter"
+  | "custom";
+
+export interface ProviderConfig {
+  id: AiProviderId;
+  name: string;
+  apiKey: string;
+  selectedModel: string;
+  customBaseUrl?: string;
+  isConfigured?: boolean;
+}
+
 export interface AppSettings {
   theme?: "dark" | "light" | "system";
   accentColor: "violet" | "emerald" | "amber" | "rose" | "blue";
@@ -102,9 +120,13 @@ export interface AppSettings {
   sidebarCollapsed?: boolean;
   reminderFrequency: "daily" | "weekly";
   showSections: Record<string, boolean>;
+  // Legacy fields preserved for backward compatibility
   nvidiaApiKey: string;
   nvidiaModelName: string;
   nvidiaInterviewerModelName?: string;
+  // Multi-provider AI ecosystem
+  activeAiProvider?: AiProviderId;
+  aiProviders?: Partial<Record<AiProviderId, ProviderConfig>>;
   integrations?: {
     leetcodeUsername?: string;
     leetcodeLastSynced?: string;

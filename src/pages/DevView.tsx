@@ -263,8 +263,11 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
 
 
   const handleGenerateAiQuiz = async (skill: DevSkill) => {
-    if (!state.sessionNvidiaKey) {
-      setAiQuizError("NVIDIA API Key not found. Configure it in Settings to enable AI quiz generators.");
+    const activeProvider = state.settings.activeAiProvider || "nvidia";
+    const activeProviderCfg = state.settings.aiProviders?.[activeProvider];
+    const apiKey = state.sessionAiKey || state.sessionNvidiaKey;
+    if (!apiKey && activeProvider !== "custom") {
+      setAiQuizError(`API Key for ${activeProvider.toUpperCase()} not found. Configure it in Settings to enable AI quiz generators.`);
       return;
     }
 
@@ -285,13 +288,15 @@ export const DevView: React.FC<DevViewProps> = ({ setActiveTab }) => {
   ]
 }`;
       const response = await nvidiaFetch({
-        apiKey: state.sessionNvidiaKey,
-        modelName: state.settings.nvidiaModelName || "meta/llama-3.1-70b-instruct",
+        provider: activeProvider,
+        apiKey: apiKey || "",
+        modelName: activeProviderCfg?.selectedModel || state.settings.nvidiaModelName || "meta/llama-3.3-70b-instruct",
         messages: [
           { role: "system", content: "You are an expert fullstack systems engineer. You output only raw, clean, valid JSON matching the user requests, with no conversational text." },
           { role: "user", content: prompt }
         ],
-        temperature: 0.1
+        temperature: 0.1,
+        customBaseUrl: activeProviderCfg?.customBaseUrl
       });
 
       const data = await response.json();

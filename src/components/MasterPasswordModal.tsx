@@ -9,6 +9,8 @@ interface MasterPasswordModalProps {
   onClose: () => void;
   mode: "encrypt" | "decrypt";
   apiKeyInput?: string; // used when encrypting
+  encryptedData?: string; // used when decrypting specific provider
+  providerName?: string;
   onSuccess: (result: string) => void;
 }
 
@@ -17,12 +19,14 @@ export const MasterPasswordModal: React.FC<MasterPasswordModalProps> = ({
   onClose,
   mode,
   apiKeyInput,
+  encryptedData,
+  providerName = "API",
   onSuccess
 }) => {
   const [password, setPassword] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState("");
-  const nvidiaApiKey = useAppState(s => s.state.settings.nvidiaApiKey);
+  const settings = useAppState(s => s.state.settings);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +44,9 @@ export const MasterPasswordModal: React.FC<MasterPasswordModalProps> = ({
         const encrypted = await encryptData(apiKeyInput, password);
         onSuccess(encrypted);
       } else {
-        const encryptedBlob = nvidiaApiKey;
+        const activeProvider = settings.activeAiProvider || "nvidia";
+        const providerKey = settings.aiProviders?.[activeProvider]?.apiKey;
+        const encryptedBlob = encryptedData || providerKey || settings.nvidiaApiKey;
         if (!encryptedBlob) throw new Error("No encrypted key found.");
         const decrypted = await decryptData(encryptedBlob, password);
         onSuccess(decrypted);
@@ -78,11 +84,11 @@ export const MasterPasswordModal: React.FC<MasterPasswordModalProps> = ({
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-white">
-                    {mode === "encrypt" ? "Secure API Key" : "Unlock API Key"}
+                    {mode === "encrypt" ? `Secure ${providerName} Key` : `Unlock ${providerName} Key`}
                   </h3>
                   <p className="text-xs text-slate-400 font-mono">
                     {mode === "encrypt" 
-                      ? "Set a master password to encrypt your key locally." 
+                      ? "Set a master password to encrypt your key locally with AES-GCM-256." 
                       : "Enter your master password to unlock your key for this session."}
                   </p>
                 </div>

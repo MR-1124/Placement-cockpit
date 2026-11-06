@@ -214,8 +214,11 @@ export const InterviewSimulatorView: React.FC = () => {
     endInterviewSession
   } = useAppState();
 
-  const apiKey = state.sessionNvidiaKey;
-  const modelName = state.settings.nvidiaInterviewerModelName || state.settings.nvidiaModelName || "meta/llama-3.1-70b-instruct";
+  const activeProvider = state.settings.activeAiProvider || "nvidia";
+  const activeProviderCfg = state.settings.aiProviders?.[activeProvider];
+  const apiKey = state.sessionAiKey || state.sessionNvidiaKey || "";
+  const modelName = activeProviderCfg?.selectedModel || state.settings.nvidiaInterviewerModelName || state.settings.nvidiaModelName || "meta/llama-3.3-70b-instruct";
+  const customBaseUrl = activeProviderCfg?.customBaseUrl;
 
 
   // Interactive active states
@@ -587,12 +590,14 @@ CRITICAL INSTRUCTION: You MUST act strictly as the interviewer. DO NOT output an
 
       // Arch Debt #14 fix: replaced 3-try copy-paste with shared nvidiaFetch utility
       const response = await nvidiaFetch({
+        provider: activeProvider,
         apiKey,
         modelName,
         messages: apiMessages,
         temperature: 0.4,
         maxTokens: 1000,
-        stream: true
+        stream: true,
+        customBaseUrl
       });
 
       const reader = response.body?.getReader();
@@ -818,13 +823,15 @@ Ensure the output is valid JSON. Do not include markdown codeblocks or other exp
     try {
       // Arch Debt #14 fix: replaced 3-try copy-paste with shared nvidiaFetch utility
       const response = await nvidiaFetch({
+        provider: activeProvider,
         apiKey,
         modelName,
         messages: [{ role: "user", content: evaluationPrompt }],
         temperature: 0.2,
         maxTokens: 2000,
         stream: false,
-        signal: abortController.signal
+        signal: abortController.signal,
+        customBaseUrl
       });
 
       clearTimeout(timeoutId);

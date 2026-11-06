@@ -78,7 +78,7 @@ import {
 
 
 import { SYSTEM_PROMPT } from "./lib/prompts";
-import { nvidiaStream } from "./lib/nvidiaApi";
+import { aiStream, AI_PROVIDERS } from "./lib/aiProviderApi";
 
 const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>(() => {
@@ -113,6 +113,13 @@ const AppContent: React.FC = () => {
   const [isWideChat, setIsWideChat] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
+
+  const currentProviderId = state.settings.activeAiProvider || "nvidia";
+  const providerMeta = AI_PROVIDERS[currentProviderId] || AI_PROVIDERS.nvidia;
+  const currentProviderCfg = state.settings.aiProviders?.[currentProviderId];
+  const activeModel = currentProviderCfg?.selectedModel || state.settings.nvidiaModelName || providerMeta.defaultModel;
+  const activeModelShort = activeModel.split("/").pop() || activeModel;
+  const hasActiveKey = Boolean(state.sessionAiKey || state.sessionNvidiaKey || currentProviderId === "custom");
 
   // Global Keyboard Shortcuts (Ctrl+K for Command Palette, Ctrl+T for Theme)
   useEffect(() => {
@@ -227,8 +234,10 @@ const AppContent: React.FC = () => {
     if (e) e.preventDefault();
     if (!chatInput.trim() || isLoading) return;
 
-    const apiKey = state.sessionNvidiaKey;
-    if (!apiKey) {
+    const activeProvider = state.settings.activeAiProvider || "nvidia";
+    const currentProviderConfig = state.settings.aiProviders?.[activeProvider];
+    const apiKey = state.sessionAiKey || state.sessionNvidiaKey;
+    if (!apiKey && activeProvider !== "custom") {
       setChatError("API Key is missing. Please configure it in Settings.");
       return;
     }
@@ -254,14 +263,19 @@ const AppContent: React.FC = () => {
         { role: "user", content: currentInput }
       ];
 
-      const finalReply = await nvidiaStream(
+      const modelName = currentProviderConfig?.selectedModel || state.settings.nvidiaModelName || "meta/llama-3.3-70b-instruct";
+      const customBaseUrl = currentProviderConfig?.customBaseUrl;
+
+      const finalReply = await aiStream(
         {
-          apiKey,
-          modelName: state.settings.nvidiaModelName || "meta/llama-3.1-70b-instruct",
+          provider: activeProvider,
+          apiKey: apiKey || "",
+          modelName,
           messages: apiMessages as any,
           temperature: 0.2,
           maxTokens: 4096,
-          signal: controller.signal
+          signal: controller.signal,
+          customBaseUrl,
         },
         {
           onStatus: (status) => setChatStatus(status),
@@ -894,9 +908,9 @@ const AppContent: React.FC = () => {
                 <div>
                   <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">AI Placement Mentor</h3>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${state.sessionNvidiaKey ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full ${hasActiveKey ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
                     <span className="text-[9px] font-mono text-slate-500 uppercase">
-                      {state.sessionNvidiaKey ? (state.settings.nvidiaModelName.split("/").pop() || "NVIDIA NIM") : "OFFLINE"}
+                      {hasActiveKey ? `${providerMeta.shortName} • ${activeModelShort}` : "OFFLINE"}
                     </span>
                   </div>
                 </div>
@@ -945,11 +959,11 @@ const AppContent: React.FC = () => {
                     </p>
                   </div>
 
-                  {!state.sessionNvidiaKey && (
+                  {!hasActiveKey && (
                     <div className="bg-amber-500/5 border border-amber-500/10 rounded-lg p-3 mt-4 text-left max-w-xs">
                       <span className="text-[10px] font-bold text-amber-500 block mb-1">API Key Needed</span>
                       <p className="text-[9px] text-slate-400 leading-normal">
-                        You must supply an NVIDIA API Key in Settings to enable the AI Placement Mentor.
+                        Configure a key for {providerMeta.name} in Settings to enable the AI Placement Mentor.
                       </p>
                       <button
                         onClick={() => {
@@ -1057,10 +1071,10 @@ const AppContent: React.FC = () => {
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  disabled={isLoading || !state.sessionNvidiaKey}
+                  disabled={isLoading || !hasActiveKey}
                   placeholder={
-                    state.sessionNvidiaKey
-                      ? "Ask about DSA, projects, STAR method... (Shift+Enter for new line)"
+                    hasActiveKey
+                      ? `Ask ${providerMeta.shortName} about DSA, projects, STAR method... (Shift+Enter for new line)`
                       : "Configure API Key in settings to chat"
                   }
                   rows={1}
@@ -1068,7 +1082,7 @@ const AppContent: React.FC = () => {
                 />
                 <button
                   type="submit"
-                  disabled={isLoading || !chatInput.trim() || !state.sessionNvidiaKey}
+                  disabled={isLoading || !chatInput.trim() || !hasActiveKey}
                   className="w-8 h-8 rounded-lg bg-accentPrimary hover:bg-accentPrimary/90 disabled:bg-white/[0.02] text-white disabled:text-slate-600 border border-white/[0.04] disabled:border-transparent flex items-center justify-center shrink-0 transition-colors"
                   aria-label="Send Message"
                 >

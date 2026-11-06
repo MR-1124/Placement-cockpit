@@ -48,7 +48,37 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api-nvidia/, ''),
         secure: true,
-      }
+      },
+      '/api-groq': {
+        target: 'https://api.groq.com/openai',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-groq/, ''),
+        secure: true,
+      },
+      '/api-openai': {
+        target: 'https://api.openai.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-openai/, ''),
+        secure: true,
+      },
+      '/api-anthropic': {
+        target: 'https://api.anthropic.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-anthropic/, ''),
+        secure: true,
+      },
+      '/api-gemini': {
+        target: 'https://generativelanguage.googleapis.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-gemini/, ''),
+        secure: true,
+      },
+      '/api-openrouter': {
+        target: 'https://openrouter.ai/api',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-openrouter/, ''),
+        secure: true,
+      },
     }
   },
   test: {
