@@ -127,3 +127,93 @@ export async function nvidiaFetch(opts: NvidiaFetchOptions): Promise<Response> {
 
   throw lastError || new Error("Failed to connect to NVIDIA NIM API after all retries.");
 }
+
+export interface NvidiaStreamCallbacks {
+  onStatus?: (status: string) => void;
+  onDelta?: (combinedText: string, contentDelta?: string, reasoningDelta?: string) => void;
+}
+
+/**
+ * Universal streaming NVIDIA NIM caller. Handles proxy connection,
+ * SSE line buffering, delta accumulation, and <think> reasoning extraction.
+ */
+export async function nvidiaStream(
+  opts: Omit<NvidiaFetchOptions, "stream">,
+  callbacks?: NvidiaStreamCallbacks
+): Promise<string> {
+  const isLocalhost = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+  callbacks?.onStatus?.(isLocalhost ? "Connecting to local dev proxy (/api-nvidia)..." : "Connecting to Netlify API proxy (/api-nvidia)...");
+
+  const response = await nvidiaFetch({
+    ...opts,
+    stream: true,
+  });
+
+  callbacks?.onStatus?.("Receiving response payload...");
+
+  const contentType = response.headers.get("content-type") || "";
+  let accumulatedContent = "";
+  let accumulatedReasoning = "";
+
+  if (contentType.includes("text/event-stream") && response.body) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed === "data: [DONE]") continue;
+
+        if (trimmed.startsWith("data: ")) {
+          try {
+            const parsed = JSON.parse(trimmed.slice(6));
+            const delta = parsed.choices?.[0]?.delta;
+
+            if (delta) {
+              if (delta.reasoning_content) {
+                accumulatedReasoning += delta.reasoning_content;
+                callbacks?.onStatus?.("Thinking...");
+              } else if (delta.content) {
+                accumulatedContent += delta.content;
+                callbacks?.onStatus?.("Responding...");
+              }
+
+              let responseText = "";
+              if (accumulatedReasoning) {
+                responseText += `<think>\n${accumulatedReasoning}\n</think>\n`;
+              }
+              responseText += accumulatedContent;
+              callbacks?.onDelta?.(responseText, delta.content, delta.reasoning_content);
+            }
+          } catch (e) {
+            console.warn("Failed to parse stream line:", trimmed, e);
+          }
+        }
+      }
+    }
+  } else {
+    // Non-streaming fallback
+    const data = await response.json();
+    const msg = data.choices?.[0]?.message;
+    if (msg) {
+      accumulatedReasoning = msg.reasoning_content || "";
+      accumulatedContent = msg.content || "";
+    }
+  }
+
+  let finalReply = "";
+  if (accumulatedReasoning && (!accumulatedContent || !accumulatedContent.includes("<think>"))) {
+    finalReply += `<think>\n${accumulatedReasoning}\n</think>\n`;
+  }
+  finalReply += accumulatedContent || "No reply received.";
+
+  return finalReply;
+}
