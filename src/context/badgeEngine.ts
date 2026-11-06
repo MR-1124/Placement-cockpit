@@ -22,7 +22,7 @@ export const checkAndUnlockBadges = (updatedState: AppState, curriculum: any, pr
     }
   }
 
-  let freshlyUnlocked: string[] = [];
+  const freshlyUnlocked: string[] = [];
 
   // 1. Calculate values
   const dsaSolvedCount = updatedState.dsaTopics.reduce(

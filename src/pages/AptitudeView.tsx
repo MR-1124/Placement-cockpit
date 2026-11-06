@@ -77,7 +77,7 @@ export const AptitudeView: React.FC = () => {
 
       const formatted: AptitudeQuestion[] = questions.map((q: any, idx: number) => {
         let options = q.options;
-        let correctOption = q.correctOption || q.correct_option || "A";
+        const correctOption = q.correctOption || q.correct_option || "A";
         if (!options && q.answer) {
           options = [
             { key: "A", text: q.answer },
@@ -127,7 +127,7 @@ export const AptitudeView: React.FC = () => {
   const topicProgress = state.aptitudeTopicProgress || {};
 
   const metrics = React.useMemo(() => {
-    let totalAttempts = quizHistory.length;
+    const totalAttempts = quizHistory.length;
     let totalCorrect = 0;
     let totalQuestions = 0;
     let totalTime = 0;

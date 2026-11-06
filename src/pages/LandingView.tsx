@@ -106,9 +106,9 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
       shadow: "hover:shadow-[0_8px_30px_rgb(16,185,129,0.15)]"
     },
     {
-      title: "NVIDIA NIM AI Mentor",
+      title: "AI Intelligence Mentor",
       icon: Sparkles,
-      desc: "Engage with an integrated chat mentor powered by LLMs. Access mock interviews, parse system designs, and format resume project stories.",
+      desc: "Engage with an integrated chat mentor powered by multi-provider LLMs (Groq, OpenAI, Claude, Gemini, NIM). Access mock interviews, parse system designs, and format resume project stories.",
       color: "text-blue-400 border-blue-500/20 bg-blue-500/5",
       shadow: "hover:shadow-[0_8px_30px_rgb(59,130,246,0.15)]"
     },
@@ -339,7 +339,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnterDashboard }) =>
         <div className="flex flex-wrap items-center justify-center gap-2.5 mb-8">
           {[
             { id: "dsa", label: "DSA Patterns Tracker", icon: Code2, color: "border-purple-500/30 text-purple-400" },
-            { id: "ai", label: "NIM AI Mentor Room", icon: Sparkles, color: "border-blue-500/30 text-blue-400" },
+            { id: "ai", label: "AI Mentor Room", icon: Sparkles, color: "border-blue-500/30 text-blue-400" },
             { id: "aptitude", label: "Aptitude Textbook Map", icon: BookOpen, color: "border-rose-500/30 text-rose-400" },
             { id: "dev", label: "Dev Curriculum Matrix", icon: Layers, color: "border-emerald-500/30 text-emerald-400" }
           ].map((tab) => {

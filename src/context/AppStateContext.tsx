@@ -896,7 +896,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       }
 
       // Update today's streak and habits if solving first problem
-      let dailyHabits = { ...prev.dailyHabits };
+      const dailyHabits = { ...prev.dailyHabits };
       let streak = prev.streak;
 
       const totalSolvedToday = dsaTopics.reduce((acc, t) => {
@@ -1050,7 +1050,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       });
 
       // Update habits trigger if building/deploying items
-      let dailyHabits = { ...prev.dailyHabits };
+      const dailyHabits = { ...prev.dailyHabits };
       if (field === "built" && !prev.dailyHabits.buildFeature) {
         dailyHabits.buildFeature = true;
         xpDiff += 10;
@@ -1083,7 +1083,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         ...logData
       };
 
-      let aiLogs = [...prev.aiLogs];
+      const aiLogs = [...prev.aiLogs];
       if (existingIndex >= 0) {
         aiLogs[existingIndex] = newLog;
       } else {
@@ -1091,7 +1091,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
       }
 
       // Check anti-vibe habits
-      let dailyHabits = { ...prev.dailyHabits };
+      const dailyHabits = { ...prev.dailyHabits };
       if (logData.aiPercentage < 30) {
         dailyHabits.avoidAi = true;
       }
@@ -2075,7 +2075,7 @@ const AppStateProviderInner: React.FC<{ children: React.ReactNode; curriculum: a
         }
       };
 
-      let dailyHabits = { ...prev.dailyHabits };
+      const dailyHabits = { ...prev.dailyHabits };
       let xpDiff = 50; // default 50 XP
       if (!prev.dailyHabits.solveDsa) {
         dailyHabits.solveDsa = true;

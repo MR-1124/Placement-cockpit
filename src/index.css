@@ -639,3 +639,67 @@ html.light ::-webkit-scrollbar-thumb:hover {
 .perspective-1000 { perspective: 1000px; }
 .preserve-3d { transform-style: preserve-3d; }
 .backface-hidden { backface-visibility: hidden; }
+
+/* REACTBITS & SHADCN KINETIC KEYFRAMES */
+@keyframes border-beam {
+  100% {
+    offset-distance: 100%;
+  }
+}
+
+@keyframes shiny-text {
+  0%, 90%, 100% {
+    background-position: calc(-100% - var(--shiny-width, 40px)) 0;
+  }
+  30%, 60% {
+    background-position: calc(100% + var(--shiny-width, 40px)) 0;
+  }
+}
+
+@keyframes aurora {
+  from {
+    background-position: 50% 50%, 50% 50%;
+  }
+  to {
+    background-position: 350% 50%, 350% 50%;
+  }
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+.animate-border-beam {
+  animation: border-beam calc(var(--duration, 10) * 1s) infinite linear;
+}
+
+.animate-shiny-text {
+  animation: shiny-text 8s infinite;
+}
+
+.animate-aurora {
+  animation: aurora 60s linear infinite;
+}
+
+.animate-accordion-down {
+  animation: accordion-down 0.2s ease-out;
+}
+
+.animate-accordion-up {
+  animation: accordion-up 0.2s ease-out;
+}
+

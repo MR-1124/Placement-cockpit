@@ -93,7 +93,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setActiveTab, onOp
   const primaryPlan = ALL_PLANS.find(p => p.id === primaryPlanId) || ALL_PLANS[0];
   const weekPlans = primaryPlan.segments;
   const primaryUserPlan = (state.userPlans || []).find(up => up.planId === primaryPlanId) || (state.userPlans || [])[0];
-  const primaryCompletedSegments = primaryUserPlan?.completedSegments || [];
+  const primaryCompletedSegments = useMemo(() => primaryUserPlan?.completedSegments || [], [primaryUserPlan?.completedSegments]);
   const currentWeekIndex = Math.min(
     weekPlans.length - 1,
     primaryCompletedSegments.length

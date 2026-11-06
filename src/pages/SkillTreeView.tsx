@@ -11,6 +11,7 @@ export const SkillTreeView: React.FC<{ setActiveTab?: (tab: string) => void }> =
   const { state, toggleSkill } = useAppState();
   const completedSkills = state.completedSkills || [];
   const [selectedNode, setSelectedNode] = useState<SkillNode | null>(null);
+  const [zoom, setZoom] = useState<number>(1);
 
   const isUnlocked = (node: SkillNode) => {
     if (node.requires.length === 0) return true;
@@ -102,13 +103,41 @@ export const SkillTreeView: React.FC<{ setActiveTab?: (tab: string) => void }> =
             <div className="w-12 h-12 rounded-xl bg-accentPrimary/15 border border-accentPrimary/30 flex items-center justify-center text-accentPrimary font-mono font-bold text-xs shadow-[0_0_15px_rgba(var(--accent-rgb),0.2)]">
               {progressPercentage}%
             </div>
+
+            {/* Zoom Controls */}
+            <div className="flex items-center gap-1 border-l border-white/10 pl-3">
+              <button
+                onClick={() => setZoom(prev => Math.min(1.4, prev + 0.1))}
+                className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.1] text-slate-300 hover:text-white transition-colors cursor-pointer text-xs font-mono"
+                title="Zoom In"
+              >
+                +
+              </button>
+              <button
+                onClick={() => setZoom(1)}
+                className="px-2 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.1] text-slate-300 hover:text-white transition-colors cursor-pointer text-[10px] font-mono"
+                title="Reset Zoom"
+              >
+                {Math.round(zoom * 100)}%
+              </button>
+              <button
+                onClick={() => setZoom(prev => Math.max(0.6, prev - 0.1))}
+                className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.1] text-slate-300 hover:text-white transition-colors cursor-pointer text-xs font-mono"
+                title="Zoom Out"
+              >
+                -
+              </button>
+            </div>
           </div>
         </div>
       </SpotlightCard>
 
       {/* RPG Tree Canvas */}
       <div className="flex-1 overflow-auto custom-scrollbar relative z-10 w-full bg-darkCard/40 border border-white/[0.06] rounded-3xl p-6 backdrop-blur-md">
-        <div className="relative w-[1200px] h-[1000px] mx-auto">
+        <div 
+          className="relative w-[1200px] h-[1000px] mx-auto origin-top transition-transform duration-200"
+          style={{ transform: `scale(${zoom})` }}
+        >
           <svg className="absolute inset-0 w-full h-full pointer-events-none">
              {drawEdges()}
           </svg>

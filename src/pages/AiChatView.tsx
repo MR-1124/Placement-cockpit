@@ -50,7 +50,7 @@ const removeLastAssistantMessage = useAppState(s => s.removeLastAssistantMessage
   const [editTitleInput, setEditTitleInput] = useState("");
 
   const activeSession = state.chatSessions?.[state.currentSessionId || "default-session"];
-  const currentMessages = activeSession?.messages || [];
+  const currentMessages = React.useMemo(() => activeSession?.messages || [], [activeSession?.messages]);
 
   const activeProvider = state.settings.activeAiProvider || "nvidia";
   const providerMeta = AI_PROVIDERS[activeProvider] || AI_PROVIDERS.nvidia;

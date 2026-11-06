@@ -228,7 +228,7 @@ export const AnimatedCounter: React.FC<{ value: number; duration?: number }> = (
   const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
-    let start = 0;
+    const start = 0;
     const end = value;
     if (start === end) {
       setDisplayValue(end);

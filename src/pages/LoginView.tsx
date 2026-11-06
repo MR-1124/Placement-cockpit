@@ -66,7 +66,7 @@ export const LoginView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center relative bg-slate-950 px-4 overflow-hidden select-none">
+    <div className="min-h-[100dvh] w-full flex items-center justify-center relative bg-slate-950 px-4 overflow-hidden select-none">
       {/* Background gradients */}
       <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-violet-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
       <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-emerald-600/10 rounded-full blur-[120px] pointer-events-none" />

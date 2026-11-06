@@ -68,7 +68,7 @@ export const PracticeView: React.FC = () => {
   const [timerRunning, setTimerRunning] = useState(false);
   const timerRef = useRef<any>(null);
 
-  const solvedRecord = state.practiceProblemsSolved || {};
+  const solvedRecord = React.useMemo(() => state.practiceProblemsSolved || {}, [state.practiceProblemsSolved]);
   
   const getTodayString = () => {
     const d = new Date();

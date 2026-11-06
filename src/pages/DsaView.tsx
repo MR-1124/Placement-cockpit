@@ -31,7 +31,16 @@ export const DsaView: React.FC = () => {
   const updateDsaComplexity = useAppState(s => s.updateDsaComplexity);
   const incrementDsaSubmissions = useAppState(s => s.incrementDsaSubmissions);
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => {
+    try {
+      const saved = localStorage.getItem("dsa_filter_query");
+      if (saved) {
+        localStorage.removeItem("dsa_filter_query");
+        return saved;
+      }
+    } catch { /* noop */ }
+    return "";
+  });
   const [difficultyFilter, setDifficultyFilter] = useState<string>("All");
   const [showAllLevels, setShowAllLevels] = useState(false);
   const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({

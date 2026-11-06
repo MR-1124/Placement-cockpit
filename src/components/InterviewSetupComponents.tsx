@@ -27,7 +27,16 @@ const updateUserProfile = useAppState(s => s.updateUserProfile);
   const confirmAction = useAppState(s => s.confirmAction);
 
 
-  const [selectedTopic, setSelectedTopic] = useState<string>("Any");
+  const [selectedTopic, setSelectedTopic] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem("mock_interview_topic");
+      if (saved) {
+        localStorage.removeItem("mock_interview_topic");
+        return saved;
+      }
+    } catch { /* noop */ }
+    return "Any";
+  });
   const [selectedDifficulty, setSelectedDifficulty] = useState<"Easy" | "Medium" | "Hard">("Medium");
   const [selectedPersonality, setSelectedPersonality] = useState<"Helpful Mentor" | "Quiet Observer" | "Strict Interviewer">("Helpful Mentor");
   const [warmupCheck1, setWarmupCheck1] = useState(false);

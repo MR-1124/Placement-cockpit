@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { AppStateProvider, useAppState } from "./context/AppStateContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
@@ -141,7 +141,7 @@ const AppContent: React.FC = () => {
   }, [toggleTheme]);
 
   const activeSession = state.chatSessions?.[state.currentSessionId || "default-session"];
-  const currentMessages = activeSession?.messages || [];
+  const currentMessages = useMemo(() => activeSession?.messages || [], [activeSession?.messages]);
   // Focus Mode state (restored from localStorage if active and not expired)
   const [focusSession, setFocusSession] = useState<{
     isOpen: boolean;
@@ -259,7 +259,7 @@ const AppContent: React.FC = () => {
     try {
       const apiMessages = [
         { role: "system", content: SYSTEM_PROMPT },
-        ...currentMessages.map(m => ({ role: m.role, content: m.content })),
+        ...currentMessages.map((m: any) => ({ role: m.role, content: m.content })),
         { role: "user", content: currentInput }
       ];
 
@@ -647,7 +647,7 @@ const AppContent: React.FC = () => {
       </aside>
 
       {/* Main App Container */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen relative z-10">
+      <div className="flex-1 flex flex-col min-w-0 min-h-[100dvh] relative z-10">
         {/* Top Desktop Telemetry Bar */}
         <header className="hidden lg:flex h-16 border-b border-white/[0.06] bg-darkCard/40 backdrop-blur-md sticky top-0 z-20 px-8 items-center justify-between select-none">
           <div className="flex items-center gap-3">
@@ -979,7 +979,7 @@ const AppContent: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  {currentMessages.map((msg) => {
+                  {currentMessages.map((msg: any) => {
                     const isUser = msg.role === "user";
                     return (
                       <div

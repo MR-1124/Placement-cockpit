@@ -35,12 +35,19 @@ export const CompanyRoadmapsView: React.FC<{ setActiveTab?: (tab: string) => voi
   };
 
   const handleStartMock = () => {
-    // Optionally setup interview context before routing
+    if (selectedRoadmap) {
+      const topTopic = selectedRoadmap.frequentlyAskedTopics?.[0] || "Any";
+      localStorage.setItem("mock_interview_topic", topTopic);
+      localStorage.setItem("mock_interview_company", selectedRoadmap.companyName);
+    }
     if (setActiveTab) setActiveTab("interview");
   };
 
   const handleSolveQuestions = () => {
-    // Optionally pass tags context
+    if (selectedRoadmap) {
+      const topTopic = selectedRoadmap.frequentlyAskedTopics?.[0] || "";
+      localStorage.setItem("dsa_filter_query", topTopic);
+    }
     if (setActiveTab) setActiveTab("dsa");
   };
 
